@@ -7,7 +7,7 @@ http://ionicframework.com/docs/theming/ */
 
   /** primary **/
   --ion-color-primary: var(--nsw-red);
-  --ion-color-primary-rgb: 249 6 75;
+  --ion-color-primary-rgb: 249, 6, 75;
   --ion-color-primary-contrast: #ffffff;
   --ion-color-primary-contrast-rgb: 255, 255, 255;
   --ion-color-primary-shade: #3171e0;
@@ -98,7 +98,7 @@ ion-toolbar {
 
   body {
     --ion-color-primary: rgba(249, 6, 75, 1);
-    --ion-color-primary-rgb: 249 6 75;
+    --ion-color-primary-rgb: 249, 6, 75;
     --ion-color-primary-contrast: #ffffff;
     --ion-color-primary-contrast-rgb: 255,255,255;
     --ion-color-primary-shade: #3a7be0;
