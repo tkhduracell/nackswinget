@@ -209,7 +209,7 @@ ion-item[data-calendar] h3 {
 }
 
 ion-content.nsw-page ion-card-title:not(.card-title-sm) {
-  font-size: 1.6rem;
+  font-size: 1.9rem;
   font-weight: 800;
   color: var(--ion-text-color);
 }
