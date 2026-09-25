@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 
+import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -19,6 +20,8 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // Opt in explicitly so pre-35 devices get the same edge-to-edge layout
+        EdgeToEdge.enable(this);
         super.onCreate(savedInstanceState);
 
         // targetSdk 35+ enforces edge-to-edge. Keep the WebView out from under the
