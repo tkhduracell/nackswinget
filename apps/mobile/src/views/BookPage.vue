@@ -97,9 +97,12 @@ ion-range {
   --knob-size: 40px;
 }
 
+/* ion-datetime has a fixed default width that overflows narrow cards */
 ion-datetime {
-  margin-left: auto;
-  margin-right: auto;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  border-radius: 8px;
 }
 
 ion-label {
