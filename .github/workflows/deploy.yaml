@@ -274,7 +274,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: corretto
-          java-version: 18
+          java-version: 21
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
