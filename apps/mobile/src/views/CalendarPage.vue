@@ -102,7 +102,7 @@
               <ion-grid>
                 <ion-row>
                   <ion-col size="auto">
-                    <ion-label style="display: flex; flex-direction: column;">
+                    <ion-label class="times" style="display: flex; flex-direction: column;">
                       <div>{{ event.startTime }}</div>
                       <ion-icon style="margin-left: auto; margin-right: auto;" :icon="caretDownOutline"></ion-icon>
                       <div>{{ event.endTime }}</div>
@@ -145,7 +145,7 @@
 
 ion-item[data-calendar] {
   --border-radius: 6px;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   color: var(--ion-color-dark);
 }
 
@@ -178,6 +178,40 @@ ion-item[data-calendar="358978"] {
 /* Eventkalender */
 ion-item[data-calendar="358979"] {
   --background: rgba(255, 70, 94, 0.9);
+}
+
+ion-item[data-calendar] {
+  --padding-start: 8px;
+  --inner-padding-end: 8px;
+}
+
+ion-item[data-calendar] ion-grid {
+  padding: 0;
+}
+
+ion-item[data-calendar] ion-col {
+  padding: 4px;
+}
+
+ion-item[data-calendar] ion-label.times {
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+ion-item[data-calendar] h2 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+ion-item[data-calendar] h3 {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+ion-content.nsw-page ion-card-title:not(.card-title-sm) {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--ion-text-color);
 }
 
 ion-item.toasted {
