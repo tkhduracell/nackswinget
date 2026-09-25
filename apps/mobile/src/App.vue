@@ -44,12 +44,27 @@ provideNews(client)
 
 ion-content.nsw-page {
   --padding-top: 0px; /* needs a unit: Ionic uses it inside calc() */
+  --padding-start: 8px;
+  --padding-end: 8px;
+}
+
+ion-content.nsw-page ion-card {
+  margin: 0 0 10px;
+  border-radius: 14px;
+}
+
+ion-content.nsw-page ion-card-header {
+  padding: 12px 12px 4px;
+}
+
+ion-content.nsw-page ion-card-content {
+  padding: 0 8px 10px;
 }
 
 .page-title {
   font-size: 2.25rem;
   font-weight: 800;
-  margin: 20px 16px 4px;
+  margin: 16px 8px 8px;
 }
 
 .card-title-sm {

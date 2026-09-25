@@ -145,7 +145,7 @@
 
 ion-item[data-calendar] {
   --border-radius: 6px;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   color: var(--ion-color-dark);
 }
 
@@ -178,6 +178,19 @@ ion-item[data-calendar="358978"] {
 /* Eventkalender */
 ion-item[data-calendar="358979"] {
   --background: rgba(255, 70, 94, 0.9);
+}
+
+ion-item[data-calendar] {
+  --padding-start: 8px;
+  --inner-padding-end: 8px;
+}
+
+ion-item[data-calendar] ion-grid {
+  padding: 0;
+}
+
+ion-item[data-calendar] ion-col {
+  padding: 4px;
 }
 
 ion-item.toasted {
