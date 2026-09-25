@@ -1,18 +1,12 @@
 <template>
   <ion-page>
     <nsw-toolbar />
-    <ion-content :fullscreen="true" class="ion-padding">
+    <ion-content :fullscreen="true" class="ion-padding nsw-page">
       <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
         <ion-refresher-content></ion-refresher-content>
       </ion-refresher>
 
-      <ion-card style="display: flex; justify-content: center;">
-        <ion-card-header>
-          <ion-card-title style="font-size: 2rem">
-            Kalender
-          </ion-card-title>
-        </ion-card-header>
-      </ion-card>
+      <h1 class="page-title">Kalender</h1>
 
       <ion-card v-if="subscription.isDenied">
         <ion-card-header>
@@ -37,9 +31,9 @@
         </ion-card-content>
       </ion-card>
 
-      <ion-card v-if="subscription.isSupported && !subscription.isSubscribed && !subscription.isDismissed">
+      <ion-card class="banner" v-if="subscription.isSupported && !subscription.isSubscribed && !subscription.isDismissed">
         <ion-card-header>
-          <ion-card-title>Vill du få notiser?</ion-card-title>
+          <ion-card-title class="card-title-sm">Vill du få notiser?</ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <p>Du kan bevaka öppna träningar och få notiser när någon bokar ny träning. Detta genom att trycka på knappen
@@ -147,10 +141,6 @@
   ion-item[data-calendar="358979"] {
     --background: rgba(252, 113, 132, 0.9);
   }
-}
-
-ion-content {
-  --padding-top: 0em;
 }
 
 ion-item[data-calendar] {

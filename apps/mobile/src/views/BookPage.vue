@@ -2,15 +2,9 @@
 <template>
   <ion-page>
     <nsw-toolbar />
-    <ion-content>
+    <ion-content class="ion-padding nsw-page">
 
-      <ion-card style="display: flex; justify-content: center;">
-        <ion-card-header>
-          <ion-card-title style="font-size: 2rem">
-            Boka träning
-          </ion-card-title>
-        </ion-card-header>
-      </ion-card>
+      <h1 class="page-title">Boka träning</h1>
 
       <form>
         <ion-card>
@@ -103,9 +97,12 @@ ion-range {
   --knob-size: 40px;
 }
 
+/* ion-datetime has a fixed default width that overflows narrow cards */
 ion-datetime {
-  margin-left: auto;
-  margin-right: auto;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  border-radius: 8px;
 }
 
 ion-label {
@@ -195,7 +192,7 @@ ion-input {
 import { Toast } from '@capacitor/toast';
 import {
   IonPage, IonContent, IonDatetime, IonInput, IonSpinner,
-  IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonButton
+  IonCard, IonCardContent, IonSelect, IonSelectOption, IonButton
 } from '@ionic/vue';
 import NswToolbar from '@/components/NswToolbar.vue';
 

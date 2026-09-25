@@ -41,4 +41,24 @@ provideNews(client)
 .text-bold {
   font-weight: bold;
 }
+
+ion-content.nsw-page {
+  --padding-top: 0px; /* needs a unit: Ionic uses it inside calc() */
+}
+
+.page-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  margin: 20px 16px 4px;
+}
+
+.card-title-sm {
+  font-size: 1.1rem;
+}
+
+ion-card.banner {
+  box-shadow: none;
+  --background: rgba(var(--ion-color-primary-rgb), 0.06);
+  border: 1px solid rgba(var(--ion-color-primary-rgb), 0.2);
+}
 </style>
