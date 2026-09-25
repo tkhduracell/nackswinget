@@ -193,6 +193,21 @@ ion-item[data-calendar] ion-col {
   padding: 4px;
 }
 
+ion-item[data-calendar] ion-col[size="auto"] ion-label {
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+ion-item[data-calendar] h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+ion-item[data-calendar] h3 {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
 ion-item.toasted {
   animation: tilt-shaking 0.5s 4 ease-in-out;
   position: relative;

@@ -62,9 +62,26 @@ ion-content.nsw-page ion-card-content {
 }
 
 .page-title {
-  font-size: 2.25rem;
+  font-size: 1.75rem;
   font-weight: 800;
   margin: 16px 8px 8px;
+}
+
+/* Type scale: title 20 / subtitle 12 / body 15 */
+ion-content.nsw-page ion-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+ion-content.nsw-page ion-card-subtitle {
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+}
+
+ion-content.nsw-page ion-card-content {
+  font-size: 0.95rem;
+  line-height: 1.4;
 }
 
 .card-title-sm {
