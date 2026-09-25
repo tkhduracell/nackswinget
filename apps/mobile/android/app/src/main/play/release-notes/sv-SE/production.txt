@@ -1,1 +1,3 @@
-Uppdaterad för senaste Android-versionen. Förbättrad layout runt statusfältet och navigeringsfältet, och ny design av sidrubriker.
+• Stöd för de senaste Android-versionerna
+• Mindre och snabbare app
+• Mindre buggfixar
