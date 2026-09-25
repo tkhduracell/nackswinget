@@ -22,3 +22,17 @@ export function useToast(def?: string, timeout = 5000) {
 
     return { toast, toasted }
 }
+export function useRapidClicks(count: number, windowMs: number, onTrigger: () => void, now: () => number = Date.now) {
+    let clicks: number[] = []
+
+    function click() {
+        const t = now()
+        clicks = [...clicks.filter(c => t - c < windowMs), t]
+        if (clicks.length >= count) {
+            clicks = []
+            onTrigger()
+        }
+    }
+
+    return { click }
+}

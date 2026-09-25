@@ -4,8 +4,8 @@
       <ion-router-outlet></ion-router-outlet>
       <ion-tab-bar slot="bottom">
 
-        <ion-tab-button tab="tab1" href="/tabs/calendar">
-          <ion-icon aria-hidden="true" :icon="calendar" ref="calendarButtonRef" />
+        <ion-tab-button tab="tab1" href="/tabs/calendar" ref="calendarButtonRef" @click="calendarClicks.click">
+          <ion-icon aria-hidden="true" :icon="calendar" />
           <ion-label>Kalender</ion-label>
         </ion-tab-button>
 
@@ -31,7 +31,7 @@ import { onLongPress, useLocalStorage } from '@vueuse/core'
 import { ref } from 'vue'
 import { Toast } from '@capacitor/toast';
 import { FCM } from '@capacitor-community/fcm';
-import { useAppMode } from '@/compsables/common';
+import { useAppMode, useRapidClicks } from '@/compsables/common';
 
 const { isDev } = useAppMode()
 
@@ -44,11 +44,16 @@ const showDeviceToken = () => {
 
 const bookingEnabled = useLocalStorage('bookingEnabled', false)
 
-const calendarButtonRef = ref<HTMLElement | null>(null)
-onLongPress(calendarButtonRef, async () => {
+const enableBooking = () => {
   Toast.show({ text: 'Du kan nu boka', duration: 'short' })
   bookingEnabled.value = true
-}, { delay: 1000 })
+}
+
+const calendarButtonRef = ref<HTMLElement | null>(null)
+onLongPress(calendarButtonRef, enableBooking, { delay: 1000 })
+
+// Fallback for devices where long-press doesn't register: 10 taps within 1 min
+const calendarClicks = useRapidClicks(10, 60_000, enableBooking)
 
 const newsButtonRef = ref<HTMLElement | null>(null)
 onLongPress(newsButtonRef, showDeviceToken, { delay: 1000 })
