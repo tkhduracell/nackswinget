@@ -34,7 +34,6 @@
     "@capacitor/ios": "5.7.8",
     "@capacitor/keyboard": "5.0.8",
     "@capacitor/push-notifications": "^5.1.1",
-    "@capacitor/status-bar": "5.0.7",
     "@capacitor/toast": "^5.0.7",
     "@ionic/vue": "^7.7.0",
     "@ionic/vue-router": "^7.7.0",
