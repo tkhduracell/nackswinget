@@ -31,8 +31,8 @@ export function Header({ nav, logo, siteName }: { nav: NavItem[]; logo?: string;
       <div className="header-inner">
         <Link href="/" className="logo" aria-label={`${siteName} – startsida`} prefetch={false}>
           {logo ? (
-            // eslint-disable-next-line @next/next/no-img-element -- small static logo
             // 480w WebP variant (~5 KB) instead of the 35 KB PNG original.
+            // eslint-disable-next-line @next/next/no-img-element -- small static logo
             <img src={publicUrl(/\.(png|jpe?g)$/i.test(logo) ? variantPath(logo, 480) : logo)} alt={siteName} width={210} height={42} decoding="async" />
           ) : (
             <span>{siteName}</span>

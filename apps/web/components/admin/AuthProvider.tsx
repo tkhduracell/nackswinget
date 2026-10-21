@@ -19,6 +19,10 @@ interface AuthCtx {
 const Ctx = createContext<AuthCtx | null>(null);
 const EMAIL_KEY = "nsw-admin-email";
 
+// An email link can only be used once; React may run effects twice in dev,
+// so the sign-in is shared through one module-level promise.
+let linkSignIn: Promise<void> | null = null;
+
 export function useAdmin(): AuthCtx {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error("useAdmin outside AuthProvider");
@@ -92,19 +96,25 @@ function LoginForm({ error }: { error?: string }) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [me, setMe] = useState<Me | null>(null);
+  // uid whose /me check has finished (avoids a sync setState in the effect).
+  const [checkedFor, setCheckedFor] = useState<string | null>(null);
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
     const auth = clientAuth();
     // Returning from the email link.
     if (isSignInWithEmailLink(auth, window.location.href)) {
-      const email = window.localStorage.getItem(EMAIL_KEY) ?? window.prompt("Bekräfta din e-postadress") ?? "";
-      signInWithEmailLink(auth, email, window.location.href)
-        .then(() => {
-          window.localStorage.removeItem(EMAIL_KEY);
-          window.history.replaceState(null, "", "/admin/");
+      linkSignIn ??= (async () => {
+        const email = window.localStorage.getItem(EMAIL_KEY) ?? window.prompt("Bekräfta din e-postadress") ?? "";
+        await signInWithEmailLink(auth, email, window.location.href);
+        window.localStorage.removeItem(EMAIL_KEY);
+      })();
+      linkSignIn
+        .catch(() => {
+          // A used link is harmless if we're signed in anyway.
+          if (!auth.currentUser) setError("Länken är ogiltig eller har gått ut. Begär en ny.");
         })
-        .catch(() => setError("Länken är ogiltig eller har gått ut. Begär en ny."));
+        .finally(() => window.history.replaceState(null, "", "/admin/"));
     }
     return onIdTokenChanged(auth, (u) => setUser(u));
   }, []);
@@ -113,12 +123,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     let cancelled = false;
     callApi<Me>(user, "/me")
-      .then((m) => !cancelled && setMe(m))
+      .then((m) => {
+        if (cancelled) return;
+        setMe(m);
+        setError(undefined);
+      })
       .catch((e: ApiError) => {
         if (cancelled) return;
         setError(e.message);
         setMe(null);
-      });
+      })
+      .finally(() => !cancelled && setCheckedFor(user.uid));
     return () => {
       cancelled = true;
     };
@@ -134,7 +149,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { me, api: (path, init) => callApi(user, path, init), logout };
   }, [user, me, logout]);
 
-  if (user === undefined || (user && !me && !error)) return <p className="admin-loading">Laddar…</p>;
+  const checking = !!user && checkedFor !== user.uid;
+  if (user === undefined || (user && !me && (checking || !error))) return <p className="admin-loading">Laddar…</p>;
   if (!user || !value) {
     return (
       <>

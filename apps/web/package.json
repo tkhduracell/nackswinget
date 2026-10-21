@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "export:wp": "tsx scripts/wp-export.ts",
-    "import": "tsx scripts/import-snapshot.ts"
+    "import": "tsx scripts/import-snapshot.ts",
+    "emulators": "firebase emulators:start --only auth,firestore --project demo-nsw --config ../../firebase.json",
+    "dev:emulators": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIREBASE_PROJECT_ID=demo-nsw NEXT_PUBLIC_EMULATORS=1 IMPORT_TOKEN=local-dev-token ADMIN_EMAILS=admin@example.test next dev"
   },
   "dependencies": {
     "@tiptap/core": "^3.32.0",

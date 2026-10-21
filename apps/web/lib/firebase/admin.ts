@@ -5,7 +5,8 @@ import { type Firestore, getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { BUCKET } from "@/lib/media/urls";
 
-export const PROJECT_ID = "nackswinget-af7ef";
+// FIREBASE_PROJECT_ID=demo-nsw with the local emulators (pnpm dev:emulators).
+export const PROJECT_ID = process.env.FIREBASE_PROJECT_ID ?? "nackswinget-af7ef";
 
 // On App Hosting the runtime service account provides Application Default
 // Credentials; no keys are stored anywhere.
