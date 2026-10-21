@@ -13,8 +13,11 @@ const openSans = Open_Sans({
 export const metadata: Metadata = {
   title: "Dansklubben Nackswinget",
   description: "Danskurser och socialdans med bugg & fox i Stockholm/Nacka.",
-  // Preview deployment: keep it out of search engines until cutover.
-  robots: { index: false, follow: false },
+  // Set SITE_INDEXABLE=true in apphosting.yaml at cutover.
+  robots:
+    process.env.SITE_INDEXABLE === "true"
+      ? { index: true, follow: true }
+      : { index: false, follow: false },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

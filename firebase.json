@@ -6,14 +6,14 @@
       "ignore": [
         "node_modules",
         ".next",
-        ".git",
-        ".github",
-        ".claude",
-        "apps/mobile",
-        "functions",
-        "docs",
-        "*.bak",
-        "eslint_report.json",
+        "/.git",
+        "/.github",
+        "/.claude",
+        "/apps/mobile",
+        "/functions",
+        "/docs",
+        "/*.bak",
+        "/eslint_report.json",
         "firebase-debug.log",
         "firebase-debug.*.log"
       ]

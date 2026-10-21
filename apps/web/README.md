@@ -9,7 +9,7 @@ This app is a standalone pnpm workspace, excluded from the root workspace, so th
 Run these from `apps/web`:
 
 - `pnpm install`
-- `pnpm dev`: local dev server at http://localhost:3000
+- `pnpm dev`: local dev server (`.claude/launch.json` runs it on http://localhost:3100)
 - `pnpm build`: production build
 - `pnpm lint`
 
