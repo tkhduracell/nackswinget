@@ -1,0 +1,385 @@
+{
+ "generatedAt": "2026-01-01T00:00:00.000Z",
+ "pages": [
+  {
+   "id": "home",
+   "path": "",
+   "title": "Hem",
+   "parentId": null,
+   "template": "default",
+   "status": "published",
+   "publishedAt": "2026-01-01T00:00:00.000Z",
+   "updatedAt": "2026-01-01T00:00:00.000Z",
+   "seo": {},
+   "sections": [
+    {
+     "type": "hero",
+     "title": "Testklubben",
+     "subtitle": "Fixture för CI",
+     "buttons": [
+      {
+       "label": "Kurser",
+       "href": "/kurser/"
+      }
+     ]
+    },
+    {
+     "type": "columns",
+     "columns": [
+      {
+       "width": "3/4",
+       "sections": [
+        {
+         "type": "postList",
+         "count": 3,
+         "showMore": true
+        }
+       ]
+      },
+      {
+       "width": "1/4",
+       "sections": [
+        {
+         "type": "linkBoxes",
+         "items": [
+          {
+           "title": "Kurser",
+           "href": "/kurser/"
+          },
+          {
+           "title": "Kalender",
+           "href": "/kalender/"
+          }
+         ]
+        },
+        {
+         "type": "calendar",
+         "title": "På gång",
+         "feeds": [
+          "fritraning"
+         ],
+         "hiddenByDefault": [],
+         "view": "list",
+         "pastDays": 0,
+         "count": 4,
+         "showLegend": false
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "kurser",
+   "path": "kurser",
+   "title": "Kurser",
+   "parentId": null,
+   "template": "default",
+   "status": "published",
+   "publishedAt": "2026-01-01T00:00:00.000Z",
+   "updatedAt": "2026-01-01T00:00:00.000Z",
+   "seo": {},
+   "sections": [
+    {
+     "type": "richText",
+     "doc": {
+      "type": "doc",
+      "content": [
+       {
+        "type": "heading",
+        "attrs": {
+         "level": 2
+        },
+        "content": [
+         {
+          "type": "text",
+          "text": "Våra kurser"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "Fixture-text om kurser."
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "kalender",
+   "path": "kalender",
+   "title": "Kalender",
+   "parentId": null,
+   "template": "default",
+   "status": "published",
+   "publishedAt": "2026-01-01T00:00:00.000Z",
+   "updatedAt": "2026-01-01T00:00:00.000Z",
+   "seo": {},
+   "sections": [
+    {
+     "type": "calendar",
+     "feeds": [
+      "fritraning",
+      "huvud"
+     ],
+     "hiddenByDefault": [
+      "huvud"
+     ],
+     "view": "month",
+     "pastDays": 30,
+     "showLegend": true
+    }
+   ]
+  },
+  {
+   "id": "om-oss",
+   "path": "om-oss",
+   "title": "Om oss",
+   "parentId": null,
+   "template": "default",
+   "status": "published",
+   "publishedAt": "2026-01-01T00:00:00.000Z",
+   "updatedAt": "2026-01-01T00:00:00.000Z",
+   "seo": {},
+   "sections": [
+    {
+     "type": "richText",
+     "variant": "boxLeft",
+     "doc": {
+      "type": "doc",
+      "content": [
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "Om fixture-klubben."
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "om-oss-historik",
+   "path": "om-oss/historik",
+   "title": "Historik",
+   "parentId": "om-oss",
+   "template": "default",
+   "status": "published",
+   "publishedAt": "2026-01-01T00:00:00.000Z",
+   "updatedAt": "2026-01-01T00:00:00.000Z",
+   "seo": {},
+   "sections": [
+    {
+     "type": "richText",
+     "doc": {
+      "type": "doc",
+      "content": [
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "En undersida."
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ],
+ "posts": [
+  {
+   "id": "post-1",
+   "slug": "testnyhet-1",
+   "title": "Testnyhet 1",
+   "excerpt": "Ingress 1.",
+   "body": {
+    "type": "doc",
+    "content": [
+     {
+      "type": "paragraph",
+      "content": [
+       {
+        "type": "text",
+        "text": "Brödtext 1."
+       }
+      ]
+     }
+    ]
+   },
+   "categories": [
+    "foreningsnyhet"
+   ],
+   "status": "published",
+   "publishedAt": "2026-01-01T10:00:00.000Z",
+   "updatedAt": "2026-01-01T10:00:00.000Z",
+   "seo": {}
+  },
+  {
+   "id": "post-2",
+   "slug": "testnyhet-2",
+   "title": "Testnyhet 2",
+   "excerpt": "Ingress 2.",
+   "body": {
+    "type": "doc",
+    "content": [
+     {
+      "type": "paragraph",
+      "content": [
+       {
+        "type": "text",
+        "text": "Brödtext 2."
+       }
+      ]
+     }
+    ]
+   },
+   "categories": [
+    "foreningsnyhet"
+   ],
+   "status": "published",
+   "publishedAt": "2026-01-02T10:00:00.000Z",
+   "updatedAt": "2026-01-02T10:00:00.000Z",
+   "seo": {}
+  },
+  {
+   "id": "post-3",
+   "slug": "testnyhet-3",
+   "title": "Testnyhet 3",
+   "excerpt": "Ingress 3.",
+   "body": {
+    "type": "doc",
+    "content": [
+     {
+      "type": "paragraph",
+      "content": [
+       {
+        "type": "text",
+        "text": "Brödtext 3."
+       }
+      ]
+     }
+    ]
+   },
+   "categories": [
+    "foreningsnyhet"
+   ],
+   "status": "published",
+   "publishedAt": "2026-01-03T10:00:00.000Z",
+   "updatedAt": "2026-01-03T10:00:00.000Z",
+   "seo": {}
+  },
+  {
+   "id": "post-4",
+   "slug": "testnyhet-4",
+   "title": "Testnyhet 4",
+   "excerpt": "Ingress 4.",
+   "body": {
+    "type": "doc",
+    "content": [
+     {
+      "type": "paragraph",
+      "content": [
+       {
+        "type": "text",
+        "text": "Brödtext 4."
+       }
+      ]
+     }
+    ]
+   },
+   "categories": [
+    "foreningsnyhet"
+   ],
+   "status": "published",
+   "publishedAt": "2026-01-04T10:00:00.000Z",
+   "updatedAt": "2026-01-04T10:00:00.000Z",
+   "seo": {}
+  }
+ ],
+ "categories": [
+  {
+   "slug": "foreningsnyhet",
+   "name": "Föreningsnyhet"
+  },
+  {
+   "slug": "tavling",
+   "name": "Tävling"
+  }
+ ],
+ "nav": [
+  {
+   "label": "Kurser",
+   "href": "/kurser/",
+   "children": []
+  },
+  {
+   "label": "Kalender",
+   "href": "/kalender/",
+   "children": []
+  },
+  {
+   "label": "Om oss",
+   "href": "/om-oss/",
+   "children": [
+    {
+     "label": "Historik",
+     "href": "/om-oss/historik/"
+    }
+   ]
+  }
+ ],
+ "settings": {
+  "siteName": "Testklubben",
+  "tagline": "Fixture för CI",
+  "siteUrl": "https://nackswinget.se",
+  "social": {},
+  "footer": {
+   "address": "Testgatan 1",
+   "email": "",
+   "links": [
+    {
+     "label": "Kontakt",
+     "href": "/om-oss/"
+    }
+   ],
+   "badges": []
+  },
+  "calendarFeeds": [
+   {
+    "key": "huvud",
+    "name": "Huvudkalender",
+    "color": "#F397D7",
+    "url": "https://storage.googleapis.com/nackswinget-af7ef.appspot.com/cal_333077.ics"
+   },
+   {
+    "key": "fritraning",
+    "name": "Friträning",
+    "color": "#9DD6B4",
+    "url": "https://storage.googleapis.com/nackswinget-af7ef.appspot.com/cal_337667.ics"
+   }
+  ]
+ },
+ "banners": [],
+ "redirects": [
+  {
+   "from": "gammal-sida",
+   "to": "/om-oss/",
+   "status": 308
+  }
+ ],
+ "media": []
+}

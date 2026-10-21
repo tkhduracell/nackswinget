@@ -1,0 +1,64 @@
+name: Web
+
+# apps/web (nackswinget.se): lint, typecheck, unit tests, a fixture build,
+# Playwright smoke tests and the Lighthouse budget (plan Q23).
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/web.yaml"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: apps/web
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CONTENT_SOURCE: snapshot
+      CONTENT_SNAPSHOT: test/fixtures/snapshot.json
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm exec next typegen && pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build (fixture content)
+        run: pnpm build:fixture
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Smoke tests
+        run: pnpm e2e --reporter=line
+
+      - name: Lighthouse budget
+        run: |
+          pnpm exec next start --port 3200 > /tmp/next.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3200/ && break; sleep 1; done
+          pnpm lighthouse:budget

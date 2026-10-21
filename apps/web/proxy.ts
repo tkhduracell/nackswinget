@@ -8,6 +8,8 @@ import { normalizePath } from "@/lib/content/store";
 // If the route index can't be read it steps aside (fail open).
 
 export async function proxy(req: NextRequest) {
+  // Local dev/CI with a snapshot file has no Firestore route index.
+  if (process.env.CONTENT_SOURCE === "snapshot") return NextResponse.next();
   const index = await getRouteIndex();
   if (!index) return NextResponse.next();
 

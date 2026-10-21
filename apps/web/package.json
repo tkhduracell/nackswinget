@@ -13,7 +13,10 @@
     "export:wp": "tsx scripts/wp-export.ts",
     "import": "tsx scripts/import-snapshot.ts",
     "emulators": "firebase emulators:start --only auth,firestore --project demo-nsw --config ../../firebase.json",
-    "dev:emulators": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIREBASE_PROJECT_ID=demo-nsw NEXT_PUBLIC_EMULATORS=1 IMPORT_TOKEN=local-dev-token ADMIN_EMAILS=admin@example.test next dev"
+    "dev:emulators": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIREBASE_PROJECT_ID=demo-nsw NEXT_PUBLIC_EMULATORS=1 IMPORT_TOKEN=local-dev-token ADMIN_EMAILS=admin@example.test next dev",
+    "build:fixture": "CONTENT_SOURCE=snapshot CONTENT_SNAPSHOT=test/fixtures/snapshot.json next build",
+    "e2e": "playwright test",
+    "lighthouse:budget": "node scripts/lighthouse-budget.mjs"
   },
   "dependencies": {
     "@tiptap/core": "^3.32.0",
@@ -35,9 +38,11 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "chrome-launcher": "^1.2.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
     "lighthouse": "13.5.0",
