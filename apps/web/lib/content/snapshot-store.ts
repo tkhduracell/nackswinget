@@ -32,6 +32,9 @@ export function storeFromSnapshot(snap: Snapshot): ContentStore {
     async listAllPostSummaries() {
       return published().map(toSummary);
     },
+    async listPublishedPosts() {
+      return published();
+    },
     async getCategories() {
       return snap.categories;
     },

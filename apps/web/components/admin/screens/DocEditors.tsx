@@ -108,7 +108,12 @@ export function PageEditor({ id }: { id: string }) {
   const { doc, update, published, publish, discard, state, error, hasDraft } = useDraft<Page>("pages", id, blank);
 
   if (!doc) return <p className="admin-loading">{error ?? "Laddar…"}</p>;
-  const isHome = published?.path === "" || (!published && doc.path === "");
+  // Only the existing start page has the empty path; new pages get a slug.
+  const isHome = published?.path === "";
+  const publishPage = () => {
+    if (!isHome && !doc.path) return void publish({ ...doc, path: slugify(doc.title) || `sida-${id.slice(-6)}` });
+    void publish();
+  };
 
   return (
     <div className="editor">
@@ -118,7 +123,7 @@ export function PageEditor({ id }: { id: string }) {
         state={state}
         hasDraft={hasDraft}
         error={error}
-        onPublish={() => void publish()}
+        onPublish={publishPage}
         onDiscard={() => void discard()}
         viewHref={published ? (published.path ? `/${published.path}/` : "/") : undefined}
       />
@@ -134,7 +139,7 @@ export function PageEditor({ id }: { id: string }) {
               <span className="muted">nackswinget.se/</span>
               <input
                 value={doc.path}
-                disabled={isHome && !!published}
+                disabled={isHome}
                 placeholder={slugify(doc.title)}
                 onChange={(e) => update({ ...doc, path: e.target.value.toLowerCase().replace(/[^a-z0-9/-]/g, "") })}
                 onBlur={() => !doc.path && !isHome && update({ ...doc, path: slugify(doc.title) })}
@@ -189,8 +194,7 @@ export function PostEditor({ id }: { id: string }) {
   const onPublish = async () => {
     const withSlug = doc.slug ? doc : { ...doc, slug: slugify(doc.title) };
     if (!withSlug.title.trim()) return window.alert("Nyheten behöver en rubrik.");
-    if (withSlug !== doc) update(withSlug);
-    const saved = await publish();
+    const saved = await publish(withSlug);
     if (saved && push && !scheduled && withSlug.status !== "draft") {
       try {
         await api("/push", { method: "POST" });

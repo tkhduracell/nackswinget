@@ -73,6 +73,13 @@ export async function listAllPosts() {
   return buildSafe("listAllPostSummaries", async () => (await getStore()).listAllPostSummaries(), []);
 }
 
+export async function listPublishedPosts() {
+  "use cache";
+  cacheTag(TAG.posts);
+  cacheLife("days");
+  return buildSafe("listPublishedPosts", async () => (await getStore()).listPublishedPosts(), []);
+}
+
 export async function getSite() {
   "use cache";
   cacheTag(TAG.site);
@@ -101,5 +108,8 @@ export async function getLiveBanners() {
   cacheLife("hours");
   const now = Date.now();
   const { banners } = await getSite();
-  return banners.filter((b) => new Date(b.startAt).getTime() + b.days * 86_400_000 > now);
+  // Earliest start first: the active banner (if any) precedes scheduled ones.
+  return banners
+    .filter((b) => new Date(b.startAt).getTime() + b.days * 86_400_000 > now)
+    .sort((a, b) => a.startAt.localeCompare(b.startAt));
 }

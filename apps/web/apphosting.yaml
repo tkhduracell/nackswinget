@@ -26,3 +26,8 @@ env:
     secret: ADMIN_EMAILS
     availability:
       - RUNTIME
+  # Guards /api/cron/ (Cloud Scheduler job web-scheduled-publish).
+  - variable: CRON_TOKEN
+    secret: CRON_TOKEN
+    availability:
+      - RUNTIME

@@ -11,7 +11,7 @@ import { guard } from "@/lib/import/auth";
 // revalidated. This checks whether anything crossed its time since the last
 // run and revalidates just those tags.
 export async function POST(req: Request) {
-  const denied = guard(req);
+  const denied = guard(req, "CRON_TOKEN");
   if (denied) return denied;
 
   const db = getDb();

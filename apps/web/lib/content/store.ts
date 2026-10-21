@@ -8,6 +8,8 @@ export interface ContentStore {
   /** Published posts, newest first. */
   listPosts(opts: { category?: string; limit: number; offset?: number }): Promise<{ posts: PostSummary[]; total: number }>;
   listAllPostSummaries(): Promise<PostSummary[]>;
+  /** All published posts with bodies (search index). One read, not one per post. */
+  listPublishedPosts(): Promise<Post[]>;
   getCategories(): Promise<Category[]>;
   getNav(): Promise<NavItem[]>;
   getSettings(): Promise<Settings>;

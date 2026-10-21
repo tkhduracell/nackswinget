@@ -74,6 +74,13 @@ export async function createFirestoreStore(): Promise<ContentStore> {
       return { posts: all.slice(offset, offset + limit), total: all.length };
     },
     listAllPostSummaries: allSummaries,
+    async listPublishedPosts() {
+      const snap = await db.collection(COLLECTIONS.posts).get();
+      return snap.docs
+        .map((d) => postSchema.parse({ id: d.id, ...d.data() }))
+        .filter((p) => isPublished(p))
+        .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+    },
     async getCategories() {
       return siteDoc("categories", (d) => categorySchema.array().parse(d.items ?? []), []);
     },

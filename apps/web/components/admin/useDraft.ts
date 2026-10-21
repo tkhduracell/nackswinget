@@ -64,11 +64,14 @@ export function useDraft<T extends { id: string }>(kind: "pages" | "posts", id: 
     return () => clearTimeout(t);
   }, [state, api, kind, id]);
 
-  const publish = useCallback(async () => {
-    if (!doc) return null;
+  /** Publishes `next` (e.g. with a generated slug) or the current doc. */
+  const publish = useCallback(async (next?: T) => {
+    const toPublish = next ?? doc;
+    if (!toPublish) return null;
+    if (next) setDoc(next);
     setState("saving");
     try {
-      const saved = await api<T>(`/docs/${kind}/${id}`, { method: "POST", json: doc });
+      const saved = await api<T>(`/docs/${kind}/${id}`, { method: "POST", json: toPublish });
       pending.current = null;
       setPublished(saved);
       setHasDraft(false);

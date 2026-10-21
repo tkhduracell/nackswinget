@@ -99,7 +99,8 @@ export async function publish(kind: Kind, id: string, data: unknown, user: Admin
   if (previous.exists) {
     batch.set(ref.collection("versions").doc(), { data: previous.data(), savedAt: now, savedBy: user.email });
   }
-  batch.set(ref, body);
+  // editedInAdmin: a later WordPress re-import must not overwrite this doc.
+  batch.set(ref, { ...body, editedInAdmin: true });
   batch.delete(db.collection("drafts").doc(`${kind}-${id}`));
   await batch.commit();
 

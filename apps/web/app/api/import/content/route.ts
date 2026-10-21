@@ -11,7 +11,8 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return Response.json({ error: "invalid snapshot", issues: parsed.error.issues.slice(0, 20) }, { status: 400 });
   }
-  const result = await writeSnapshot(parsed.data);
+  // ?force=1 also overwrites admin-edited pages/posts and existing site documents.
+  const result = await writeSnapshot(parsed.data, { force: new URL(req.url).searchParams.get("force") === "1" });
   for (const tag of CONTENT_TAGS) revalidateTag(tag, "max");
   return Response.json({ ok: true, ...result });
 }

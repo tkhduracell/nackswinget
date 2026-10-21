@@ -114,6 +114,12 @@ export async function finalizeUpload(id: string, user: AdminUser): Promise<Media
   const size = Number(meta.size ?? doc.size);
 
   if (doc.kind === "image") {
+    // The declared size can't be trusted; check the stored object before loading it.
+    if (size > IMAGE_MAX_BYTES) {
+      await file.delete({ ignoreNotFound: true });
+      await ref.update({ status: "error", error: "Bilden är större än 20 MB" });
+      throw new HttpError(413, "Bilden är större än 20 MB");
+    }
     const [data] = await file.download();
     const stored = await storeMedia(doc.path, data, doc.contentType);
     const update = { status: "ready" as const, size, width: stored.width, height: stored.height, variants: stored.variants };
