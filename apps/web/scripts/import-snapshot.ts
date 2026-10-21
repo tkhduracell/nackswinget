@@ -4,7 +4,7 @@
 // no Google credentials are needed here, only the IMPORT_TOKEN.
 //
 //   pnpm import --url https://nsw-web--nackswinget-af7ef.europe-west4.hosted.app
-//   pnpm import --url ... --skip-media | --only-media
+//   pnpm import --url ... --skip-media | --only-media | --reconcile-only
 
 import { readFile } from "node:fs/promises";
 import os from "node:os";
@@ -16,6 +16,7 @@ const file = arg("--file") ?? "content/snapshot.json";
 const tokenFile = arg("--token-file") ?? path.join(os.homedir(), ".config", "nsw", "import-token");
 const skipMedia = process.argv.includes("--skip-media");
 const onlyMedia = process.argv.includes("--only-media");
+const reconcileOnly = process.argv.includes("--reconcile-only");
 
 async function post(route: string, body: unknown, token: string) {
   const res = await fetch(`${base}${route}`, {
@@ -32,9 +33,13 @@ async function main() {
   const token = (await readFile(tokenFile, "utf8")).trim();
   const snapshot = JSON.parse(await readFile(file, "utf8")) as { media: string[] };
 
+  if (reconcileOnly) {
+    console.log(await post("/api/import/reconcile/", {}, token));
+    return;
+  }
   if (!onlyMedia) {
     console.log(`Writing content to ${base} ...`);
-    console.log(await post("/api/import/content", snapshot, token));
+    console.log(await post("/api/import/content/", snapshot, token));
   }
   if (skipMedia) return;
 
@@ -44,7 +49,7 @@ async function main() {
   // Retries a batch on 5xx by splitting it, down to single files.
   async function copy(paths: string[], attempt = 0): Promise<void> {
     try {
-      const { results } = (await post("/api/import/media", { paths }, token)) as { results: Result[] };
+      const { results } = (await post("/api/import/media/", { paths }, token)) as { results: Result[] };
       for (const r of results) {
         if (r.skipped) skipped++;
         if (!r.ok) failed.push(`${r.path} (${r.status ?? r.error})`);
@@ -67,6 +72,9 @@ async function main() {
     console.log(`media ${Math.min(i + batch, snapshot.media.length)}/${snapshot.media.length}, skipped ${skipped}, failed ${failed.length}`);
   }
   if (failed.length) console.log(`Failed:\n  ${failed.join("\n  ")}`);
+  // Make image variant lists match what was actually generated.
+  console.log("Reconciling image variants ...");
+  console.log(await post("/api/import/reconcile/", {}, token));
 }
 
 main().catch((e) => {
