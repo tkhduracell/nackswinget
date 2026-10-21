@@ -1,5 +1,6 @@
 packages:
   - apps/*
+  - '!apps/web'
   - functions
   - '!**/test/**'
   - '!**/tests/**'

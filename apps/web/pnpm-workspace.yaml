@@ -1,0 +1,10 @@
+# Standalone workspace: apps/web is excluded from the root workspace so
+# App Hosting can build it from this directory with its own lockfile.
+packages:
+  - '.'
+
+ignoredBuiltDependencies:
+  - unrs-resolver
+
+onlyBuiltDependencies:
+  - sharp
