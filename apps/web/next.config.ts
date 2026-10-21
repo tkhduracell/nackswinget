@@ -7,7 +7,11 @@ const appRoot = process.cwd();
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // WordPress URLs end in "/"; keep them identical for links and SEO.
+  trailingSlash: true,
   partialPrefetching: true,
+  // ~4 KB gzipped: cheaper inline than a render-blocking request on mobile.
+  experimental: { inlineCss: true },
   outputFileTracingRoot: appRoot,
   turbopack: { root: appRoot },
 };
