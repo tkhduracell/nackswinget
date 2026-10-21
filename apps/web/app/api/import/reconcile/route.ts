@@ -60,7 +60,9 @@ export async function POST(req: Request) {
   const db = getDb();
   let docsChanged = 0;
   let imagesFixed = 0;
-  for (const collection of [COLLECTIONS.pages, COLLECTIONS.posts]) {
+  let conflicts = 0;
+  // Drafts too, or publishing an old draft would bring the bad variants back.
+  for (const collection of [COLLECTIONS.pages, COLLECTIONS.posts, "drafts"]) {
     const snap = await db.collection(collection).get();
     for (const doc of snap.docs) {
       const data = doc.data();
@@ -79,8 +81,13 @@ export async function POST(req: Request) {
         }
       }
       if (changed) {
-        await doc.ref.set(data);
-        docsChanged++;
+        // Only if nobody published in the meantime; a skipped doc is fixed on the next run.
+        try {
+          await doc.ref.update(data, { lastUpdateTime: doc.updateTime });
+          docsChanged++;
+        } catch {
+          conflicts++;
+        }
       }
     }
   }
@@ -88,7 +95,7 @@ export async function POST(req: Request) {
     revalidateTag(TAG.pages, "max");
     revalidateTag(TAG.posts, "max");
   }
-  return Response.json({ ok: true, variantSets: widths.size, docsChanged, imagesFixed });
+  return Response.json({ ok: true, variantSets: widths.size, docsChanged, imagesFixed, conflicts });
 }
 
 export const maxDuration = 300;

@@ -23,9 +23,9 @@ Run these in order and record each result:
 
 ## Deployed
 
-Against the App Hosting backend (preview until DNS cutover), or a `--base` URL the caller gives you:
+Against the URL the caller gives you. Before DNS cutover that's the App Hosting preview (`https://nsw-web--nackswinget-af7ef.europe-west4.hosted.app`, the default); after cutover use `https://nackswinget.se`:
 
-1. `pnpm smoke` (HTTP checks: page statuses, 308 redirects, 404s, RSS incl. `?cat=-5`, sitemap, llms.txt, search index, OG image, admin auth gate, cron auth gate, image variants on the start page)
+1. `SMOKE_BASE=<url> pnpm smoke` (HTTP checks: page statuses, 308 redirects, 404s, RSS incl. `?cat=-5`, sitemap, llms.txt, search index, OG image, admin auth gate, cron auth gate, image variants on the start page)
 2. `pnpm lighthouse:budget --base <url> / /kalender/ /om-oss/` plus one recent post URL taken from `<url>/feed/`
 
 Never call `/api/import/*` or `/api/cron/` with a token, never log in to `/admin`, and never POST to the admin API.

@@ -1,10 +1,10 @@
 // HTTP smoke check of a deployed nackswinget.se (preview or production).
 // No browser, no credentials: status codes, redirects, content markers.
-//   pnpm smoke [--base https://nsw-web--nackswinget-af7ef.europe-west4.hosted.app]
+//   pnpm smoke [--base <url>]   (or SMOKE_BASE=<url>; after DNS cutover use https://nackswinget.se)
 
 const args = process.argv.slice(2);
 const baseIdx = args.indexOf("--base");
-const BASE = (baseIdx >= 0 ? args[baseIdx + 1] : "https://nsw-web--nackswinget-af7ef.europe-west4.hosted.app").replace(/\/$/, "");
+const BASE = (baseIdx >= 0 ? args[baseIdx + 1] : (process.env.SMOKE_BASE ?? "https://nsw-web--nackswinget-af7ef.europe-west4.hosted.app")).replace(/\/$/, "");
 const STORAGE = "https://storage.googleapis.com/nackswinget-af7ef.appspot.com/";
 
 /** [path, expected status, check(body, res) -> error string | null] */
@@ -39,14 +39,25 @@ const CHECKS = [
   ["/api/cron/", 405, null],
 ];
 
+// One request per path; several checks may look at the same response.
+const responses = new Map();
+function get(path) {
+  if (!responses.has(path)) {
+    responses.set(
+      path,
+      fetch(BASE + path, { redirect: "manual", headers: { "User-Agent": "nsw-smoke/1.0" } }).then(async (res) => ({ res, body: res.status === 200 ? await res.text() : "" })),
+    );
+  }
+  return responses.get(path);
+}
+
 async function run() {
   const failures = [];
   const started = Date.now();
   for (const [path, status, check] of CHECKS) {
     let line;
     try {
-      const res = await fetch(BASE + path, { redirect: "manual", headers: { "User-Agent": "nsw-smoke/1.0" } });
-      const body = status === 200 ? await res.text() : "";
+      const { res, body } = await get(path);
       const err = res.status !== status ? `status ${res.status}, expected ${status}` : check ? check(body, res) : null;
       line = `${err ? "FAIL" : "ok  "} ${String(res.status).padEnd(3)} ${path}${err ? `  — ${err}` : ""}`;
       if (err) failures.push(`${path}: ${err}`);
@@ -57,7 +68,7 @@ async function run() {
     console.log(line);
   }
   // Images referenced by the start page must resolve (variants exist).
-  const home = await (await fetch(`${BASE}/`)).text();
+  const { body: home } = await get("/");
   const imgs = [...new Set([...home.matchAll(/https:\/\/storage\.googleapis\.com\/[^"'\s)]+\.webp/g)].map((m) => m[0]))].slice(0, 10);
   for (const url of imgs) {
     const res = await fetch(url, { method: "HEAD" });
