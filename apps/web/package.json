@@ -4,14 +4,33 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:snapshot": "CONTENT_SOURCE=snapshot next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "export:wp": "tsx scripts/wp-export.ts",
+    "import": "tsx scripts/import-snapshot.ts"
   },
   "dependencies": {
+    "@tiptap/core": "^3.32.0",
+    "@tiptap/extension-placeholder": "^3.32.0",
+    "@tiptap/extension-table": "^3.32.0",
+    "@tiptap/pm": "^3.32.0",
+    "@tiptap/react": "^3.32.0",
+    "@tiptap/starter-kit": "^3.32.0",
+    "firebase": "^13.0.0",
+    "firebase-admin": "^14.5.0",
+    "google-auth-library": "^11.3.1",
+    "linkedom": "^0.18.14",
+    "minisearch": "^7.2.0",
     "next": "16.4.2",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
+    "sharp": "^0.35.5",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^24",
@@ -19,7 +38,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^5.0.5"
   },
   "packageManager": "pnpm@10.14.0",
   "engines": {

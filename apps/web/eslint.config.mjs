@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored FCM service worker (copied from functions/static).
+    "public/**",
   ]),
 ]);
 
