@@ -7,6 +7,8 @@ const appRoot = process.cwd();
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // WordPress URLs end in "/"; keep them identical for links and SEO.
+  trailingSlash: true,
   partialPrefetching: true,
   outputFileTracingRoot: appRoot,
   turbopack: { root: appRoot },

@@ -7,7 +7,7 @@ runConfig:
   maxInstances: 1
   concurrency: 80
   cpu: 1
-  memoryMiB: 512
+  memoryMiB: 1024
 
 env:
   # Flip to "true" at DNS cutover; until then every page is noindex.
@@ -15,4 +15,14 @@ env:
     value: "false"
     availability:
       - BUILD
+      - RUNTIME
+  # Guards the one-time WordPress import endpoints (/api/import/*).
+  - variable: IMPORT_TOKEN
+    secret: IMPORT_TOKEN
+    availability:
+      - RUNTIME
+  # Bootstrap admins for /admin (comma separated); others live in Firestore users/.
+  - variable: ADMIN_EMAILS
+    secret: ADMIN_EMAILS
+    availability:
       - RUNTIME
