@@ -37,7 +37,10 @@ export class ApiError extends Error {
 async function callApi<T>(user: User, path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
   const token = await user.getIdToken();
   const { json, ...rest } = init;
-  const res = await fetch(`/api/admin${path}`, {
+  // trailingSlash is on: call the canonical "/api/admin/x/?q" form to skip a 308.
+  const [pathname, query] = path.split("?");
+  const url = `/api/admin${pathname.endsWith("/") ? pathname : `${pathname}/`}${query ? `?${query}` : ""}`;
+  const res = await fetch(url, {
     ...rest,
     headers: { Authorization: `Bearer ${token}`, ...(json !== undefined ? { "Content-Type": "application/json" } : {}), ...(rest.headers ?? {}) },
     body: json !== undefined ? JSON.stringify(json) : rest.body,

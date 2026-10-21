@@ -1,12 +1,51 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { COLLECTIONS, redirectKey } from "@/lib/content/firestore-store";
-import type { Snapshot } from "@/lib/content/types";
-import { getDb } from "@/lib/firebase/admin";
+import type { Section, Snapshot } from "@/lib/content/types";
+import { getBucket, getDb } from "@/lib/firebase/admin";
 import { invalidateRouteIndex, rebuildRouteIndex } from "@/lib/content/route-index";
+
+/**
+ * Link-box icons come out of WordPress as base64 data URIs. Inline they bloat
+ * every page's HTML (twice, with the RSC payload) and barely compress, so
+ * they're stored as files (content-addressed) and referenced by path.
+ */
+async function extractIcons(sections: Section[], seen: Map<string, string>): Promise<Section[]> {
+  const out: Section[] = [];
+  for (const s of sections) {
+    if (s.type === "columns") {
+      out.push({ ...s, columns: await Promise.all(s.columns.map(async (c) => ({ ...c, sections: await extractIcons(c.sections, seen) }))) });
+    } else if (s.type === "linkBoxes") {
+      const items = [];
+      for (const item of s.items) {
+        const m = item.icon?.match(/^data:(image\/(png|svg\+xml|jpeg|webp|gif));base64,(.+)$/);
+        if (!m) {
+          items.push(item);
+          continue;
+        }
+        let path = seen.get(item.icon!);
+        if (!path) {
+          const data = Buffer.from(m[3], "base64");
+          const ext = m[2] === "svg+xml" ? "svg" : m[2] === "jpeg" ? "jpg" : m[2];
+          path = `web/icons/${createHash("sha1").update(data).digest("hex").slice(0, 16)}.${ext}`;
+          await getBucket().file(path).save(data, { resumable: false, public: true, contentType: m[1], metadata: { cacheControl: "public, max-age=31536000, immutable" } });
+          seen.set(item.icon!, path);
+        }
+        items.push({ ...item, icon: path });
+      }
+      out.push({ ...s, items });
+    } else {
+      out.push(s);
+    }
+  }
+  return out;
+}
 
 /** Upserts a snapshot into Firestore. Idempotent: documents are keyed by id. */
 export async function writeSnapshot(snap: Snapshot): Promise<Record<string, number>> {
   const db = getDb();
+  const icons = new Map<string, string>();
+  snap = { ...snap, pages: await Promise.all(snap.pages.map(async (p) => ({ ...p, sections: await extractIcons(p.sections, icons) }))) };
   const writes: { ref: FirebaseFirestore.DocumentReference; data: FirebaseFirestore.DocumentData }[] = [];
 
   for (const { id, ...page } of snap.pages) writes.push({ ref: db.collection(COLLECTIONS.pages).doc(id), data: page });

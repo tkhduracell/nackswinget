@@ -41,7 +41,7 @@ export async function GET(req: Request) {
   const items = posts
     .map((p) => {
       const url = absolute(settings, `/${p.slug}/`);
-      const img = p.image ? imageUrl(p.image.src, p.image.variants) : absolute(settings, `/og?title=${encodeURIComponent(p.title)}`);
+      const img = p.image ? imageUrl(p.image.src, p.image.variants) : absolute(settings, `/og/?title=${encodeURIComponent(p.title)}`);
       return `<item>
 <title>${esc(p.title)}</title>
 <link>${url}</link>

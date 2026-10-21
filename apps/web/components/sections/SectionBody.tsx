@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Img } from "@/components/Img";
+import { publicUrl } from "@/lib/media/urls";
 import { RichText } from "@/components/RichText";
 import type { Section } from "@/lib/content/types";
 import { DansSeWidget } from "./DansSeWidget";
@@ -22,6 +23,18 @@ const WIDTH_CLASS: Record<string, string> = {
   "3/4": "col-3-4",
   "1/1": "col-1-1",
 };
+
+/** Accessible name for an image link: its alt/caption, else the link target. */
+function linkLabel(text: string | undefined, href: string): string {
+  if (text?.trim()) return text.trim();
+  try {
+    const u = new URL(href, "https://nackswinget.se");
+    const last = u.pathname.split("/").filter(Boolean).pop();
+    return last ? decodeURIComponent(last).replace(/[-_]+/g, " ") : u.hostname.replace(/^www\./, "");
+  } catch {
+    return href;
+  }
+}
 
 function ext(href: string) {
   return /^https?:\/\//.test(href) && !/^https?:\/\/(www\.)?nackswinget\.se/.test(href) ? { target: "_blank", rel: "noopener noreferrer" } : {};
@@ -67,7 +80,7 @@ export function SectionView({ section, slots, index, first }: { section: Section
             <li key={item.href + item.title}>
               <a href={item.href} {...ext(item.href)}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- tiny inline icon */}
-                {item.icon && <img src={item.icon} alt="" width={28} height={28} />}
+                {item.icon && <img src={item.icon.startsWith("data:") ? item.icon : publicUrl(item.icon)} alt="" width={28} height={28} decoding="async" />}
                 <span>{item.title}</span>
               </a>
             </li>
@@ -109,7 +122,7 @@ export function SectionView({ section, slots, index, first }: { section: Section
       return (
         <figure className="image-section">
           {section.href ? (
-            <a href={section.href} {...ext(section.href)}>
+            <a href={section.href} {...ext(section.href)} aria-label={linkLabel(section.caption || section.image.alt, section.href)}>
               {img}
             </a>
           ) : (

@@ -3,11 +3,14 @@ import { Open_Sans } from "next/font/google";
 import { publicUrl, wpUploadPath } from "@/lib/media/urls";
 import "./globals.css";
 
-// Self-hosted at build time by next/font; latin subset only.
+// Self-hosted at build time by next/font; latin subset, two weights (plan Q31).
+// Not preloaded: with display=swap the metric-matched fallback paints first,
+// so the font shouldn't compete with the HTML for bandwidth on slow mobiles.
 const openSans = Open_Sans({
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: ["400", "700"],
   display: "swap",
+  preload: false,
   variable: "--font-sans",
 });
 

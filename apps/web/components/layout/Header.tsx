@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { NavItem } from "@/lib/content/types";
-import { publicUrl } from "@/lib/media/urls";
+import { publicUrl, variantPath } from "@/lib/media/urls";
 import { SearchButton } from "@/components/search/SearchButton";
 
 function NavLinks({ items, mobile }: { items: NavItem[]; mobile?: boolean }) {
@@ -32,7 +32,8 @@ export function Header({ nav, logo, siteName }: { nav: NavItem[]; logo?: string;
         <Link href="/" className="logo" aria-label={`${siteName} – startsida`} prefetch={false}>
           {logo ? (
             // eslint-disable-next-line @next/next/no-img-element -- small static logo
-            <img src={publicUrl(logo)} alt={siteName} width={210} height={42} fetchPriority="high" />
+            // 480w WebP variant (~5 KB) instead of the 35 KB PNG original.
+            <img src={publicUrl(/\.(png|jpe?g)$/i.test(logo) ? variantPath(logo, 480) : logo)} alt={siteName} width={210} height={42} decoding="async" />
           ) : (
             <span>{siteName}</span>
           )}

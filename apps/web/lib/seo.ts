@@ -29,7 +29,7 @@ export function pageUrl(page: Page): string {
 
 export function ogImageFor(title: string, image?: { src: string; variants: number[] }): string {
   if (image) return imageUrl(image.src, image.variants);
-  return `/og?title=${encodeURIComponent(title)}`;
+  return `/og/?title=${encodeURIComponent(title)}`;
 }
 
 export function buildMetadata(opts: {
