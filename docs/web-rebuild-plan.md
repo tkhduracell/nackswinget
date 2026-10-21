@@ -34,7 +34,7 @@ Ways to stay under budget:
 | Q6 | Import **all 236 posts** and keep their URLs (`/<slug>/`). |
 | Q7 | Images upload to Storage, max 20 MB. Resized WebP variants at 480/960/1600 w, plus a focal-point picker. Originals are never served. |
 | Q8 | Videos have **no upload cap** (resumable upload). A Cloud Run ffmpeg job transcodes each upload to H.264 MP4 at 1080p + 720p, plus a poster image. The original goes to Archive class storage. YouTube embeds show a thumbnail and load the player on click. |
-| Q9 | **Star banner ("Joy's PowerPuff")**: text (≤ 80 chars), optional link, start date, and "visible for N days". It hides itself when expired, and one next banner can be scheduled. Colours are fixed. |
+| Q9 | **Star banner ("PowerPuff")**: text (≤ 80 chars), optional link, start date, and "visible for N days". It hides itself when expired, and one next banner can be scheduled. Colours are fixed. |
 | Q10 | Live preview shows a split pane of the real components rendered from the draft, with a mobile/desktop toggle. Drafts save automatically, Publish triggers revalidation, and the last 20 versions are kept for rollback. |
 | Q11 | SEO: title, description and canonical; OG + Twitter tags with auto-generated OG images; JSON-LD for `SportsClub`, `NewsArticle`, `Event` and `BreadcrumbList`. Also `sitemap.xml`, `robots.txt`, RSS at `/feed/`, and `llms.txt` plus a `.md` twin of each page. |
 | Q12 | Blaze plan with a **100 kr/month budget alert**. Email stays at Miss Hosting, and only the web DNS records move. WP stays live until cutover, then stays read-only for 30 days. |
