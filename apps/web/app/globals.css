@@ -1,0 +1,40 @@
+:root {
+  --color-brand: #f9064b;
+  --color-ink: #333333;
+  --color-header: #000000;
+  --color-surface: #f0f0f0;
+  --radius: 4px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  font-family: var(--font-sans), Helvetica, Arial, sans-serif;
+  color: var(--color-ink);
+  background: #ffffff;
+}
+
+.hero {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 16px;
+  background: var(--color-header);
+  color: #ffffff;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  line-height: 1.1;
+}
+
+.hero p {
+  margin: 0.5rem 0 0;
+  font-size: 1.125rem;
+}

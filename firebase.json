@@ -1,0 +1,22 @@
+{
+  "apphosting": [
+    {
+      "backendId": "nsw-web",
+      "rootDir": "apps/web",
+      "ignore": [
+        "node_modules",
+        ".next",
+        "/.git",
+        "/.github",
+        "/.claude",
+        "/apps/mobile",
+        "/functions",
+        "/docs",
+        "/*.bak",
+        "/eslint_report.json",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ]
+}

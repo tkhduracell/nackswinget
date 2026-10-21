@@ -1,0 +1,18 @@
+# Firebase App Hosting config for backend "nsw-web" (europe-west4).
+# https://firebase.google.com/docs/app-hosting/configure
+runConfig:
+  # One always-warm instance: avoids cold starts (FCP budget) and keeps
+  # Next's per-instance cache consistent for on-demand revalidation.
+  minInstances: 1
+  maxInstances: 1
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  # Flip to "true" at DNS cutover; until then every page is noindex.
+  - variable: SITE_INDEXABLE
+    value: "false"
+    availability:
+      - BUILD
+      - RUNTIME
