@@ -1,24 +1,41 @@
-import type { PostSummary } from "@/lib/content/types";
-import { formatDate } from "@/lib/format";
+import type { Category, PostSummary } from "@/lib/content/types";
+import { formatShortDate } from "@/lib/format";
 import { Img } from "./Img";
 
-export function PostCard({ post, compact }: { post: PostSummary; compact?: boolean }) {
+/**
+ * A post in a list. Full: the old blog module (big image, title, "date | categories",
+ * excerpt, "läs mer"). Compact: just the linked title (sidebar lists).
+ */
+export function PostCard({ post, compact, categories = [] }: { post: PostSummary; compact?: boolean; categories?: Category[] }) {
+  const href = `/${post.slug}/`;
+  if (compact) {
+    return (
+      <article className="post-card compact">
+        <h2>
+          <a href={href}>{post.title}</a>
+        </h2>
+      </article>
+    );
+  }
+  const names = post.categories.map((slug) => categories.find((c) => c.slug === slug)?.name).filter(Boolean);
   return (
-    <article className={compact ? "post-card compact" : "post-card"}>
-      {!compact && post.image && (
-        <a href={`/${post.slug}/`} className="post-card-img" tabIndex={-1} aria-hidden="true">
-          <Img image={post.image} sizes="(min-width: 600px) 200px, 112px" />
+    <article className="post-card">
+      {post.image && (
+        <a href={href} className="post-card-img" tabIndex={-1} aria-hidden="true">
+          <Img image={post.image} sizes="(min-width: 1440px) 795px, (min-width: 981px) 55vw, 80vw" />
         </a>
       )}
-      <div className="post-card-body">
-        <h2>
-          <a href={`/${post.slug}/`}>{post.title}</a>
-        </h2>
-        <p className="muted">
-          <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
-        </p>
-        {!compact && post.excerpt && <p>{post.excerpt}</p>}
-      </div>
+      <h2>
+        <a href={href}>{post.title}</a>
+      </h2>
+      <p className="post-meta">
+        <time dateTime={post.publishedAt}>{formatShortDate(post.publishedAt)}</time>
+        {names.length > 0 && ` | ${names.join(", ")}`}
+      </p>
+      {post.excerpt && <p className="post-excerpt">{/[.!?…]$/.test(post.excerpt.trim()) ? post.excerpt : `${post.excerpt.trim()}…`}</p>}
+      <a href={href} className="more-link">
+        läs mer
+      </a>
     </article>
   );
 }

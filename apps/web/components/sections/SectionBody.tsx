@@ -15,14 +15,14 @@ export interface SectionSlots {
   postList(section: Extract<Section, { type: "postList" }>): ReactNode;
 }
 
-const WIDTH_CLASS: Record<string, string> = {
-  "1/4": "col-1-4",
-  "1/3": "col-1-3",
-  "1/2": "col-1-2",
-  "2/3": "col-2-3",
-  "3/4": "col-3-4",
-  "1/1": "col-1-1",
-};
+const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
+
+/** Divi row grid: one track per 1/n of the row (n = common denominator), each column spans its share. */
+function rowGrid(widths: string[]): { cols: number; spans: number[] } {
+  const fractions = widths.map((w) => w.split("/").map(Number) as [number, number]);
+  const cols = fractions.reduce((acc, [, b]) => (acc * b) / gcd(acc, b), 1);
+  return { cols, spans: fractions.map(([a, b]) => (a * cols) / b) };
+}
 
 /** Accessible name for an image link: its alt/caption, else the link target. */
 function linkLabel(text: string | undefined, href: string): string {
@@ -63,16 +63,18 @@ export function SectionView({ section, slots, index, first }: { section: Section
       );
     case "richText":
       return <RichText doc={section.doc} className={section.variant && section.variant !== "plain" ? `box ${section.variant}` : undefined} />;
-    case "columns":
+    case "columns": {
+      const grid = rowGrid(section.columns.map((c) => c.width));
       return (
-        <div className="columns">
+        <div className="columns" style={{ ["--cols" as string]: grid.cols }}>
           {section.columns.map((c, i) => (
-            <div key={i} className={`column ${WIDTH_CLASS[c.width]}`}>
+            <div key={i} className="column" style={{ ["--span" as string]: grid.spans[i] }}>
               <SectionList sections={c.sections} slots={slots} prefix={`${index}-${i}`} />
             </div>
           ))}
         </div>
       );
+    }
     case "linkBoxes":
       return (
         <ul className="link-boxes">
@@ -90,7 +92,7 @@ export function SectionView({ section, slots, index, first }: { section: Section
     case "postList":
       return slots.postList(section);
     case "calendar":
-      return slots.calendar(section, index);
+      return section.variant ? <div className={`box ${section.variant}`}>{slots.calendar(section, index)}</div> : slots.calendar(section, index);
     case "embed": {
       const style = section.aspect === "auto" ? { height: section.height ?? 600 } : { aspectRatio: section.aspect };
       return (

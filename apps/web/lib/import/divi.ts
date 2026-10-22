@@ -31,7 +31,7 @@ function columnWidth(el: Element): ColumnWidth {
   const m = (el.getAttribute("class") ?? "").match(/et_pb_column_(\d)_(\d)\b/);
   if (!m) return "1/1";
   const key = `${m[1]}/${m[2]}`;
-  const map: Record<string, ColumnWidth> = { "1/4": "1/4", "1/3": "1/3", "1/2": "1/2", "2/3": "2/3", "3/4": "3/4", "4/4": "1/1" };
+  const map: Record<string, ColumnWidth> = { "1/4": "1/4", "1/3": "1/3", "2/5": "2/5", "1/2": "1/2", "3/5": "3/5", "2/3": "2/3", "3/4": "3/4", "4/4": "1/1" };
   return map[key] ?? "1/1";
 }
 
@@ -51,7 +51,7 @@ class DiviMapper {
         clone.querySelectorAll(".ics-calendar, [class*='r34ics'], [data-args]").forEach((n) => n.remove());
         const doc = htmlElementToDoc(clone, this.ctx);
         if (!docIsEmpty(doc)) out.push({ type: "richText", doc, ...(variant ? { variant } : {}) });
-        out.push(cal);
+        out.push(variant === "boxTop" ? { ...cal, variant } : cal);
         return out;
       }
       this.ctx.flag("calendar without config");
@@ -74,7 +74,8 @@ class DiviMapper {
           type: "embed",
           url: src,
           title: iframe.getAttribute("title") ?? "Inbäddat innehåll",
-          aspect: /google\./.test(src) ? "4/3" : "auto",
+          // Maps showed roughly square in the old columns (their height="600" was capped by the theme).
+          aspect: /google\./.test(src) ? "1/1" : "auto",
           ...(Number.isFinite(height) && height > 0 ? { height } : {}),
         });
         iframe.remove();
@@ -154,7 +155,7 @@ class DiviMapper {
     }
     if (hasClass(el, "et_pb_fullwidth_header")) {
       const title = (el.querySelector(".et_pb_module_header")?.textContent ?? "").trim();
-      const subtitle = (el.querySelector(".et_pb_header_content_wrapper")?.textContent ?? "").trim();
+      const subtitle = (el.querySelector(".et_pb_fullwidth_header_subhead, .et_pb_header_content_wrapper")?.textContent ?? "").trim();
       const buttons = Array.from(el.querySelectorAll("a.et_pb_button"))
         .map((a) => ({ label: (a.textContent ?? "").trim(), href: this.ctx.rewriteHref(a.getAttribute("href") ?? "") }))
         .filter((b) => b.label && b.href)
@@ -196,7 +197,13 @@ class DiviMapper {
       if (nonEmpty.length <= 1 || nonEmpty.every((c) => columnWidth(c) === "1/1")) {
         return nonEmpty.flatMap((c) => this.modules(c));
       }
-      return [{ type: "columns" as const, columns: nonEmpty.map((c) => ({ width: columnWidth(c), sections: this.modules(c) })) }];
+      // "nswBoxes" rows: every column is a grey box with a red left border.
+      const boxed = hasClass(row, "nswBoxes");
+      const columns = nonEmpty.map((c) => {
+        const sections = this.modules(c);
+        return { width: columnWidth(c), sections: boxed ? sections.map((s) => (s.type === "richText" ? { ...s, variant: "boxLeft" as const } : s)) : sections };
+      });
+      return [{ type: "columns" as const, columns }];
     });
   }
 }
@@ -209,16 +216,6 @@ export function mergeLinkBoxes(sections: Section[]): Section[] {
     else out.push(s.type === "linkBoxes" ? { ...s, items: [...s.items] } : s);
   }
   return out;
-}
-
-/** Drops a leading rich text block that only repeats the page title (the layout renders it). */
-export function dropTitleHeading(sections: Section[], title: string): Section[] {
-  const first = sections[0];
-  if (first?.type !== "richText") return sections;
-  const [only, ...rest] = first.doc.content;
-  const text = only?.type === "heading" ? (only.content ?? []).map((n) => (n.type === "text" ? n.text : "")).join("") : null;
-  if (text === null || text.trim().toLowerCase() !== title.trim().toLowerCase()) return sections;
-  return rest.length ? [{ ...first, doc: { ...first.doc, content: rest } }, ...sections.slice(1)] : sections.slice(1);
 }
 
 /** Page body -> sections. Non-Divi content becomes a single rich text block. */
@@ -237,5 +234,16 @@ export function contentToSections(root: Element, ctx: DiviContext): Section[] {
     }
     return mapper.textToSections(root);
   }
+  // A first section holding only an <h1> is the coloured title band; the layout renders its own.
+  if (isTitleBand(sections[0])) sections.shift();
   return sections.flatMap((s) => mapper.section(s));
+}
+
+function isTitleBand(sec: Element | undefined): boolean {
+  if (!sec) return false;
+  const mods = Array.from(sec.querySelectorAll(".et_pb_module"));
+  if (mods.length !== 1 || !hasClass(mods[0], "et_pb_text")) return false;
+  const inner = mods[0].querySelector(".et_pb_text_inner") ?? mods[0];
+  const kids = Array.from(inner.children);
+  return kids.length === 1 && kids[0].tagName === "H1";
 }

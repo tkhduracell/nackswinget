@@ -7,8 +7,9 @@
   --brand-ink: #e0053d;
   --brand-dark: #c8043b;
   --brand-tint: #fee6ed;
-  --ink: #333333;
-  --muted: #6b6b6b;
+  --ink: #666666;
+  --heading: #333333;
+  --muted: #666666;
   --header: #000000;
   --surface: #f5f5f5;
   --surface-2: #f0f0f0;
@@ -16,20 +17,20 @@
   --radius: 4px;
   --max: 1080px;
   --gutter: 16px;
+  /* The old Divi theme: Open Sans 500 at 14px/1.7, headings in #333. */
   --fs-sm: 0.875rem;
-  --fs-base: 1rem;
-  --fs-lg: 1.125rem;
-  --fs-h3: 1.25rem;
-  --fs-h2: 1.5rem;
-  --fs-h1: 2rem;
-  --header-h: 64px;
+  --fs-base: 0.875rem;
+  --fs-lg: 1rem;
+  --fs-h3: 1.125rem;
+  --fs-h2: 1.875rem;
+  --fs-h1: 1.875rem;
+  --header-h: 70px;
+  --bg-texture: url("https://storage.googleapis.com/nackswinget-af7ef.appspot.com/web/variants/uploads/2022/11/bg-1/640.webp");
 }
 
-@media (min-width: 768px) {
+@media (min-width: 981px) {
   :root {
-    --gutter: 24px;
-    --fs-h1: 2.5rem;
-    --header-h: 80px;
+    --fs-h1: 3rem;
   }
 }
 
@@ -48,9 +49,18 @@ body {
   margin: 0;
   font-family: var(--font-sans), Helvetica, Arial, sans-serif;
   font-size: var(--fs-base);
-  line-height: 1.65;
+  font-weight: 500;
+  line-height: 1.7;
   color: var(--ink);
+  /* The tiled photo shows above the footer, like the old theme's body background. */
+  background: #fff var(--bg-texture);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+main {
   background: #fff;
+  flex: 1;
 }
 
 img,
@@ -61,6 +71,7 @@ video {
 
 a {
   color: var(--brand-ink);
+  text-decoration: none;
 }
 a:hover {
   color: var(--brand-dark);
@@ -69,18 +80,26 @@ a:hover {
 h1,
 h2,
 h3 {
-  line-height: 1.25;
-  color: #111;
-  margin: 1.4em 0 0.5em;
+  line-height: 1.2;
+  color: var(--heading);
+  margin: 0;
+  padding-bottom: 10px;
 }
 h1 {
   font-size: var(--fs-h1);
+  font-weight: 800;
 }
 h2 {
   font-size: var(--fs-h2);
+  font-weight: 800;
 }
 h3 {
   font-size: var(--fs-h3);
+  font-weight: 500;
+}
+p {
+  margin: 0;
+  padding-bottom: 1em;
 }
 
 .sr-only {
@@ -104,10 +123,11 @@ h3 {
   left: 8px;
 }
 
+/* Divi rows: 80% wide, at most 1080px, on every screen size. */
 .container {
+  width: 80%;
   max-width: var(--max);
   margin: 0 auto;
-  padding: 0 var(--gutter);
 }
 
 .muted {
@@ -125,9 +145,8 @@ h3 {
   color: #fff;
 }
 .header-inner {
-  max-width: var(--max);
   margin: 0 auto;
-  padding: 0 var(--gutter);
+  padding: 0 34px;
   height: var(--header-h);
   display: flex;
   align-items: center;
@@ -142,7 +161,7 @@ h3 {
   margin-right: auto;
 }
 .logo img {
-  height: 36px;
+  height: 32px;
   width: auto;
   display: block;
 }
@@ -159,20 +178,24 @@ h3 {
 }
 .nav-list {
   display: flex;
-  flex-wrap: wrap;
   justify-content: flex-end;
 }
 .nav-list > li {
   position: relative;
 }
-.nav-list a {
+.nav-list > li > a {
   display: block;
   color: #fff;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: var(--fs-sm);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1;
   text-transform: uppercase;
-  padding: 10px 12px;
+  white-space: nowrap;
+  padding: 27px 11px;
+}
+.nav-list .sub-menu a {
+  display: block;
+  color: #fff;
 }
 .nav-list a:hover,
 .nav-list a:focus-visible {
@@ -181,10 +204,13 @@ h3 {
 .nav-list .has-children > a::after {
   content: "";
   display: inline-block;
-  margin-left: 6px;
-  border: 4px solid transparent;
-  border-top-color: currentColor;
-  vertical-align: 1px;
+  width: 5px;
+  height: 5px;
+  margin-left: 7px;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+  vertical-align: 3px;
 }
 .nav-list .sub-menu {
   position: absolute;
@@ -202,8 +228,9 @@ h3 {
 }
 .nav-list .sub-menu a {
   text-transform: none;
-  font-weight: 400;
-  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 6px 20px;
 }
 
 .search-btn {
@@ -279,7 +306,7 @@ h3 {
   color: #ddd;
 }
 
-@media (min-width: 1000px) {
+@media (min-width: 1100px) {
   .nav-desktop {
     display: block;
   }
@@ -290,50 +317,72 @@ h3 {
     height: 42px;
   }
 }
+@media (max-width: 600px) {
+  .header-inner {
+    padding: 0 6%;
+  }
+}
 
 /* ---------- page chrome ---------- */
 
+/* Red title band, then a grey breadcrumb bar (the old theme's page header). */
 .page-header {
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  padding: 28px 0 20px;
+  background: var(--brand);
+  padding: 24px 0;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
 }
 .page-header h1 {
-  margin: 0;
+  color: #fff;
+  font-size: 48px;
+  line-height: 1;
+  padding-bottom: 10px;
+}
+.breadcrumbs-bar {
+  background: var(--surface);
+  padding: 16px 0;
 }
 .breadcrumbs ol {
   list-style: none;
   padding: 0;
-  margin: 12px auto 0;
+  margin: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  font-size: var(--fs-sm);
-  color: var(--muted);
+  gap: 4px 8px;
+  font-weight: 600;
+  color: var(--heading);
 }
 .breadcrumbs li + li::before {
-  content: "›";
-  margin-right: 4px;
-}
-.breadcrumbs a {
+  content: "»";
+  margin-right: 8px;
   color: var(--muted);
 }
-.page-body {
-  padding-top: 8px;
-  padding-bottom: 48px;
+.breadcrumbs a {
+  color: var(--brand-ink);
 }
-.page-body > :first-child,
-.column > :first-child {
-  margin-top: 16px;
+.page-body {
+  padding-top: 54px;
+  padding-bottom: 54px;
+}
+@media (max-width: 600px) {
+  .page-header h1 {
+    font-size: 30px;
+  }
 }
 
 /* ---------- hero & star ---------- */
 
+/* The old start page header: the tiled club photo, darkened from the top. */
 .hero {
   position: relative;
-  background: linear-gradient(180deg, #000 0%, #1b1b1b 100%);
+  background: var(--bg-texture), linear-gradient(180deg, #000 0%, #000 5%, rgba(0, 0, 0, 0) 100%);
+  background-blend-mode: multiply;
+  background-size: cover;
+  background-position: center;
   color: #fff;
-  padding: 56px var(--gutter) 64px;
+  min-height: 441px;
+  padding: 4vh 0;
   overflow: hidden;
 }
 .hero-bg {
@@ -346,24 +395,43 @@ h3 {
 }
 .hero-inner {
   position: relative;
+  width: 80%;
   max-width: var(--max);
   margin: 0 auto;
+  padding: 22px 0 11px;
 }
 .hero h1 {
   color: #fff;
-  margin: 0;
-  font-size: calc(var(--fs-h1) * 1.2);
+  font-size: 56px;
+  line-height: 1;
 }
 .hero-sub {
-  font-size: var(--fs-lg);
-  max-width: 34em;
-  margin: 12px 0 0;
+  font-size: 14px;
+  padding: 0;
 }
 .hero-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin: 24px 0 0;
+  gap: 20px 15px;
+  margin: 20px 0 0;
+  padding: 0;
+}
+.hero .button-lg {
+  font-size: 20px;
+  line-height: 1.7;
+  padding: 6px 20px;
+}
+@media (max-width: 600px) {
+  .hero h1 {
+    font-size: 40px;
+  }
+  .hero-sub {
+    font-size: 16px;
+  }
+  .hero-buttons {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .star-wrap {
@@ -414,10 +482,10 @@ h3 {
 
 .button {
   display: inline-block;
-  background: var(--brand-ink);
+  background: var(--brand);
   color: #fff;
   border: 0;
-  border-radius: var(--radius);
+  border-radius: 3px;
   padding: 10px 18px;
   font: inherit;
   font-weight: 700;
@@ -445,44 +513,69 @@ h3 {
 
 /* ---------- layout sections ---------- */
 
+/* Divi rows: 5.5% gutters, 30px between stacked columns on phones. */
 .columns {
   display: grid;
-  gap: 24px;
-  margin: 24px 0;
+  gap: 30px;
+  margin: 0 0 54px;
 }
-@media (min-width: 900px) {
+.columns:last-child {
+  margin-bottom: 0;
+}
+@media (min-width: 981px) {
+  /* --cols is the row's common denominator; each column spans its share. */
   .columns {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 32px;
+    grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+    column-gap: 5.5%;
   }
-  .col-1-4 {
-    grid-column: span 3;
-  }
-  .col-1-3 {
-    grid-column: span 4;
-  }
-  .col-1-2 {
-    grid-column: span 6;
-  }
-  .col-2-3 {
-    grid-column: span 8;
-  }
-  .col-3-4 {
-    grid-column: span 9;
-  }
-  .col-1-1 {
-    grid-column: span 12;
+  .column {
+    grid-column: span var(--span, 1);
   }
 }
-.column > * + * {
-  margin-top: 16px;
+.column > * + *,
+.page-body > * + * {
+  margin-top: 0;
+}
+.column > *,
+.page-body > * {
+  margin-bottom: 18px;
+}
+.column > :last-child,
+.page-body > :last-child {
+  margin-bottom: 0;
 }
 
 .prose {
-  max-width: 46rem;
+  max-width: none;
+}
+.prose a:not(.button) {
+  color: var(--brand);
+}
+.prose h2 {
+  font-size: 37px;
+}
+.prose h3 {
+  font-size: 22px;
+  font-weight: 800;
+}
+.prose li > p {
+  padding-bottom: 0;
+}
+@media (max-width: 600px) {
+  .prose h2 {
+    font-size: 30px;
+  }
+}
+.prose ul,
+.prose ol {
+  padding: 0 0 23px 1em;
+  line-height: 26px;
 }
 .columns .prose {
   max-width: none;
+}
+.prose a:not(.button) {
+  color: var(--brand);
 }
 .prose > :first-child {
   margin-top: 0;
@@ -490,10 +583,7 @@ h3 {
 .prose p,
 .prose ul,
 .prose ol {
-  margin: 0 0 1em;
-}
-.prose li + li {
-  margin-top: 0.25em;
+  margin: 0;
 }
 .prose blockquote {
   margin: 1em 0;
@@ -536,6 +626,7 @@ h3 {
 
 .box {
   background: var(--surface);
+  color: var(--heading);
   border-radius: var(--radius);
   padding: 12px 18px;
 }
@@ -546,8 +637,16 @@ h3 {
   border-top: 4px solid var(--brand);
 }
 .box h2 {
-  font-size: var(--fs-h3);
-  margin-top: 0.4em;
+  font-size: 22px;
+  font-weight: 600;
+}
+.box.boxLeft h2,
+.box.boxLeft h3 {
+  font-size: 18px;
+  font-weight: 400;
+}
+.box p:last-child {
+  padding-bottom: 0;
 }
 
 .link-boxes {
@@ -557,22 +656,26 @@ h3 {
   display: grid;
   gap: 12px;
 }
+.link-boxes {
+  gap: 13px;
+}
 .link-boxes a {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.5em;
   background: var(--surface);
   border-left: 4px solid var(--brand);
   border-radius: var(--radius);
-  padding: 12px 16px;
-  color: var(--ink);
+  padding: 12px 18px;
+  color: var(--brand);
+  font-size: 16px;
   font-weight: 700;
-  text-decoration: none;
-  transition: transform 0.15s ease;
+  line-height: normal;
+  transition: transform 0.2s ease-in-out;
 }
 .link-boxes a:hover {
-  color: var(--brand-ink);
-  transform: translateX(3px);
+  color: var(--brand);
+  transform: scale(1.1);
 }
 .link-boxes img {
   flex: none;
@@ -590,10 +693,12 @@ h3 {
   color: var(--muted);
   margin-top: 6px;
 }
+/* The old dividers: a short red rule under a heading. */
 .divider {
   border: 0;
-  border-top: 1px solid var(--line);
-  margin: 32px 0;
+  border-top: 2px solid var(--brand);
+  width: 50%;
+  margin: 0 0 23px;
 }
 .placeholder {
   background: repeating-linear-gradient(45deg, #fafafa, #fafafa 10px, #f2f2f2 10px, #f2f2f2 20px);
@@ -654,6 +759,38 @@ h3 {
 .dansse {
   margin: 16px 0;
 }
+/* dans.se's injected course tables, styled like the old theme did (cwEvents). */
+.dansse .cwEvents {
+  border-collapse: separate !important;
+  border-spacing: 0 8px !important;
+  border: none !important;
+  width: 100%;
+}
+.dansse .cwEvents tr.dataRow th,
+.dansse .cwEvents tr.dataRow td {
+  background-color: var(--surface);
+  padding: 12px 8px;
+  border: 0;
+  color: var(--heading) !important;
+}
+.dansse .cwEvents tr.dataRow:hover td {
+  background-color: var(--brand-tint);
+  cursor: pointer;
+}
+.dansse .cwEvents tr.dataRow td:last-child,
+.dansse .cwEvents tr.dataRow td:nth-last-child(2) {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+.dansse .cwEvents tr.dataRow td.title {
+  border-left: 4px solid var(--brand);
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+.dansse .cwEvents tr.dataRow td a {
+  color: #444 !important;
+  background-color: transparent !important;
+}
 .file-list ul {
   padding-left: 1.2em;
 }
@@ -664,73 +801,132 @@ h3 {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: grid;
-  gap: 16px;
 }
+/* The old blog module: full-width image, big light title, meta, excerpt, "läs mer". */
 .post-card {
-  display: grid;
-  gap: 12px;
-  background: #fafafa;
-  border-radius: var(--radius);
-  padding: 12px;
-}
-/* Phones: small thumbnail beside the text (fewer image bytes, denser list). */
-.post-card:has(.post-card-img) {
-  grid-template-columns: 112px 1fr;
-}
-@media (min-width: 600px) {
-  .post-card:has(.post-card-img) {
-    grid-template-columns: 200px 1fr;
-  }
+  margin-bottom: 60px;
 }
 .post-card-img img {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: var(--radius);
+  margin-bottom: 30px;
 }
 .post-card h2 {
-  margin: 0;
-  font-size: var(--fs-lg);
+  font-size: 31px;
+  font-weight: 500;
+  line-height: 1;
+  padding-bottom: 10px;
 }
 .post-card h2 a {
-  color: #111;
-  text-decoration: none;
+  color: var(--heading);
 }
 .post-card h2 a:hover {
-  color: var(--brand-ink);
-}
-.post-card p {
-  margin: 4px 0 0;
-}
-.post-card.compact {
-  background: none;
-  padding: 0;
-}
-.post-card.compact h2 {
-  font-size: var(--fs-base);
-  font-weight: 600;
-}
-.posts-compact {
-  gap: 10px;
+  color: var(--brand);
 }
 .post-meta {
-  margin: 8px 0 0;
+  margin: 0 0 6px;
+  padding: 0;
   color: var(--muted);
-  font-size: var(--fs-sm);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
+}
+.post-excerpt {
+  padding: 0;
+}
+.more-link {
+  display: block;
+  font-weight: 600;
+  color: var(--brand);
+}
+@media (max-width: 600px) {
+  .post-card h2 {
+    font-size: 18px;
+    line-height: 1.2;
+  }
+}
+.older-posts a {
+  color: var(--brand);
+}
+/* Sidebar lists: small titles on light cards inside a grey box. */
+.post-list-compact {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 0 0 12px;
+}
+.post-list-compact .post-card {
+  background: #fafafa;
+  border-radius: var(--radius);
+  margin: 8px;
+  padding: 12px;
+}
+.post-list-compact h2 {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.3;
+  padding: 0;
+}
+.post-list-compact .older-posts {
+  padding: 4px 20px 0;
 }
 .tag {
   background: var(--brand-tint);
   color: var(--brand-dark);
   border-radius: 999px;
   padding: 1px 10px;
-  text-decoration: none;
   font-weight: 600;
+}
+/* Single post: Divi's left area + sidebar, split by a 1px rule. */
+.post-layout {
+  display: grid;
+  gap: 40px;
+  padding: 58px 0 40px;
+}
+.post-title {
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1;
+}
+.post-layout .post-meta {
+  margin-bottom: 40px;
+}
+.post-meta a {
+  color: var(--muted);
+}
+.widget-title {
+  font-size: 18px;
+  font-weight: 500;
+  padding-bottom: 10px;
+}
+.recent-posts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.recent-posts li {
+  margin-bottom: 0.5em;
+}
+.recent-posts a {
+  color: var(--muted);
+}
+.recent-posts a:hover {
+  color: var(--brand);
+}
+@media (min-width: 981px) {
+  .post-layout {
+    grid-template-columns: 79.125% 20.875%;
+    gap: 0;
+    padding-bottom: 0;
+    background: linear-gradient(var(--line), var(--line)) 79.125% 0 / 1px 100% no-repeat;
+  }
+  .post-main {
+    padding-right: 5.5%;
+    padding-bottom: 50px;
+  }
+  .post-sidebar {
+    padding-left: 30px;
+  }
+  .widget-title {
+    font-size: 26px;
+    line-height: 1;
+  }
 }
 .post-image {
   margin: 0 0 20px;
@@ -757,8 +953,11 @@ h3 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 32px 0 0;
+  margin: 0;
   gap: 16px;
+}
+.pagination a {
+  color: var(--brand);
 }
 
 /* ---------- calendar ---------- */
@@ -767,8 +966,33 @@ h3 {
   margin: 16px 0;
 }
 .cal-title {
-  font-size: var(--fs-h3);
-  margin-top: 0.4em;
+  font-size: 22px;
+  font-weight: 600;
+}
+/* "På gång": days with solid colour blocks (the old ICS list widget). */
+.ev-dayhead {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 9px 0 4.5px;
+  padding: 0;
+}
+.cal-list .ev-list {
+  border-radius: 4px;
+  overflow: hidden;
+}
+.cal .ev.ev-block {
+  display: block;
+  background: var(--ev-color, #999);
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+  padding: 7px 7px 7px 11px;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.ev-block .ev-time {
+  display: block;
 }
 .cal .ev-list {
   list-style: none;
@@ -867,8 +1091,22 @@ h3 {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
+.cal-toolbar {
+  align-items: center;
+  margin: 12px 0 8px;
+}
 .cal-month-title {
-  margin: 20px 0 12px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--heading);
+  padding: 0;
+}
+.cal-legend .cal-key {
+  font-size: 11px;
+  padding: 2px 8px;
+}
+.cal-month .ev {
+  hyphens: auto;
 }
 
 .cal-grid {
@@ -885,8 +1123,10 @@ h3 {
 }
 .cal-wk {
   width: 2.2em;
-  color: var(--muted) !important;
-  font-weight: 400;
+  color: var(--heading) !important;
+  font-weight: 700;
+  font-size: 115%;
+  vertical-align: top;
 }
 .cal-day {
   vertical-align: top;
@@ -1051,43 +1291,51 @@ h3 {
 
 /* ---------- footer ---------- */
 
+/* The old theme had no footer: the tiled photo (body background) fades to white
+   below the content. The links sit small on that fade. */
 .site-footer {
-  background: #111;
-  color: #ccc;
-  padding: 40px 0;
-  font-size: var(--fs-sm);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #fff 100%);
+  color: var(--heading);
+  padding: 100px 0 24px;
+  font-size: 13px;
 }
 .footer-inner {
+  width: 80%;
   max-width: var(--max);
   margin: 0 auto;
-  padding: 0 var(--gutter);
-  display: grid;
-  gap: 24px;
-}
-@media (min-width: 768px) {
-  .footer-inner {
-    grid-template-columns: 2fr 1fr 1fr 1fr;
-  }
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  align-items: center;
 }
 .footer-name {
-  color: #fff;
   font-weight: 700;
-  font-size: var(--fs-base);
 }
 .site-footer p {
-  margin: 0 0 6px;
+  margin: 0;
+  padding: 0;
+}
+.footer-inner > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+  margin-right: auto;
 }
 .footer-links {
   list-style: none;
   margin: 0;
   padding: 0;
-}
-.footer-links li + li {
-  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
 }
 .site-footer a {
-  color: #fff;
+  color: var(--heading);
 }
 .site-footer a:hover {
   color: var(--brand);
+}
+.footer-badges img {
+  height: 40px;
+  width: auto;
 }
