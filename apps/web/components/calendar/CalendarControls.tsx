@@ -13,6 +13,7 @@ export function CalendarControls({ id }: { id: string }) {
     if (!root) return;
     const legend = root.querySelector<HTMLElement>(`[data-cal-legend="${id}"]`);
     const select = root.querySelector<HTMLSelectElement>(`[data-cal-month="${id}"]`);
+    const title = root.querySelector<HTMLElement>(`[data-cal-title="${id}"]`);
 
     const onLegend = () => {
       const boxes = legend ? Array.from(legend.querySelectorAll<HTMLInputElement>("input[type=checkbox]")) : [];
@@ -21,6 +22,7 @@ export function CalendarControls({ id }: { id: string }) {
     const onMonth = () => {
       if (!select) return;
       for (const s of root.querySelectorAll<HTMLElement>("[data-month]")) s.hidden = s.dataset.month !== select.value;
+      if (title) title.textContent = select.selectedOptions[0]?.textContent ?? "";
     };
     legend?.addEventListener("change", onLegend);
     select?.addEventListener("change", onMonth);

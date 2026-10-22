@@ -8,7 +8,7 @@ import "./globals.css";
 // so the font shouldn't compete with the HTML for bandwidth on slow mobiles.
 const openSans = Open_Sans({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  // Variable font: one file covers the 400-800 weights the old theme used.
   display: "swap",
   preload: false,
   variable: "--font-sans",

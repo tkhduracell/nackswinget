@@ -1,7 +1,7 @@
 import { parseHTML } from "linkedom";
 import { describe, expect, it } from "vitest";
 import type { ImageAttrs, Section } from "@/lib/content/types";
-import { contentToSections, dropTitleHeading, isAllowedEmbed, mergeLinkBoxes } from "./divi";
+import { contentToSections, isAllowedEmbed, mergeLinkBoxes } from "./divi";
 import { docToText, htmlElementToDoc, youtubeId } from "./html";
 
 function root(html: string) {
@@ -51,6 +51,29 @@ describe("htmlElementToDoc", () => {
   });
 });
 
+describe("htmlElementToDoc (old theme quirks)", () => {
+  it("drops white dot spacers and splits paragraphs on double line breaks", () => {
+    const doc = htmlElementToDoc(
+      root(`<p>Villkor.<br /><span style="color: #ffffff;">.</span><br /><span style="color: #ffffff;">.</span><br />Nästa<br />rad</p>`),
+      ctx,
+    );
+    expect(doc.content).toEqual([
+      { type: "paragraph", content: [{ type: "text", text: "Villkor." }] },
+      { type: "paragraph", content: [{ type: "text", text: "Nästa" }, { type: "hardBreak" }, { type: "text", text: "rad" }] },
+    ]);
+  });
+
+  it("turns big-button links into buttons", () => {
+    const doc = htmlElementToDoc(root(`<p><a href="https://dans.se/nsw/mship/new" class="big-button bigpink">Bli medlem!</a></p>`), ctx);
+    expect(doc.content).toEqual([{ type: "button", attrs: { href: "https://dans.se/nsw/mship/new", label: "Bli medlem!" } }]);
+  });
+
+  it("keeps headings inside table cells", () => {
+    const doc = htmlElementToDoc(root(`<table><tr><td><h2><strong>Viktigt</strong></h2></td></tr></table>`), ctx);
+    expect(docToText(doc)).toContain("Viktigt");
+  });
+});
+
 describe("youtubeId", () => {
   it("parses common URL forms", () => {
     expect(youtubeId("https://youtu.be/abcdef123")).toBe("abcdef123");
@@ -97,6 +120,28 @@ describe("contentToSections", () => {
     expect(banner).toBe("Ställ klockan");
   });
 
+  it("maps 3/5 + 2/5 rows, boxes nswBoxes rows and drops the title band", () => {
+    const text = (t: string) => `<div class="et_pb_module et_pb_text"><div class="et_pb_text_inner"><p>${t}</p></div></div>`;
+    const html = `
+      <div class="et_pb_section"><div class="et_pb_row"><div class="et_pb_column et_pb_column_4_4">
+        <div class="et_pb_module et_pb_text"><div class="et_pb_text_inner"><h1>Bandtitel</h1></div></div>
+      </div></div></div>
+      <div class="et_pb_section">
+        <div class="et_pb_row"><div class="et_pb_column et_pb_column_3_5">${text("Bild")}</div><div class="et_pb_column et_pb_column_2_5">${text("Styrelsen")}</div></div>
+        <div class="et_pb_row nswBoxes"><div class="et_pb_column et_pb_column_1_3">${text("A")}</div><div class="et_pb_column et_pb_column_1_3">${text("B")}</div></div>
+      </div>`;
+    const sections = contentToSections(root(html), diviCtx) as Extract<Section, { type: "columns" }>[];
+    expect(sections).toHaveLength(2);
+    expect(sections[0].columns.map((c) => c.width)).toEqual(["3/5", "2/5"]);
+    expect(sections[1].columns.map((c) => c.sections[0])).toMatchObject([{ variant: "boxLeft" }, { variant: "boxLeft" }]);
+  });
+
+  it("reads the hero subtitle", () => {
+    const html = `<div class="et_pb_section et_pb_fullwidth_section"><div class="et_pb_module et_pb_fullwidth_header">
+      <h1 class="et_pb_module_header">Nackswinget</h1><span class="et_pb_fullwidth_header_subhead">Upplev dansglädjen</span></div></div>`;
+    expect(contentToSections(root(html), diviCtx)).toMatchObject([{ type: "hero", title: "Nackswinget", subtitle: "Upplev dansglädjen" }]);
+  });
+
   it("falls back to one rich text block for non-Divi content", () => {
     expect(contentToSections(root("<p>Hej</p>"), diviCtx)).toMatchObject([{ type: "richText" }]);
   });
@@ -111,11 +156,6 @@ describe("helpers", () => {
       { type: "linkBoxes", items: [{ title: "c", href: "/c/" }] },
     ]);
     expect(merged.map((s) => s.type)).toEqual(["linkBoxes", "divider", "linkBoxes"]);
-  });
-
-  it("drops a leading heading that repeats the page title", () => {
-    const doc = { type: "doc" as const, content: [{ type: "heading" as const, attrs: { level: 2 as const }, content: [{ type: "text" as const, text: "Kalender" }] }] };
-    expect(dropTitleHeading([{ type: "richText", doc }, { type: "divider" }], "Kalender")).toEqual([{ type: "divider" }]);
   });
 
   it("only allows known embed hosts", () => {

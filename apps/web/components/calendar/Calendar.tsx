@@ -21,6 +21,22 @@ function dayLabel(day: string): string {
   return `${WEEKDAYS_SHORT[isoWeekday(day) - 1]} ${d} ${MONTHS[m - 1]}`;
 }
 
+/** The old list widget's solid colours (white text); feeds not listed use their own colour. */
+const LIST_COLORS: Record<string, string> = {
+  huvud: "#800080",
+  // The old widget's colours, darkened where needed for AA contrast with white text.
+  kurs: "#a35f00",
+  tavlingskalender: "#2471a3",
+  event: "#e0053d",
+  fritraning: "#007a00",
+};
+
+/** "tor 22/10", like the old theme's list widget. */
+function shortDay(day: string): string {
+  const [, m, d] = day.split("-").map(Number);
+  return `${WEEKDAYS_SHORT[isoWeekday(day) - 1].toLowerCase()} ${d}/${m}`;
+}
+
 function timeRange(e: CalendarEvent): string {
   if (e.allDay) return "Heldag";
   const s = timeOf(e.start);
@@ -28,11 +44,11 @@ function timeRange(e: CalendarEvent): string {
   return end && e.end?.slice(0, 10) === dayOf(e) ? `${s}–${end}` : (s ?? "");
 }
 
-function EventItem({ e, color }: { e: CalendarEvent; color: string }) {
+function EventItem({ e, color, startOnly }: { e: CalendarEvent; color: string; startOnly?: boolean }) {
   const hasDetails = !!(e.location || e.description || e.url);
   const head = (
     <>
-      <span className="ev-time">{timeRange(e)}</span> <span className="ev-title">{e.title}</span>
+      <span className="ev-time">{startOnly && !e.allDay ? timeOf(e.start) : timeRange(e)}</span> <span className="ev-title">{e.title}</span>
     </>
   );
   return (
@@ -129,7 +145,7 @@ function MonthGrid({ ym, byDay, colors, today }: { ym: string; byDay: Map<string
                   {events.length > 0 && (
                     <ul className="ev-list">
                       {events.map((e) => (
-                        <EventItem key={`${e.uid}-${e.start}`} e={e} color={colors.get(e.feed) ?? "#999"} />
+                        <EventItem key={`${e.uid}-${e.start}`} e={e} color={colors.get(e.feed) ?? "#999"} startOnly />
                       ))}
                     </ul>
                   )}
@@ -192,15 +208,24 @@ export async function Calendar({ section, feeds: allFeeds, siteUrl, id }: { sect
         {upcoming.length === 0 ? (
           <p className="muted">Inga kommande aktiviteter.</p>
         ) : (
-          <ul className="ev-list">
-            {upcoming.map((e) => (
-              <li key={`${e.uid}-${e.start}`} className="ev ev-row" data-feed={e.feed} style={{ ["--ev-color" as string]: colors.get(e.feed) }}>
-                <span className="ev-day">{dayLabel(dayOf(e))}</span>
-                <span className="ev-time">{timeRange(e)}</span>
-                <span className="ev-title">{e.title}</span>
-              </li>
-            ))}
-          </ul>
+          [...groupByDay(upcoming)].map(([day, list]) => (
+            <div key={day} className="ev-daygroup">
+              <h3 className="ev-dayhead">{shortDay(day)}</h3>
+              <ul className="ev-list">
+                {list.map((e) => (
+                  <li
+                    key={`${e.uid}-${e.start}`}
+                    className={LIST_COLORS[e.feed] ? "ev ev-block" : "ev ev-block ev-light"}
+                    data-feed={e.feed}
+                    style={{ ["--ev-color" as string]: LIST_COLORS[e.feed] ?? colors.get(e.feed) }}
+                  >
+                    <span className="ev-time">{timeRange(e)}</span>
+                    <span className="ev-title">{e.title}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
         )}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd(upcoming, siteUrl)) }} />
       </div>
@@ -245,8 +270,12 @@ export async function Calendar({ section, feeds: allFeeds, siteUrl, id }: { sect
   return (
     <div className="cal cal-month" data-cal={id} data-hide={section.hiddenByDefault.join(" ")}>
       <style>{hideCss}</style>
+      {section.showLegend && <Legend feeds={feeds} hidden={section.hiddenByDefault} id={id} />}
+      {/* Month title and picker on one row; the title follows the picker. */}
       <div className="cal-toolbar">
-        {section.showLegend && <Legend feeds={feeds} hidden={section.hiddenByDefault} id={id} />}
+        <p className="cal-month-title" aria-hidden="true" data-cal-title={id}>
+          {monthLabel(current)}
+        </p>
         <label className="cal-select">
           <span className="sr-only">Välj månad</span>
           <select data-cal-month={id} defaultValue={current}>
@@ -260,7 +289,7 @@ export async function Calendar({ section, feeds: allFeeds, siteUrl, id }: { sect
       </div>
       {months.map((m) => (
         <section key={m} className="cal-month-view" data-month={m} hidden={m !== current}>
-          <h2 className="cal-month-title">{monthLabel(m)}</h2>
+          <h2 className="sr-only">{monthLabel(m)}</h2>
           <MonthGrid ym={m} byDay={byDay} colors={colors} today={today} />
         </section>
       ))}
