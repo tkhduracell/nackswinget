@@ -19,6 +19,7 @@ const PLACEHOLDER = "unset";
 const ALLOWED_ORIGINS = new Set([
   "https://nsw-web--nackswinget-af7ef.europe-west4.hosted.app",
   "https://nackswinget.se",
+  "https://ny.nackswinget.se",
   "https://www.nackswinget.se",
   "http://localhost:3100",
 ]);
