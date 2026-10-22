@@ -11,7 +11,8 @@ type State = "checking" | "unsupported" | "denied" | "idle" | "subscribed" | "wo
 async function getPushToken(): Promise<string> {
   // Loaded on demand so other pages never ship the Firebase SDK.
   const [{ initializeApp, getApps }, { getMessaging, getToken }] = await Promise.all([import("firebase/app"), import("firebase/messaging")]);
-  const app = getApps()[0] ?? initializeApp(firebaseConfig);
+  // The default app; the admin uses a separate named app with another key.
+  const app = getApps().find((a) => a.name === "[DEFAULT]") ?? initializeApp(firebaseConfig);
   const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
   // Deprecated in favour of Installation-ID messaging, but functions/notifications-api
   // subscribes FCM registration tokens to topics, so this must stay token-based.
