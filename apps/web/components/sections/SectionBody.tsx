@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Img } from "@/components/Img";
 import { publicUrl } from "@/lib/media/urls";
+import { HeroVideo } from "./HeroVideo";
 import { RichText } from "@/components/RichText";
 import type { Section } from "@/lib/content/types";
 import { DansSeWidget } from "./DansSeWidget";
@@ -46,6 +47,7 @@ export function SectionView({ section, slots, index, first }: { section: Section
       return (
         <section className={section.image ? "hero hero-image" : "hero"}>
           {section.image && <Img image={section.image} sizes="100vw" priority className="hero-bg" alt="" />}
+          {section.video && <HeroVideo video={section.video} />}
           <div className="hero-inner">
             <h1>{section.title}</h1>
             {section.subtitle && <p className="hero-sub">{section.subtitle}</p>}
