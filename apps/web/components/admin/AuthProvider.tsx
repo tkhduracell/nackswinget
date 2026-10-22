@@ -3,6 +3,7 @@
 import { isSignInWithEmailLink, onIdTokenChanged, sendSignInLinkToEmail, signInWithEmailLink, signOut, type User } from "firebase/auth";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { clientAuth } from "@/lib/firebase/client";
+import { AdminLogo } from "./brand";
 
 export interface Me {
   uid: string;
@@ -81,24 +82,29 @@ function LoginForm({ error }: { error?: string }) {
   };
   return (
     <div className="admin-login">
-      <h1>Nackswinget – administration</h1>
-      {error && <p className="admin-error">{error}</p>}
-      {state === "sent" ? (
-        <p>
-          Om <strong>{email}</strong> har behörighet har en inloggningslänk skickats dit. Öppna den i den här webbläsaren.
-        </p>
-      ) : (
-        <form onSubmit={send}>
-          <label>
-            E-postadress
-            <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          </label>
-          <button className="button" disabled={state === "sending"}>
-            {state === "sending" ? "Skickar…" : "Skicka inloggningslänk"}
-          </button>
-          {state === "error" && <p className="admin-error">Kunde inte skicka länken. Kontrollera adressen och försök igen.</p>}
-        </form>
-      )}
+      <div className="admin-login-brand">
+        <AdminLogo />
+      </div>
+      <div className="admin-login-body">
+        <h1>Nackswinget – administration</h1>
+        {error && <p className="admin-error">{error}</p>}
+        {state === "sent" ? (
+          <p className="admin-ok">
+            Om <strong>{email}</strong> har behörighet har en inloggningslänk skickats dit. Öppna den i den här webbläsaren.
+          </p>
+        ) : (
+          <form onSubmit={send}>
+            <label className="field">
+              <span>E-postadress</span>
+              <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </label>
+            <button className="button button-block" disabled={state === "sending"}>
+              {state === "sending" ? "Skickar…" : "Skicka inloggningslänk"}
+            </button>
+            {state === "error" && <p className="admin-error">Kunde inte skicka länken. Kontrollera adressen och försök igen.</p>}
+          </form>
+        )}
+      </div>
     </div>
   );
 }
@@ -164,17 +170,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   if (user === undefined || (user && !me && (checking || !error))) return <p className="admin-loading">Laddar…</p>;
   if (!user || !value) {
     return (
-      <>
+      <div className="admin-auth">
         <LoginForm error={user ? error : undefined} />
         {user && (
-          <p className="admin-login">
+          <p className="admin-login-note">
             Inloggad som {user.email}.{" "}
             <button className="link-button" onClick={logout}>
               Logga ut
             </button>
           </p>
         )}
-      </>
+      </div>
     );
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

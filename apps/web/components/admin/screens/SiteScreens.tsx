@@ -4,7 +4,9 @@ import { type Banner, bannerExpiresAt, type CalendarFeed, type NavItem, type Red
 import { publicUrl } from "@/lib/media/urls";
 import { useAdmin } from "../AuthProvider";
 import { MediaThumb } from "../MediaPicker";
+import { Icon } from "../icons";
 import { uploadFile } from "../upload";
+import { Badge, EmptyState, LoadingRow, PageHead } from "../ui";
 
 function useSiteDoc<T>(name: string) {
   const { api } = useAdmin();
@@ -43,17 +45,19 @@ export function BannerScreen() {
   const set = (i: number, b: Banner) => setValue(list.map((x, j) => (j === i ? b : x)));
   return (
     <div className="admin-page narrow">
-      <h1>Stjärnan på startsidan</h1>
-      <p className="muted">Puffen visas från startdatum i det antal dagar du anger och försvinner sedan av sig själv. Lägg gärna in nästa puff i förväg.</p>
+      <PageHead title="Stjärnan på startsidan">Puffen visas från startdatum i det antal dagar du anger och försvinner sedan av sig själv. Lägg gärna in nästa puff i förväg.</PageHead>
+      {value !== null && list.length === 0 && <EmptyState icon="star">Ingen puff ännu.</EmptyState>}
       {list.map((b, i) => {
         const expires = bannerExpiresAt(b);
         const start = new Date(b.startAt).getTime();
         const state = now < start ? `Visas från ${toDateInput(b.startAt)}` : now < expires.getTime() ? `Visas nu – ${Math.ceil((expires.getTime() - now) / 86_400_000)} dagar kvar` : "Har gått ut";
+        const tone = now < start ? "info" : now < expires.getTime() ? "success" : "neutral";
         return (
           <div key={i} className="card">
-            <div className="row space">
-              <strong>{state}</strong>
-              <button type="button" className="link-button" onClick={() => setValue(list.filter((_, j) => j !== i))}>
+            <div className="card-head">
+              <Badge tone={tone}>{state}</Badge>
+              <button type="button" className="button button-danger-ghost button-sm" onClick={() => setValue(list.filter((_, j) => j !== i))}>
+                <Icon name="trash" size={16} />
                 Ta bort
               </button>
             </div>
@@ -70,7 +74,7 @@ export function BannerScreen() {
               <span>Länk (valfri)</span>
               <input value={b.href ?? ""} placeholder="/nackswingets-40-ars-jubileum/" onChange={(e) => set(i, { ...b, href: e.target.value || undefined })} />
             </label>
-            <div className="row">
+            <div className="field-row">
               <label className="field">
                 <span>Startdatum</span>
                 <input type="date" value={toDateInput(b.startAt)} onChange={(e) => e.target.value && set(i, { ...b, startAt: new Date(`${e.target.value}T00:00:00`).toISOString() })} />
@@ -80,12 +84,13 @@ export function BannerScreen() {
                 <input type="number" min={0} max={365} value={b.days} onChange={(e) => set(i, { ...b, days: Math.max(0, Math.min(365, Number(e.target.value) || 0)) })} />
               </label>
             </div>
-            <p className="muted">Slutar visas: {expires.toLocaleDateString("sv-SE")}</p>
+            <p className="muted card-foot">Slutar visas: {expires.toLocaleDateString("sv-SE")}</p>
           </div>
         );
       })}
-      <div className="row">
+      <div className="form-actions">
         <button type="button" className="button button-ghost" onClick={() => setValue([...list, { text: "", startAt: new Date(new Date().toDateString()).toISOString(), days: 7 }])}>
+          <Icon name="plus" size={16} />
           Ny puff
         </button>
         <button type="button" className="button" onClick={() => save(list.filter((b) => b.text.trim()))}>
@@ -112,52 +117,53 @@ export function MenuScreen() {
   const set = (i: number, item: NavItem) => setValue(items.map((x, j) => (j === i ? item : x)));
   return (
     <div className="admin-page narrow">
-      <h1>Meny</h1>
-      <p className="muted">Två nivåer: huvudmenyn och en undermeny under varje punkt.</p>
+      <PageHead title="Meny">Två nivåer: huvudmenyn och en undermeny under varje punkt.</PageHead>
       {items.map((item, i) => (
-        <div key={i} className="card">
-          <div className="row">
+        <div key={i} className="card menu-card">
+          <div className="row menu-row">
             <input value={item.label} onChange={(e) => set(i, { ...item, label: e.target.value })} aria-label="Text" />
             <input value={item.href} onChange={(e) => set(i, { ...item, href: e.target.value })} aria-label="Länk" />
             <div className="list-actions">
               <button type="button" disabled={i === 0} onClick={() => setValue(move(items, i, -1))} aria-label="Flytta upp">
-                ↑
+                <Icon name="up" size={16} />
               </button>
               <button type="button" disabled={i === items.length - 1} onClick={() => setValue(move(items, i, 1))} aria-label="Flytta ner">
-                ↓
+                <Icon name="down" size={16} />
               </button>
               <button type="button" onClick={() => setValue(items.filter((_, j) => j !== i))} aria-label="Ta bort">
-                ✕
+                <Icon name="close" size={16} />
               </button>
             </div>
           </div>
           <div className="submenu">
             {item.children.map((c, k) => (
-              <div key={k} className="row">
-                <span className="muted">↳</span>
+              <div key={k} className="row menu-row">
+                <span className="submenu-mark" aria-hidden="true" />
                 <input value={c.label} onChange={(e) => set(i, { ...item, children: item.children.map((x, m) => (m === k ? { ...x, label: e.target.value } : x)) })} aria-label="Text" />
                 <input value={c.href} onChange={(e) => set(i, { ...item, children: item.children.map((x, m) => (m === k ? { ...x, href: e.target.value } : x)) })} aria-label="Länk" />
                 <div className="list-actions">
                   <button type="button" disabled={k === 0} onClick={() => set(i, { ...item, children: move(item.children, k, -1) })} aria-label="Flytta upp">
-                    ↑
-                  </button>
+                <Icon name="up" size={16} />
+              </button>
                   <button type="button" disabled={k === item.children.length - 1} onClick={() => set(i, { ...item, children: move(item.children, k, 1) })} aria-label="Flytta ner">
-                    ↓
-                  </button>
+                <Icon name="down" size={16} />
+              </button>
                   <button type="button" onClick={() => set(i, { ...item, children: item.children.filter((_, m) => m !== k) })} aria-label="Ta bort">
-                    ✕
-                  </button>
+                <Icon name="close" size={16} />
+              </button>
                 </div>
               </div>
             ))}
-            <button type="button" className="link-button" onClick={() => set(i, { ...item, children: [...item.children, { label: "Ny länk", href: "/" }] })}>
-              + Undermeny
+            <button type="button" className="button button-ghost button-sm add-row" onClick={() => set(i, { ...item, children: [...item.children, { label: "Ny länk", href: "/" }] })}>
+              <Icon name="plus" size={16} />
+              Undermeny
             </button>
           </div>
         </div>
       ))}
-      <div className="row">
+      <div className="form-actions">
         <button type="button" className="button button-ghost" onClick={() => setValue([...items, { label: "Ny punkt", href: "/", children: [] }])}>
+          <Icon name="plus" size={16} />
           Ny menypunkt
         </button>
         <button type="button" className="button" onClick={() => save(items)}>
@@ -174,12 +180,12 @@ export function MenuScreen() {
 
 export function SettingsScreen() {
   const { value, setValue, save, status } = useSiteDoc<Settings>("settings");
-  if (!value) return <p className="admin-loading">{status ?? "Laddar…"}</p>;
+  if (!value) return status ? <p className="admin-error">{status}</p> : <LoadingRow />;
   const s = value;
   const setFeed = (i: number, f: CalendarFeed) => setValue({ ...s, calendarFeeds: s.calendarFeeds.map((x, j) => (j === i ? f : x)) });
   return (
     <div className="admin-page narrow">
-      <h1>Inställningar</h1>
+      <PageHead title="Inställningar" />
       <div className="card">
         <h2>Allmänt</h2>
         <label className="field">
@@ -212,16 +218,18 @@ export function SettingsScreen() {
         <fieldset className="field">
           <legend>Snabblänkar i sidfoten</legend>
           {s.footer.links.map((l, i) => (
-            <div key={i} className="row">
+            <div key={i} className="row menu-row">
               <input value={l.label} onChange={(e) => setValue({ ...s, footer: { ...s.footer, links: s.footer.links.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)) } })} aria-label="Text" />
               <input value={l.href} onChange={(e) => setValue({ ...s, footer: { ...s.footer, links: s.footer.links.map((x, j) => (j === i ? { ...x, href: e.target.value } : x)) } })} aria-label="Länk" />
-              <button type="button" className="link-button" onClick={() => setValue({ ...s, footer: { ...s.footer, links: s.footer.links.filter((_, j) => j !== i) } })}>
-                Ta bort
+              <button type="button" className="button button-danger-ghost button-sm" onClick={() => setValue({ ...s, footer: { ...s.footer, links: s.footer.links.filter((_, j) => j !== i) } })}>
+                <Icon name="trash" size={16} />
+                <span className="hide-xs">Ta bort</span>
               </button>
             </div>
           ))}
-          <button type="button" className="link-button" onClick={() => setValue({ ...s, footer: { ...s.footer, links: [...s.footer.links, { label: "Ny länk", href: "/" }] } })}>
-            + Länk
+          <button type="button" className="button button-ghost button-sm add-row" onClick={() => setValue({ ...s, footer: { ...s.footer, links: [...s.footer.links, { label: "Ny länk", href: "/" }] } })}>
+            <Icon name="plus" size={16} />
+            Länk
           </button>
         </fieldset>
       </div>
@@ -229,16 +237,18 @@ export function SettingsScreen() {
         <h2>Kalendrar</h2>
         <p className="muted">Kalenderflöden (ICS) som visas i kalendersektionerna. Uppdateras var 5:e minut.</p>
         {s.calendarFeeds.map((f, i) => (
-          <div key={f.key} className="row">
+          <div key={f.key} className="row feed-row">
             <input type="color" value={f.color} onChange={(e) => setFeed(i, { ...f, color: e.target.value })} aria-label="Färg" />
             <input value={f.name} onChange={(e) => setFeed(i, { ...f, name: e.target.value })} aria-label="Namn" />
             <input value={f.url} onChange={(e) => setFeed(i, { ...f, url: e.target.value })} aria-label="Adress" className="grow" />
           </div>
         ))}
       </div>
-      <button type="button" className="button" onClick={() => save(s)}>
-        Spara
-      </button>
+      <div className="form-actions">
+        <button type="button" className="button" onClick={() => save(s)}>
+          Spara
+        </button>
+      </div>
       <Status text={status} />
     </div>
   );
@@ -254,13 +264,16 @@ export function RedirectsScreen() {
   useEffect(() => {
     api<Redirect[]>("/redirects").then(setList).catch((e: Error) => setStatus(e.message));
   }, [api]);
-  if (!list) return <p className="admin-loading">{status ?? "Laddar…"}</p>;
+  if (!list) return status ? <p className="admin-error">{status}</p> : <LoadingRow />;
   const set = (i: number, r: Redirect) => setList(list.map((x, j) => (j === i ? r : x)));
   return (
     <div className="admin-page narrow">
-      <h1>Omdirigeringar</h1>
-      <p className="muted">Gamla adresser som skickas vidare. Skapas automatiskt när en sida eller nyhet byter adress.</p>
-      <table className="admin-table">
+      <PageHead title="Omdirigeringar">Gamla adresser som skickas vidare. Skapas automatiskt när en sida eller nyhet byter adress.</PageHead>
+      {list.length === 0 ? (
+        <EmptyState icon="redirect">Inga omdirigeringar ännu.</EmptyState>
+      ) : (
+      <div className="table-card">
+      <table className="admin-table edit-table">
         <thead>
           <tr>
             <th>Från (nackswinget.se/…)</th>
@@ -277,17 +290,20 @@ export function RedirectsScreen() {
               <td>
                 <input value={r.to} onChange={(e) => set(i, { ...r, to: e.target.value })} aria-label="Till" />
               </td>
-              <td>
-                <button type="button" className="link-button" onClick={() => setList(list.filter((_, j) => j !== i))}>
-                  Ta bort
+              <td className="col-actions">
+                <button type="button" className="icon-btn danger" onClick={() => setList(list.filter((_, j) => j !== i))} aria-label="Ta bort" title="Ta bort">
+                  <Icon name="trash" size={16} />
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="row">
+      </div>
+      )}
+      <div className="form-actions">
         <button type="button" className="button button-ghost" onClick={() => setList([...list, { from: "", to: "/", status: 308 }])}>
+          <Icon name="plus" size={16} />
           Ny omdirigering
         </button>
         <button
@@ -341,14 +357,16 @@ export function UsersScreen() {
   };
   return (
     <div className="admin-page narrow">
-      <h1>Användare</h1>
-      <p className="muted">De här e-postadresserna kan logga in med en inloggningslänk. Redaktörer redigerar sidor, nyheter, bilder och stjärnan; administratörer även meny, inställningar och användare.</p>
-      {list && (
-        <table className="admin-table">
+      <PageHead title="Användare">De här e-postadresserna kan logga in med en inloggningslänk. Redaktörer redigerar sidor, nyheter, bilder och stjärnan; administratörer även meny, inställningar och användare.</PageHead>
+      {!list && !status && <LoadingRow />}
+      {list && list.length === 0 && <EmptyState icon="users">Inga användare ännu.</EmptyState>}
+      {list && list.length > 0 && (
+        <div className="table-card">
+        <table className="admin-table users-table">
           <thead>
             <tr>
               <th>E-post</th>
-              <th>Namn</th>
+              <th className="hide-sm">Namn</th>
               <th>Roll</th>
               <th />
             </tr>
@@ -356,26 +374,38 @@ export function UsersScreen() {
           <tbody>
             {list.map((u) => (
               <tr key={u.email}>
-                <td>{u.email}</td>
-                <td>{u.name}</td>
+                <td>
+                  <span className="user-cell">
+                    <span className="avatar" aria-hidden="true">
+                      {u.email.slice(0, 1).toUpperCase()}
+                    </span>
+                    <span className="user-cell-text">
+                      <span className="cell-title">{u.email}</span>
+                      {u.name && <span className="cell-sub show-sm">{u.name}</span>}
+                    </span>
+                  </span>
+                </td>
+                <td className="hide-sm">{u.name}</td>
                 <td>
                   <select value={u.role} onChange={(e) => put({ ...u, role: e.target.value as UserRow["role"] })} disabled={u.email === me.email}>
                     <option value="editor">Redaktör</option>
                     <option value="admin">Administratör</option>
                   </select>
                 </td>
-                <td>
+                <td className="col-actions">
                   {u.email !== me.email && (
                     <button
                       type="button"
-                      className="link-button"
+                      className="icon-btn danger"
+                      aria-label="Ta bort"
+                      title="Ta bort"
                       onClick={async () => {
                         if (!window.confirm(`Ta bort ${u.email}?`)) return;
                         await api(`/users?email=${encodeURIComponent(u.email)}`, { method: "DELETE" });
                         await load();
                       }}
                     >
-                      Ta bort
+                      <Icon name="trash" size={16} />
                     </button>
                   )}
                 </td>
@@ -383,9 +413,10 @@ export function UsersScreen() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
       <form
-        className="card row wrap"
+        className="card add-user"
         onSubmit={(e) => {
           e.preventDefault();
           void put(draft).then(() => setDraft({ email: "", name: "", role: "editor" }));
@@ -397,7 +428,10 @@ export function UsersScreen() {
           <option value="editor">Redaktör</option>
           <option value="admin">Administratör</option>
         </select>
-        <button className="button">Lägg till</button>
+        <button className="button">
+          <Icon name="plus" size={16} />
+          Lägg till
+        </button>
       </form>
       <Status text={status} />
     </div>
@@ -412,6 +446,7 @@ export function MediaScreen() {
   const [items, setItems] = useState<MediaDoc[] | null>(null);
   const [uploads, setUploads] = useState<{ name: string; progress: number }[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
   const load = useCallback(() => api<MediaDoc[]>("/media").then(setItems).catch((e: Error) => setError(e.message)), [api]);
   useEffect(() => {
     void load();
@@ -444,56 +479,95 @@ export function MediaScreen() {
 
   return (
     <div className="admin-page">
-      <h1>Bilder och filer</h1>
+      <PageHead title="Bilder och filer">{items && `${items.length} filer`}</PageHead>
       <label
-        className="upload-drop big"
-        onDragOver={(e) => e.preventDefault()}
+        className={dragging ? "upload-drop big dragging" : "upload-drop big"}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (!dragging) setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
         onDrop={(e) => {
           e.preventDefault();
+          setDragging(false);
           void onFiles(e.dataTransfer.files);
         }}
       >
         <input type="file" multiple onChange={(e) => e.target.files && onFiles(e.target.files)} />
-        Släpp filer här eller klicka för att välja. Bilder skalas om automatiskt; videor konverteras för webben (kan ta några minuter).
+        <span className="upload-icon">
+          <Icon name="upload" size={24} />
+        </span>
+        <span>Släpp filer här eller klicka för att välja. Bilder skalas om automatiskt; videor konverteras för webben (kan ta några minuter).</span>
       </label>
-      {uploads.map((u) => (
-        <p key={u.name}>
-          {u.name}: {Math.round(u.progress * 100)} %
-        </p>
-      ))}
+      {uploads.length > 0 && (
+        <ul className="upload-list">
+          {uploads.map((u) => (
+            <li key={u.name}>
+              <span className="upload-name">
+                {u.name}: {Math.round(u.progress * 100)} %
+              </span>
+              <span className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(u.progress * 100)} aria-label={u.name}>
+                <span style={{ width: `${Math.round(u.progress * 100)}%` }} />
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
       {error && <p className="admin-error">{error}</p>}
       {!items ? (
-        <p>Laddar…</p>
+        <LoadingRow />
+      ) : items.length === 0 ? (
+        <EmptyState icon="image">Inga filer ännu.</EmptyState>
       ) : (
         <ul className="media-grid big">
           {items.map((m) => (
             <li key={m.id}>
-              <MediaThumb m={m} />
-              <span className="media-name">{m.name}</span>
-              <span className="muted">{m.status === "ready" ? `${(m.size / 1024 / 1024).toFixed(1)} MB` : m.status === "processing" ? "Konverteras…" : m.status === "error" ? `Fel: ${m.error ?? ""}` : "Laddas upp…"}</span>
-              {m.kind === "image" && (
-                <input
-                  defaultValue={m.alt}
-                  placeholder="Alternativtext"
-                  onBlur={(e) => e.target.value !== m.alt && api(`/media/${m.id}`, { method: "PATCH", json: { alt: e.target.value } })}
-                  aria-label={`Alternativtext för ${m.name}`}
-                />
-              )}
-              <div className="row">
+              <div className="media-thumb">
+                <MediaThumb m={m} />
+                {m.kind !== "image" && <span className="media-kind">{m.kind === "video" ? "Video" : m.name.split(".").pop()?.toUpperCase()}</span>}
+              </div>
+              <div className="media-info">
+                <span className="media-name" title={m.name}>
+                  {m.name}
+                </span>
+                {m.status === "ready" ? (
+                  <span className="muted">{`${(m.size / 1024 / 1024).toFixed(1)} MB`}</span>
+                ) : m.status === "processing" ? (
+                  <Badge tone="warning">
+                    <span className="spinner sm" aria-hidden="true" />
+                    Konverteras…
+                  </Badge>
+                ) : m.status === "error" ? (
+                  <Badge tone="danger">{`Fel: ${m.error ?? ""}`}</Badge>
+                ) : (
+                  <Badge tone="info">Laddas upp…</Badge>
+                )}
+                {m.kind === "image" && (
+                  <input
+                    defaultValue={m.alt}
+                    placeholder="Alternativtext"
+                    onBlur={(e) => e.target.value !== m.alt && api(`/media/${m.id}`, { method: "PATCH", json: { alt: e.target.value } })}
+                    aria-label={`Alternativtext för ${m.name}`}
+                  />
+                )}
+              </div>
+              <div className="media-actions">
                 {m.status === "ready" && (
-                  <button type="button" className="link-button" onClick={() => navigator.clipboard?.writeText(publicUrl(m.kind === "video" && m.renditions ? m.renditions.src720 : m.path))}>
+                  <button type="button" className="button button-ghost button-sm" onClick={() => navigator.clipboard?.writeText(publicUrl(m.kind === "video" && m.renditions ? m.renditions.src720 : m.path))}>
+                    <Icon name="link" size={15} />
                     Kopiera länk
                   </button>
                 )}
                 <button
                   type="button"
-                  className="link-button"
+                  className="button button-danger-ghost button-sm"
                   onClick={async () => {
                     if (!window.confirm(`Ta bort ${m.name}? (Kan återställas inom 30 dagar.)`)) return;
                     await api(`/media/${m.id}`, { method: "DELETE" });
                     await load();
                   }}
                 >
+                  <Icon name="trash" size={15} />
                   Ta bort
                 </button>
               </div>

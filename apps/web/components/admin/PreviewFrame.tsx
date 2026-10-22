@@ -4,6 +4,7 @@ import { RichText } from "@/components/RichText";
 import { SectionList, type SectionSlots } from "@/components/sections/SectionBody";
 import type { Page, Post } from "@/lib/content/types";
 import { formatDate } from "@/lib/format";
+import { Icon } from "./icons";
 
 export type PreviewMessage = { type: "nsw-preview"; kind: "page"; data: Page } | { type: "nsw-preview"; kind: "post"; data: Post };
 
@@ -89,14 +90,19 @@ export function PreviewPane({ message }: { message: PreviewMessage }) {
   }, [message, ready]);
 
   return (
-    <div className="preview-pane">
+    <div className="preview-pane" id="forhandsvisning">
       <div className="preview-toolbar">
-        <span>Förhandsvisning</span>
-        <div className="row">
-          <button type="button" className={device === "desktop" ? "tb-btn active" : "tb-btn"} onClick={() => setDevice("desktop")}>
+        <span className="preview-title">
+          <span className="live-dot" aria-hidden="true" />
+          Förhandsvisning
+        </span>
+        <div className="segmented" role="group" aria-label="Förhandsvisning">
+          <button type="button" className={device === "desktop" ? "seg active" : "seg"} aria-pressed={device === "desktop"} onClick={() => setDevice("desktop")}>
+            <Icon name="monitor" size={15} />
             Dator
           </button>
-          <button type="button" className={device === "mobile" ? "tb-btn active" : "tb-btn"} onClick={() => setDevice("mobile")}>
+          <button type="button" className={device === "mobile" ? "seg active" : "seg"} aria-pressed={device === "mobile"} onClick={() => setDevice("mobile")}>
+            <Icon name="phone" size={15} />
             Mobil
           </button>
         </div>
