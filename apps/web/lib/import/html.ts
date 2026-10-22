@@ -20,6 +20,12 @@ export interface ConvertContext {
 
 type El = Element;
 
+/** Where a block (button, image, video) was lifted out of inline content; paragraphs split there. */
+const HOIST = "__hoist";
+type Marker = { type: typeof HOIST; node: RichNode };
+const marker = (node: RichNode) => ({ type: HOIST, node }) as unknown as RichNode;
+const isMarker = (n: RichNode): boolean => (n as unknown as Marker).type === HOIST;
+
 const BLOCK_TAGS = new Set([
   "P", "DIV", "SECTION", "ARTICLE", "H1", "H2", "H3", "H4", "H5", "H6", "UL", "OL", "LI",
   "BLOCKQUOTE", "TABLE", "THEAD", "TBODY", "TFOOT", "TR", "TD", "TH", "FIGURE", "FIGCAPTION",
@@ -81,8 +87,8 @@ function normalizeInline(nodes: RichNode[]): RichNode[] {
 class Converter {
   constructor(private ctx: ConvertContext) {}
 
-  /** Inline content of an element; block-level media found inside is hoisted to `hoisted`. */
-  inline(el: Node, marks: Mark[], hoisted: RichNode[]): RichNode[] {
+  /** Inline content of an element; block-level media found inside is left as a marker in place. */
+  inline(el: Node, marks: Mark[]): RichNode[] {
     const out: RichNode[] = [];
     for (const child of Array.from(el.childNodes)) {
       if (child.nodeType === 3) {
@@ -97,30 +103,30 @@ class Converter {
       } else if (tag === "BR") {
         out.push({ type: "hardBreak" });
       } else if (tag === "STRONG" || tag === "B") {
-        out.push(...this.inline(child, addMark(marks, { type: "bold" }), hoisted));
+        out.push(...this.inline(child, addMark(marks, { type: "bold" })));
       } else if (tag === "EM" || tag === "I") {
-        out.push(...this.inline(child, addMark(marks, { type: "italic" }), hoisted));
+        out.push(...this.inline(child, addMark(marks, { type: "italic" })));
       } else if (tag === "A") {
         const raw = child.getAttribute("href") ?? "";
         const href = raw ? this.ctx.rewriteHref(raw) : "";
         const cls = child.getAttribute("class") ?? "";
         if (/\bet_pb_button\b|\bwp-block-button__link\b|\bbig-button\b/.test(cls) && href) {
-          hoisted.push({ type: "button", attrs: { href, label: (child.textContent ?? "").trim() } });
+          out.push(marker({ type: "button", attrs: { href, label: (child.textContent ?? "").trim() } }));
           continue;
         }
-        const inner = this.inline(child, href && !href.startsWith("#") ? addMark(marks, { type: "link", attrs: { href } }) : marks, hoisted);
+        const inner = this.inline(child, href && !href.startsWith("#") ? addMark(marks, { type: "link", attrs: { href } }) : marks);
         out.push(...inner);
       } else if (tag === "IMG") {
         const img = this.image(child);
-        if (img) hoisted.push(img);
+        if (img) out.push(marker(img));
       } else if (tag === "IFRAME") {
         const v = this.iframe(child);
-        if (v) hoisted.push(v);
+        if (v) out.push(marker(v));
       } else if (BLOCK_TAGS.has(tag)) {
         // Block inside inline context (e.g. <div> inside <a>): flatten.
-        out.push(...this.inline(child, marks, hoisted));
+        out.push(...this.inline(child, marks));
       } else {
-        out.push(...this.inline(child, marks, hoisted));
+        out.push(...this.inline(child, marks));
       }
     }
     return out;
@@ -142,8 +148,7 @@ class Converter {
   }
 
   paragraphFrom(el: Node): RichNode[] {
-    const hoisted: RichNode[] = [];
-    const content = normalizeInline(this.inline(el, [], hoisted));
+    const content = normalizeInline(this.inline(el, []));
     const out: RichNode[] = [];
     // Two or more line breaks in a row separate paragraphs.
     let run: RichNode[] = [];
@@ -154,6 +159,12 @@ class Converter {
       run = [];
     };
     for (const n of content) {
+      if (isMarker(n)) {
+        flush();
+        out.push((n as unknown as Marker).node);
+        breaks = 0;
+        continue;
+      }
       if (n.type === "hardBreak") {
         breaks++;
         continue;
@@ -164,7 +175,6 @@ class Converter {
       run.push(n);
     }
     flush();
-    out.push(...hoisted);
     return out;
   }
 
@@ -212,8 +222,10 @@ class Converter {
       case "H4":
       case "H5":
       case "H6": {
-        const hoisted: RichNode[] = [];
-        const content = normalizeInline(this.inline(el, [], hoisted));
+        // Blocks inside a heading go after it.
+        const inline = this.inline(el, []);
+        const hoisted = inline.filter(isMarker).map((n) => (n as unknown as Marker).node);
+        const content = normalizeInline(inline.filter((n) => !isMarker(n)));
         // The old theme styled <h1> as the big bold heading and everything else as small ones.
         const level = tag === "H1" ? 2 : 3;
         // Headings are styled by the theme; drop bold marks inside them.

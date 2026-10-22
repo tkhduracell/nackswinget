@@ -158,6 +158,7 @@ async function main() {
 
   const banners: Banner[] = [];
 
+  const bandTitles = new Map<string, string>();
   function convertContent(html: string, slug: string, kind: "page" | "post"): Section[] {
     const { document } = parseHTML(`<!doctype html><html><body><div id="root">${html}</div></body></html>`);
     const root = document.getElementById("root")!;
@@ -176,6 +177,9 @@ async function main() {
       banner: (text) => {
         if (text) banners.push({ text: text.slice(0, 120), startAt: "2026-10-10T00:00:00.000Z", days: 6 });
       },
+      bandTitle: (text) => {
+        if (text) bandTitles.set(slug, text);
+      },
     });
   }
 
@@ -188,6 +192,11 @@ async function main() {
     if (!body) {
       report.push(`page ${p.slug}: no .entry-content, using REST content`);
       return p.content.rendered;
+    }
+    // Sections Divi gives a background colour (inline CSS), e.g. the red title band.
+    const css = Array.from(document.querySelectorAll("style"), (s) => s.textContent ?? "").join("\n");
+    for (const m of css.matchAll(/\.et_pb_section_(\d+)(?:\.et_pb_section)?\{[^}]*background-color:\s*([^;!}]+)/gi)) {
+      body.querySelector(`.et_pb_section_${m[1]}`)?.setAttribute("data-bg", m[2].trim());
     }
     return body.innerHTML;
   }
@@ -207,16 +216,19 @@ async function main() {
       redirects.push({ from: "boka", to: m ? m[0] : "https://europe-north1-nackswinget-af7ef.cloudfunctions.net/calendars-api/book", status: 308 });
       continue;
     }
+    const title = decode(p.title.rendered);
+    const sections: Section[] =
+      p.slug === "nyheter" ? [{ type: "postList", count: 12, showMore: true }] : convertContent(await pageBodyHtml(p), p.slug, "page");
+    const band = bandTitles.get(p.slug);
     pages.push({
       id: `wp-page-${p.id}`,
       path: pathName,
-      title: decode(p.title.rendered),
+      title,
+      // Only when the band said something other than the title.
+      ...(band && band.toLowerCase() !== title.toLowerCase() ? { bandTitle: band } : {}),
       parentId: p.parent ? `wp-page-${p.parent}` : null,
       template: p.slug === "kalender-for-tv" || p.template.includes("blank") ? "blank" : "default",
-      sections:
-        p.slug === "nyheter"
-          ? [{ type: "postList", count: 12, showMore: true }]
-          : convertContent(await pageBodyHtml(p), p.slug, "page"),
+      sections,
       seo: {},
       status: "published",
       publishedAt: `${p.date_gmt}Z`,

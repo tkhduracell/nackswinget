@@ -208,6 +208,8 @@ export const pageSchema = z.object({
   // Full path without leading/trailing slash, e.g. "om-oss/antidoping". "" = home.
   path: z.string(),
   title: z.string(),
+  /** Text in the red title band when it should differ from the title (e.g. "Hitta hit" on Kontakt). */
+  bandTitle: z.string().optional(),
   parentId: z.string().nullable().default(null),
   template: z.enum(["default", "blank"]).default("default"),
   sections: z.array(sectionSchema),

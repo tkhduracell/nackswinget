@@ -63,6 +63,11 @@ describe("htmlElementToDoc (old theme quirks)", () => {
     ]);
   });
 
+  it("keeps a button where it was in the paragraph", () => {
+    const doc = htmlElementToDoc(root(`<p>Före<br /><a class="big-button" href="https://dans.se/x">Knapp</a><br />Efter</p>`), ctx);
+    expect(doc.content.map((n) => n.type)).toEqual(["paragraph", "button", "paragraph"]);
+  });
+
   it("turns big-button links into buttons", () => {
     const doc = htmlElementToDoc(root(`<p><a href="https://dans.se/nsw/mship/new" class="big-button bigpink">Bli medlem!</a></p>`), ctx);
     expect(doc.content).toEqual([{ type: "button", attrs: { href: "https://dans.se/nsw/mship/new", label: "Bli medlem!" } }]);
@@ -123,17 +128,25 @@ describe("contentToSections", () => {
   it("maps 3/5 + 2/5 rows, boxes nswBoxes rows and drops the title band", () => {
     const text = (t: string) => `<div class="et_pb_module et_pb_text"><div class="et_pb_text_inner"><p>${t}</p></div></div>`;
     const html = `
-      <div class="et_pb_section"><div class="et_pb_row"><div class="et_pb_column et_pb_column_4_4">
+      <div class="et_pb_section" data-bg="#F9064B"><div class="et_pb_row"><div class="et_pb_column et_pb_column_4_4">
         <div class="et_pb_module et_pb_text"><div class="et_pb_text_inner"><h1>Bandtitel</h1></div></div>
       </div></div></div>
       <div class="et_pb_section">
         <div class="et_pb_row"><div class="et_pb_column et_pb_column_3_5">${text("Bild")}</div><div class="et_pb_column et_pb_column_2_5">${text("Styrelsen")}</div></div>
         <div class="et_pb_row nswBoxes"><div class="et_pb_column et_pb_column_1_3">${text("A")}</div><div class="et_pb_column et_pb_column_1_3">${text("B")}</div></div>
       </div>`;
-    const sections = contentToSections(root(html), diviCtx) as Extract<Section, { type: "columns" }>[];
+    let band = "";
+    const sections = contentToSections(root(html), { ...diviCtx, bandTitle: (t: string) => (band = t) }) as Extract<Section, { type: "columns" }>[];
+    expect(band).toBe("Bandtitel");
     expect(sections).toHaveLength(2);
     expect(sections[0].columns.map((c) => c.width)).toEqual(["3/5", "2/5"]);
     expect(sections[1].columns.map((c) => c.sections[0])).toMatchObject([{ variant: "boxLeft" }, { variant: "boxLeft" }]);
+  });
+
+  it("keeps a heading-only first row that isn't a coloured band", () => {
+    const html = `<div class="et_pb_section"><div class="et_pb_row"><div class="et_pb_column et_pb_column_4_4">
+      <div class="et_pb_module et_pb_text"><div class="et_pb_text_inner"><h1>Välkommen</h1></div></div></div></div></div>`;
+    expect(contentToSections(root(html), diviCtx)).toMatchObject([{ type: "richText" }]);
   });
 
   it("reads the hero subtitle", () => {
