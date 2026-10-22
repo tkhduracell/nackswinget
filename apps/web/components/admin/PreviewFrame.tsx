@@ -64,7 +64,7 @@ export function PreviewView() {
           <>
             <header className="page-header">
               <div className="container">
-                <h1>{page.title}</h1>
+                <h1>{page.bandTitle || page.title}</h1>
               </div>
             </header>
             <div className="breadcrumbs-bar">

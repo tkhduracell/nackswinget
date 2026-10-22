@@ -10,6 +10,8 @@ export interface DiviContext extends ConvertContext {
   postListCategory(articles: Element[]): string | undefined;
   /** Called when the page carries the "PowerPuff" star banner. */
   banner(text: string): void;
+  /** Called with the text of the page's coloured title band, if it has one. */
+  bandTitle?(text: string): void;
 }
 
 const EMBED_HOSTS = [/(^|\.)google\.[a-z.]+$/, /(^|\.)dans\.se$/, /(^|\.)youtube(-nocookie)?\.com$/, /(^|\.)forms\.office\.com$/];
@@ -234,13 +236,17 @@ export function contentToSections(root: Element, ctx: DiviContext): Section[] {
     }
     return mapper.textToSections(root);
   }
-  // A first section holding only an <h1> is the coloured title band; the layout renders its own.
-  if (isTitleBand(sections[0])) sections.shift();
+  // The coloured title band (first section, only an <h1>): the layout renders its own band.
+  if (isTitleBand(sections[0])) {
+    ctx.bandTitle?.((sections[0].querySelector("h1")?.textContent ?? "").replace(/[\u200b\ufeff]/g, "").trim());
+    sections.shift();
+  }
   return sections.flatMap((s) => mapper.section(s));
 }
 
+/** data-bg is set by the exporter on sections the theme gives a background colour. */
 function isTitleBand(sec: Element | undefined): boolean {
-  if (!sec) return false;
+  if (!sec?.hasAttribute("data-bg")) return false;
   const mods = Array.from(sec.querySelectorAll(".et_pb_module"));
   if (mods.length !== 1 || !hasClass(mods[0], "et_pb_text")) return false;
   const inner = mods[0].querySelector(".et_pb_text_inner") ?? mods[0];

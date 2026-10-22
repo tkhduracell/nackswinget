@@ -29,7 +29,7 @@ export async function PageView({ page }: { page: Page }) {
       {!hasHero && (
         <header className="page-header">
           <div className="container">
-            <h1>{page.title}</h1>
+            <h1>{page.bandTitle || page.title}</h1>
           </div>
         </header>
       )}

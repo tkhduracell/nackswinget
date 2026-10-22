@@ -160,6 +160,12 @@ export function PageEditor({ id }: { id: string }) {
             <span>Sidans titel</span>
             <input value={doc.title} onChange={(e) => update({ ...doc, title: e.target.value })} />
           </label>
+          {!isHome && (
+            <label className="field">
+              <span>Rubrik i det röda bandet (valfri)</span>
+              <input value={doc.bandTitle ?? ""} placeholder={doc.title} onChange={(e) => update({ ...doc, bandTitle: e.target.value || undefined })} />
+            </label>
+          )}
           <label className="field">
             <span>Adress</span>
             <div className="url-field">
