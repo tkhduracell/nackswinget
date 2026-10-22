@@ -1,5 +1,7 @@
 // Maps rendered Divi page HTML (et_pb_* modules) onto the fixed section set.
 
+import { createHash } from "node:crypto";
+import { BUILTIN_DANCER, DANCER_PNG_SHA1 } from "@/lib/content/icons";
 import type { ColumnWidth, Section } from "@/lib/content/types";
 import { type ConvertContext, displayWidth, docIsEmpty, htmlElementToDoc } from "./html";
 
@@ -23,6 +25,17 @@ export function isAllowedEmbed(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Link box icon from its `<img src>`: inline data URIs are kept, except the
+ * dancing-person PNG, which the site draws as an animated SVG instead.
+ */
+export function linkBoxIcon(src: string | undefined): string | undefined {
+  if (!src?.startsWith("data:")) return undefined;
+  const png = src.match(/^data:image\/png;base64,(.+)$/);
+  if (png && createHash("sha1").update(Buffer.from(png[1], "base64")).digest("hex") === DANCER_PNG_SHA1) return BUILTIN_DANCER;
+  return src;
 }
 
 function hasClass(el: Element, cls: string): boolean {
@@ -93,11 +106,11 @@ class DiviMapper {
     const a = el.querySelector("a");
     if (!a) return null;
     const img = a.querySelector("img");
-    const icon = img?.getAttribute("src") ?? undefined;
+    const icon = linkBoxIcon(img?.getAttribute("src") ?? undefined);
     return {
       title: (a.textContent ?? "").trim() || a.getAttribute("title") || "",
       href: this.ctx.rewriteHref(a.getAttribute("href") ?? ""),
-      ...(icon ? { icon: icon.startsWith("data:") ? icon : undefined } : {}),
+      ...(icon ? { icon } : {}),
     };
   }
 
