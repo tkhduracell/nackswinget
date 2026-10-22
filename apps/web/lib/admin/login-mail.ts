@@ -28,8 +28,9 @@ export function smtpConfigured(): boolean {
   return !!url && url !== PLACEHOLDER;
 }
 
-export function linkOrigin(origin: string | null): string {
-  return origin && ALLOWED_ORIGINS.has(origin) ? origin : "https://nackswinget.se";
+/** The request origin if it's one of the site's hosts, else null. */
+export function linkOrigin(origin: string | null): string | null {
+  return origin && ALLOWED_ORIGINS.has(origin) ? origin : null;
 }
 
 /** A sign-in link that opens /admin/ directly (not Firebase's hosted handler). */
