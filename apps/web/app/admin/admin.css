@@ -41,6 +41,13 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* The public stylesheet spaces headings and paragraphs with padding-bottom
+   (the old theme's rhythm); the admin spaces with margins/gaps instead. */
+.admin :is(h1, h2, h3, p),
+.admin-auth :is(h1, h2, h3, p) {
+  padding-bottom: 0;
+}
+
 /* ---------- loading & messages (also used outside the shell) ---------- */
 
 .admin-loading {
