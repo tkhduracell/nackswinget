@@ -9,7 +9,7 @@ import path from "node:path";
 import { parseHTML } from "linkedom";
 import type { Banner, ImageAttrs, NavItem, Page, Post, Redirect, Section, Settings, Snapshot } from "../lib/content/types";
 import { snapshotSchema } from "../lib/content/types";
-import { contentToSections, dropTitleHeading } from "../lib/import/divi";
+import { contentToSections } from "../lib/import/divi";
 import { docToText, htmlElementToDoc } from "../lib/import/html";
 import { isRaster, publicUrl, variantWidthsFor, wpUploadPath } from "../lib/media/urls";
 
@@ -216,7 +216,7 @@ async function main() {
       sections:
         p.slug === "nyheter"
           ? [{ type: "postList", count: 12, showMore: true }]
-          : dropTitleHeading(convertContent(await pageBodyHtml(p), p.slug, "page"), decode(p.title.rendered)),
+          : convertContent(await pageBodyHtml(p), p.slug, "page"),
       seo: {},
       status: "published",
       publishedAt: `${p.date_gmt}Z`,

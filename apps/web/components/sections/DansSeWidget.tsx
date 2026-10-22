@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const INIT = "https://dans.se/api/init.js";
 const LIB = "https://dans.se/files/1076/js/lib.js";
+
+type CwWindow = Window & { cwApi?: { linksToReplace: Element[]; replaceLinks(): Promise<void> }; cwInitContent?: () => void };
 
 function loadScript(src: string): Promise<void> {
   const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
@@ -16,6 +17,28 @@ function loadScript(src: string): Promise<void> {
     s.onerror = () => reject(new Error(src));
     document.body.appendChild(s);
   });
+}
+
+let replacing: Promise<void> | null = null;
+
+/**
+ * lib.js swaps every a.cwLoadContent for its content, but only from its own
+ * window "load" handler, which has already fired when it's loaded lazily.
+ * So run the swap here; one pass covers every widget on the page.
+ */
+function replaceLinks(): Promise<void> {
+  replacing ??= loadScript(LIB)
+    .then(async () => {
+      const w = window as CwWindow;
+      if (!w.cwApi || document.readyState !== "complete") return; // lib.js' own load handler does it
+      w.cwApi.linksToReplace = [];
+      await w.cwApi.replaceLinks();
+      w.cwInitContent?.();
+    })
+    .finally(() => {
+      replacing = null;
+    });
+  return replacing;
 }
 
 /**
@@ -34,9 +57,7 @@ export function DansSeWidget({ href, label }: { href: string; label: string }) {
         if (!entries.some((e) => e.isIntersecting)) return;
         io.disconnect();
         setState("loading");
-        loadScript(INIT)
-          .then(() => loadScript(LIB))
-          .catch(() => setState("failed"));
+        replaceLinks().catch(() => setState("failed"));
       },
       { rootMargin: "200px" },
     );

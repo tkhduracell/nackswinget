@@ -91,7 +91,10 @@ class Converter {
       }
       if (!isElement(child) || SKIP_TAGS.has(child.tagName)) continue;
       const tag = child.tagName;
-      if (tag === "BR") {
+      if (isSpacer(child)) {
+        // Editors used white "." characters as vertical spacing.
+        continue;
+      } else if (tag === "BR") {
         out.push({ type: "hardBreak" });
       } else if (tag === "STRONG" || tag === "B") {
         out.push(...this.inline(child, addMark(marks, { type: "bold" }), hoisted));
@@ -101,7 +104,7 @@ class Converter {
         const raw = child.getAttribute("href") ?? "";
         const href = raw ? this.ctx.rewriteHref(raw) : "";
         const cls = child.getAttribute("class") ?? "";
-        if (/\bet_pb_button\b|\bwp-block-button__link\b/.test(cls) && href) {
+        if (/\bet_pb_button\b|\bwp-block-button__link\b|\bbig-button\b/.test(cls) && href) {
           hoisted.push({ type: "button", attrs: { href, label: (child.textContent ?? "").trim() } });
           continue;
         }
@@ -142,7 +145,25 @@ class Converter {
     const hoisted: RichNode[] = [];
     const content = normalizeInline(this.inline(el, [], hoisted));
     const out: RichNode[] = [];
-    if (content.length) out.push({ type: "paragraph", content });
+    // Two or more line breaks in a row separate paragraphs.
+    let run: RichNode[] = [];
+    let breaks = 0;
+    const flush = () => {
+      const trimmed = normalizeInline(run);
+      if (trimmed.length) out.push({ type: "paragraph", content: trimmed });
+      run = [];
+    };
+    for (const n of content) {
+      if (n.type === "hardBreak") {
+        breaks++;
+        continue;
+      }
+      if (breaks >= 2) flush();
+      else if (breaks === 1) run.push({ type: "hardBreak" });
+      breaks = 0;
+      run.push(n);
+    }
+    flush();
     out.push(...hoisted);
     return out;
   }
@@ -193,7 +214,8 @@ class Converter {
       case "H6": {
         const hoisted: RichNode[] = [];
         const content = normalizeInline(this.inline(el, [], hoisted));
-        const level = tag === "H1" || tag === "H2" ? 2 : 3;
+        // The old theme styled <h1> as the big bold heading and everything else as small ones.
+        const level = tag === "H1" ? 2 : 3;
         // Headings are styled by the theme; drop bold marks inside them.
         const plain = content.map((n) =>
           n.type === "text" && n.marks ? { ...n, marks: n.marks.filter((m) => m.type === "link") } : n,
@@ -244,7 +266,7 @@ class Converter {
         content: Array.from(tr.children)
           .filter((c) => c.tagName === "TD" || c.tagName === "TH")
           .map((cell) => {
-            const content = this.blocks(cell).filter((n) => n.type === "paragraph" || n.type === "image");
+            const content = this.blocks(cell).filter((n) => n.type === "paragraph" || n.type === "heading" || n.type === "image");
             return {
               type: "tableCell" as const,
               ...(cell.tagName === "TH" ? { attrs: { header: true } } : {}),
@@ -255,6 +277,13 @@ class Converter {
       .filter((r) => r.content.length > 0);
     return rows.length ? [{ type: "table", content: rows }] : [];
   }
+}
+
+const WHITE = /color:\s*(#fff(fff)?|white|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))\s*(;|$)/i;
+
+/** A white span holding only dots/whitespace: an invisible spacer in the old theme. */
+function isSpacer(el: El): boolean {
+  return WHITE.test(el.getAttribute("style") ?? "") && /^[\s.\u00a0]*$/.test(el.textContent ?? "");
 }
 
 function addMark(marks: Mark[], m: Mark): Mark[] {

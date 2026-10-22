@@ -114,6 +114,8 @@ export type Section =
       pastDays: number;
       count?: number;
       showLegend: boolean;
+      /** Grey box with a red top border (the start page's "På gång"). */
+      variant?: "boxTop";
     }
   | { type: "embed"; url: string; title: string; aspect: "16/9" | "4/3" | "1/1" | "auto"; height?: number }
   | { type: "dansSeWidget"; href: string; label: string }
@@ -122,7 +124,7 @@ export type Section =
   | { type: "divider" }
   | { type: "pushSubscribe" };
 
-export const columnWidthSchema = z.enum(["1/4", "1/3", "1/2", "2/3", "3/4", "1/1"]);
+export const columnWidthSchema = z.enum(["1/4", "1/3", "2/5", "1/2", "3/5", "2/3", "3/4", "1/1"]);
 export type ColumnWidth = z.infer<typeof columnWidthSchema>;
 
 export const sectionSchema: z.ZodType<Section> = z.lazy(() =>
@@ -164,6 +166,7 @@ export const sectionSchema: z.ZodType<Section> = z.lazy(() =>
       pastDays: z.number().int().min(0).max(365).default(0),
       count: z.number().int().min(1).max(100).optional(),
       showLegend: z.boolean().default(true),
+      variant: z.literal("boxTop").optional(),
     }),
     z.object({
       type: z.literal("embed"),

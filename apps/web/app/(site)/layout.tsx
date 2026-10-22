@@ -6,7 +6,7 @@ import { organizationJsonLd } from "@/lib/seo";
 export default async function SiteLayout({ children }: LayoutProps<"/">) {
   const { settings, nav } = await getSite();
   return (
-    <>
+    <div className="site">
       <a href="#main" className="skip-link">
         Hoppa till innehållet
       </a>
@@ -14,6 +14,6 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
       <main id="main">{children}</main>
       <Footer settings={settings} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd(settings)) }} />
-    </>
+    </div>
   );
 }

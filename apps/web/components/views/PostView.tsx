@@ -1,65 +1,52 @@
-import { Calendar } from "@/components/calendar/Calendar";
 import { Img } from "@/components/Img";
-import { PostCard } from "@/components/PostCard";
 import { RichText } from "@/components/RichText";
-import { Breadcrumbs } from "@/components/views/Breadcrumbs";
 import { getSite, listPosts } from "@/lib/content/cached";
 import type { Post } from "@/lib/content/types";
-import { formatDate } from "@/lib/format";
-import { articleJsonLd } from "@/lib/seo";
+import { formatShortDate } from "@/lib/format";
+import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
+/** A post the way the old theme showed it: title and meta above the text, recent posts in a ruled-off sidebar. */
 export async function PostView({ post }: { post: Post }) {
   const [{ settings, categories }, latest] = await Promise.all([getSite(), listPosts(undefined, 6)]);
   const cats = post.categories.map((slug) => categories.find((c) => c.slug === slug)).filter((c) => !!c);
+  const crumbs = [
+    { name: "Hem", path: "/" },
+    { name: "Nyheter", path: "/nyheter/" },
+    { name: post.title, path: `/${post.slug}/` },
+  ];
   return (
     <article className="post">
-      <header className="page-header">
-        <div className="container">
-          <h1>{post.title}</h1>
+      <div className="container post-layout">
+        <div className="post-main">
+          <h1 className="post-title">{post.title}</h1>
           <p className="post-meta">
-            <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
-            {cats.map((c) => (
-              <a key={c.slug} href={`/category/${c.slug}/`} className="tag">
-                {c.name}
-              </a>
+            <time dateTime={post.publishedAt}>{formatShortDate(post.publishedAt)}</time>
+            {cats.map((c, i) => (
+              <span key={c.slug}>
+                {i === 0 ? " | " : ", "}
+                <a href={`/category/${c.slug}/`}>{c.name}</a>
+              </span>
             ))}
           </p>
-        </div>
-      </header>
-      <Breadcrumbs crumbs={[{ name: "Nyheter", path: "/nyheter/" }, { name: post.title, path: `/${post.slug}/` }]} settings={settings} />
-      <div className="container with-sidebar">
-        <div className="main-col">
           {post.image && (
             <figure className="post-image">
-              <Img image={post.image} priority sizes="(min-width: 1080px) 760px, 100vw" />
+              <Img image={post.image} priority sizes="(min-width: 1080px) 760px, 80vw" />
             </figure>
           )}
           <RichText doc={post.body} />
         </div>
-        <aside className="sidebar" aria-label="Mer från Nackswinget">
-          <div className="box boxTop">
-            <Calendar
-              section={{ type: "calendar", title: "På gång", feeds: ["huvud", "kurs", "tavlingskalender", "event", "fritraning"], hiddenByDefault: [], view: "list", pastDays: 0, count: 5, showLegend: false }}
-              feeds={settings.calendarFeeds}
-              siteUrl={settings.siteUrl}
-              id={`${post.id}-side`}
-            />
-          </div>
-          <div className="box boxTop">
-            <h2>Senaste nyheterna</h2>
-            <ul className="posts posts-compact">
-              {latest.posts
-                .filter((p) => p.id !== post.id)
-                .slice(0, 5)
-                .map((p) => (
-                  <li key={p.id}>
-                    <PostCard post={p} compact />
-                  </li>
-                ))}
-            </ul>
-          </div>
+        <aside className="post-sidebar" aria-label="Senaste nyheter">
+          <h2 className="widget-title">Senaste nyheter</h2>
+          <ul className="recent-posts">
+            {latest.posts.slice(0, 5).map((p) => (
+              <li key={p.id}>
+                <a href={`/${p.slug}/`}>{p.title}</a>
+              </li>
+            ))}
+          </ul>
         </aside>
       </div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(settings, crumbs)) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd(settings, post)) }} />
     </article>
   );
