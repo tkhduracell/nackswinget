@@ -178,7 +178,7 @@ async function main() {
         if (text) banners.push({ text: text.slice(0, 120), startAt: "2026-10-10T00:00:00.000Z", days: 6 });
       },
       bandTitle: (text) => {
-        if (text) bandTitles.set(slug, text);
+        bandTitles.set(slug, text);
       },
     });
   }
@@ -192,11 +192,6 @@ async function main() {
     if (!body) {
       report.push(`page ${p.slug}: no .entry-content, using REST content`);
       return p.content.rendered;
-    }
-    // Sections Divi gives a background colour (inline CSS), e.g. the red title band.
-    const css = Array.from(document.querySelectorAll("style"), (s) => s.textContent ?? "").join("\n");
-    for (const m of css.matchAll(/\.et_pb_section_(\d+)(?:\.et_pb_section)?\{[^}]*background-color:\s*([^;!}]+)/gi)) {
-      body.querySelector(`.et_pb_section_${m[1]}`)?.setAttribute("data-bg", m[2].trim());
     }
     return body.innerHTML;
   }
@@ -217,8 +212,12 @@ async function main() {
       continue;
     }
     const title = decode(p.title.rendered);
-    const sections: Section[] =
-      p.slug === "nyheter" ? [{ type: "postList", count: 12, showMore: true }] : convertContent(await pageBodyHtml(p), p.slug, "page");
+    const body = p.slug === "nyheter" ? "" : await pageBodyHtml(p);
+    const sections: Section[] = p.slug === "nyheter" ? [{ type: "postList", count: 10, showMore: true }] : convertContent(body, p.slug, "page");
+    // Not built with Divi (and the blog index): WordPress's default layout with the sidebar.
+    const plain = p.slug === "nyheter" || !body.includes("et_pb_section");
+    // Divi pages without a coloured title band showed only their content.
+    const noBand = !plain && !bandTitles.has(p.slug) && pathName !== "";
     const band = bandTitles.get(p.slug);
     pages.push({
       id: `wp-page-${p.id}`,
@@ -227,7 +226,7 @@ async function main() {
       // Only when the band said something other than the title.
       ...(band && band.toLowerCase() !== title.toLowerCase() ? { bandTitle: band } : {}),
       parentId: p.parent ? `wp-page-${p.parent}` : null,
-      template: p.slug === "kalender-for-tv" || p.template.includes("blank") ? "blank" : "default",
+      template: p.slug === "kalender-for-tv" || p.template.includes("blank") ? "blank" : plain ? "sidebar" : noBand ? "plain" : "default",
       sections,
       seo: {},
       status: "published",

@@ -48,7 +48,16 @@ function EventItem({ e, color, startOnly }: { e: CalendarEvent; color: string; s
   const hasDetails = !!(e.location || e.description || e.url);
   const head = (
     <>
-      <span className="ev-time">{startOnly && !e.allDay ? timeOf(e.start) : timeRange(e)}</span> <span className="ev-title">{e.title}</span>
+      {startOnly && !e.allDay && timeRange(e).includes("–") ? (
+        // Grid cells show the start time; the end shows when the grid becomes a list on phones.
+        <span className="ev-time">
+          {timeOf(e.start)}
+          <span className="ev-end">{timeRange(e).slice(timeRange(e).indexOf("–"))}</span>
+        </span>
+      ) : (
+        <span className="ev-time">{timeRange(e)}</span>
+      )}{" "}
+      <span className="ev-title">{e.title}</span>
     </>
   );
   return (
@@ -163,6 +172,9 @@ function Legend({ feeds, hidden, id }: { feeds: CalendarFeed[]; hidden: string[]
   return (
     <fieldset className="cal-legend" data-cal-legend={id}>
       <legend className="sr-only">Visa kalendrar</legend>
+      <label className="cal-key cal-key-all">
+        <input type="checkbox" className="cal-all" defaultChecked={hidden.length === 0} /> Visa/dölj alla
+      </label>
       {feeds.map((f) => (
         <label key={f.key} className="cal-key" style={{ ["--ev-color" as string]: f.color }}>
           <input type="checkbox" value={f.key} defaultChecked={!hidden.includes(f.key)} /> {f.name}

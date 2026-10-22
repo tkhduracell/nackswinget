@@ -19,7 +19,15 @@ const ImageNode = Node.create({
   atom: true,
   draggable: true,
   addAttributes() {
-    return { src: { default: null }, alt: { default: "" }, width: { default: null }, height: { default: null }, variants: { default: [] } };
+    return {
+      src: { default: null },
+      alt: { default: "" },
+      width: { default: null },
+      height: { default: null },
+      variants: { default: [] },
+      displayWidth: { default: null },
+      href: { default: null },
+    };
   },
   parseHTML: () => [{ tag: "img[data-nsw-src]" }],
   renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, unknown> }) {

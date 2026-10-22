@@ -68,6 +68,16 @@ describe("htmlElementToDoc (old theme quirks)", () => {
     expect(doc.content.map((n) => n.type)).toEqual(["paragraph", "button", "paragraph"]);
   });
 
+  it("keeps a linked image's link and its displayed width", () => {
+    const doc = htmlElementToDoc(root(`<p><a href="https://play.google.com/x"><img src="/wp-content/uploads/badge.png" width="190" style="height:60px;width:190px" /></a></p>`), ctx);
+    expect(doc.content[0]).toMatchObject({ type: "image", attrs: { displayWidth: 190, href: "https://play.google.com/x" } });
+  });
+
+  it("keeps the space between two inline elements", () => {
+    const doc = htmlElementToDoc(root(`<div><strong>Tillgång till</strong> <a href="/kurser/">kurser</a></div>`), ctx);
+    expect(docToText(doc)).toBe("Tillgång till kurser");
+  });
+
   it("turns big-button links into buttons", () => {
     const doc = htmlElementToDoc(root(`<p><a href="https://dans.se/nsw/mship/new" class="big-button bigpink">Bli medlem!</a></p>`), ctx);
     expect(doc.content).toEqual([{ type: "button", attrs: { href: "https://dans.se/nsw/mship/new", label: "Bli medlem!" } }]);
@@ -128,7 +138,7 @@ describe("contentToSections", () => {
   it("maps 3/5 + 2/5 rows, boxes nswBoxes rows and drops the title band", () => {
     const text = (t: string) => `<div class="et_pb_module et_pb_text"><div class="et_pb_text_inner"><p>${t}</p></div></div>`;
     const html = `
-      <div class="et_pb_section" data-bg="#F9064B"><div class="et_pb_row"><div class="et_pb_column et_pb_column_4_4">
+      <div class="et_pb_section et_pb_with_background"><div class="et_pb_row"><div class="et_pb_column et_pb_column_4_4">
         <div class="et_pb_module et_pb_text"><div class="et_pb_text_inner"><h1>Bandtitel</h1></div></div>
       </div></div></div>
       <div class="et_pb_section">

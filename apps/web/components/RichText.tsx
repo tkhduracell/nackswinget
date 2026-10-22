@@ -49,12 +49,20 @@ function node(n: RichNode, key: number): ReactNode {
       return <br key={key} />;
     case "horizontalRule":
       return <hr key={key} />;
-    case "image":
+    case "image": {
+      const img = <Img image={n.attrs} sizes={n.attrs.displayWidth ? `${n.attrs.displayWidth}px` : undefined} />;
       return (
-        <figure key={key} className="rt-figure">
-          <Img image={n.attrs} />
+        <figure key={key} className={n.attrs.displayWidth ? "rt-figure rt-figure-sized" : "rt-figure"} style={n.attrs.displayWidth ? { maxWidth: n.attrs.displayWidth } : undefined}>
+          {n.attrs.href ? (
+            <a href={n.attrs.href} {...(isExternal(n.attrs.href) ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+              {img}
+            </a>
+          ) : (
+            img
+          )}
         </figure>
       );
+    }
     case "video":
       if (n.attrs.provider === "youtube") return <YouTube key={key} id={n.attrs.id} title={n.attrs.title} />;
       return (

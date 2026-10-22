@@ -117,7 +117,8 @@ class Converter {
         const inner = this.inline(child, href && !href.startsWith("#") ? addMark(marks, { type: "link", attrs: { href } }) : marks);
         out.push(...inner);
       } else if (tag === "IMG") {
-        const img = this.image(child);
+        const link = marks.find((m) => m.type === "link");
+        const img = this.image(child, link?.type === "link" ? link.attrs.href : undefined);
         if (img) out.push(marker(img));
       } else if (tag === "IFRAME") {
         const v = this.iframe(child);
@@ -132,11 +133,16 @@ class Converter {
     return out;
   }
 
-  image(el: El): RichNode | null {
+  image(el: El, href?: string): RichNode | null {
     const src = el.getAttribute("src") ?? el.getAttribute("data-src") ?? "";
     if (!src || src.startsWith("data:")) return null;
     const attrs = this.ctx.resolveImage(src, el.getAttribute("alt") ?? "", intAttr(el, "width"), intAttr(el, "height"));
-    return attrs ? { type: "image", attrs } : null;
+    if (!attrs) return null;
+    const shown = displayWidth(el);
+    return {
+      type: "image",
+      attrs: { ...attrs, ...(shown && (!attrs.width || shown < attrs.width) ? { displayWidth: shown } : {}), ...(href ? { href } : {}) },
+    };
   }
 
   iframe(el: El): RichNode | null {
@@ -190,7 +196,8 @@ class Converter {
 
     for (const child of Array.from(el.childNodes)) {
       if (child.nodeType === 3) {
-        if ((child.textContent ?? "").trim()) pendingInline.push(child);
+        // Whitespace between two inline elements is a word gap ("<b>till</b> <a>kurser</a>").
+        if ((child.textContent ?? "").trim() || pendingInline.length) pendingInline.push(child);
         continue;
       }
       if (!isElement(child)) continue;
@@ -289,6 +296,12 @@ class Converter {
       .filter((r) => r.content.length > 0);
     return rows.length ? [{ type: "table", content: rows }] : [];
   }
+}
+
+/** The width the old content showed an image at: the width attribute or an inline style width in px. */
+export function displayWidth(el: El): number | undefined {
+  const style = (el.getAttribute("style") ?? "").match(/(?:^|;)\s*width:\s*(\d+)px/i);
+  return style ? Number(style[1]) : intAttr(el, "width");
 }
 
 const WHITE = /color:\s*(#fff(fff)?|white|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))\s*(;|$)/i;

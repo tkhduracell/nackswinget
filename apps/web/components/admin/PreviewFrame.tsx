@@ -55,12 +55,31 @@ export function PreviewView() {
     );
   }
   const page = msg.data;
+  if (page.template === "sidebar") {
+    return (
+      <div className="site">
+        <main>
+          <article className="page">
+            <div className="container post-layout">
+              <div className="post-main">
+                <h1 className="post-title">{page.title}</h1>
+                <SectionList sections={page.sections} slots={slots} />
+              </div>
+              <aside className="post-sidebar" aria-hidden="true">
+                <h2 className="widget-title">Senaste nyheter</h2>
+              </aside>
+            </div>
+          </article>
+        </main>
+      </div>
+    );
+  }
   const hasHero = page.sections[0]?.type === "hero";
   return (
     <div className="site">
       <main>
       <article className="page">
-        {!hasHero && (
+        {!hasHero && page.template !== "plain" && (
           <>
             <header className="page-header">
               <div className="container">
