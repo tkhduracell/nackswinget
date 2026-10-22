@@ -27,6 +27,8 @@ export interface MediaDoc {
   status: "uploading" | "processing" | "ready" | "error";
   error?: string;
   jobName?: string;
+  /** Video without an audio track (transcoded video-only). */
+  silent?: boolean;
   renditions?: { src720: string; src1080?: string; poster?: string };
   createdAt: string;
   createdBy: string;
@@ -87,19 +89,33 @@ async function transcoderFetch(path: string, init?: RequestInit) {
   return body;
 }
 
-function transcodeConfig() {
+/** Without audio for inputs that have no audio track (screen recordings, muted clips). */
+function transcodeConfig(withAudio: boolean) {
   const video = (key: string, height: number, bitrate: number) => ({
     key,
     videoStream: { h264: { heightPixels: height, bitrateBps: bitrate, frameRate: 30, profile: "high", preset: "veryfast", pixelFormat: "yuv420p" } },
   });
+  const audio = withAudio ? ["a"] : [];
   return {
-    elementaryStreams: [video("v720", 720, 2_500_000), video("v1080", 1080, 5_000_000), { key: "a", audioStream: { codec: "aac", bitrateBps: 128_000, channelCount: 2, sampleRateHertz: 48_000 } }],
+    elementaryStreams: [
+      video("v720", 720, 2_500_000),
+      video("v1080", 1080, 5_000_000),
+      ...(withAudio ? [{ key: "a", audioStream: { codec: "aac", bitrateBps: 128_000, channelCount: 2, sampleRateHertz: 48_000 } }] : []),
+    ],
     muxStreams: [
-      { key: "720", container: "mp4", elementaryStreams: ["v720", "a"] },
-      { key: "1080", container: "mp4", elementaryStreams: ["v1080", "a"] },
+      { key: "720", container: "mp4", elementaryStreams: ["v720", ...audio] },
+      { key: "1080", container: "mp4", elementaryStreams: ["v1080", ...audio] },
     ],
     spriteSheets: [{ filePrefix: "poster", spriteWidthPixels: 1280, columnCount: 1, rowCount: 1, totalCount: 1, startTimeOffset: "1s" }],
   };
+}
+
+async function startTranscode(doc: MediaDoc, withAudio: boolean): Promise<string> {
+  const job = await transcoderFetch(`projects/${PROJECT_ID}/locations/${TRANSCODER_LOCATION}/jobs`, {
+    method: "POST",
+    body: JSON.stringify({ inputUri: `gs://${BUCKET}/${doc.path}`, outputUri: `gs://${BUCKET}/web/media/${doc.id}/out/`, config: transcodeConfig(withAudio) }),
+  });
+  return job.name as string;
 }
 
 export async function finalizeUpload(id: string, user: AdminUser): Promise<MediaDoc> {
@@ -129,11 +145,7 @@ export async function finalizeUpload(id: string, user: AdminUser): Promise<Media
   }
   if (doc.kind === "video") {
     // The original stays private; only the renditions are public.
-    const job = await transcoderFetch(`projects/${PROJECT_ID}/locations/${TRANSCODER_LOCATION}/jobs`, {
-      method: "POST",
-      body: JSON.stringify({ inputUri: `gs://${BUCKET}/${doc.path}`, outputUri: `gs://${BUCKET}/web/media/${id}/out/`, config: transcodeConfig() }),
-    });
-    const update = { status: "processing" as const, size, jobName: job.name as string };
+    const update = { status: "processing" as const, size, jobName: await startTranscode(doc, true) };
     await ref.update(update);
     await audit(user, "upload", `media/${id}`, doc.name);
     return { ...doc, ...update };
@@ -153,6 +165,12 @@ export async function refreshMedia(id: string): Promise<MediaDoc> {
   if (doc.kind !== "video" || doc.status !== "processing" || !doc.jobName) return doc;
   const job = await transcoderFetch(doc.jobName);
   if (job.state === "FAILED") {
+    // The job can't make audio optional; a silent input gets a video-only retry.
+    if (!doc.silent && /audio track/i.test(job.error?.message ?? "")) {
+      const update = { silent: true, jobName: await startTranscode(doc, false) };
+      await ref.update(update);
+      return { ...doc, ...update };
+    }
     const update = { status: "error" as const, error: job.error?.message ?? "Konverteringen misslyckades" };
     await ref.update(update);
     return { ...doc, ...update };
