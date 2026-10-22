@@ -86,7 +86,17 @@ function node(n: RichNode, key: number): ReactNode {
           </a>
         </p>
       );
-    case "table":
+    case "table": {
+      // WordPress authors boxed notices in a one-cell table: show it as a callout, not a table.
+      const row = n.content.length === 1 ? n.content[0] : undefined;
+      const cell = row?.type === "tableRow" && row.content.length === 1 ? row.content[0] : undefined;
+      if (cell?.type === "tableCell") {
+        return (
+          <div key={key} className="rt-callout">
+            {children(cell.content)}
+          </div>
+        );
+      }
       return (
         <div key={key} className="rt-table">
           <table>
@@ -94,6 +104,7 @@ function node(n: RichNode, key: number): ReactNode {
           </table>
         </div>
       );
+    }
     case "tableRow":
       return <tr key={key}>{children(n.content)}</tr>;
     case "tableCell":

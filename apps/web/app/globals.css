@@ -82,6 +82,12 @@ a {
 a:hover {
   color: var(--brand-dark);
 }
+/* One visible keyboard focus ring everywhere (red on white, still 4:1 on the black header). */
+:where(a, button, summary, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--brand-ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
 
 h1,
 h2,
@@ -378,6 +384,20 @@ p {
   }
 }
 
+.not-found {
+  min-height: 40vh;
+}
+.not-found-lead {
+  font-size: 20px;
+  color: var(--heading);
+}
+.not-found-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 8px;
+}
+
 /* ---------- hero & star ---------- */
 
 /* The old start page header: the tiled club photo, darkened from the top. */
@@ -592,6 +612,10 @@ p {
   /* Long runs without spaces ("______" dividers, URLs) wrap instead of widening the page. */
   overflow-wrap: anywhere;
 }
+/* Headings only break inside a word when it can't fit at all. */
+.prose :is(h2, h3) {
+  overflow-wrap: break-word;
+}
 /* The old theme set body text larger on phones. */
 @media (max-width: 600px) {
   .prose p,
@@ -625,8 +649,18 @@ p {
   background: var(--brand-tint);
   color: var(--brand-dark);
 }
+/* Links in running text: --brand-ink (AA on white) with a soft underline so
+   they don't rely on colour alone. */
 .prose a:not(.button) {
   color: var(--brand-ink);
+  text-decoration: underline;
+  text-decoration-color: rgba(224, 5, 61, 0.35);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.prose a:not(.button):hover {
+  color: var(--brand-dark);
+  text-decoration-color: currentColor;
 }
 .prose h2 {
   font-size: 37px;
@@ -634,6 +668,17 @@ p {
 .prose h3 {
   font-size: 22px;
   font-weight: 800;
+}
+/* Vertical rhythm: a heading after text gets air above it, so it groups with
+   what follows rather than what came before. */
+.prose > * + h2 {
+  margin-top: 0.6em;
+}
+.prose > * + h3 {
+  margin-top: 0.5em;
+}
+.prose > :is(h2, h3) + :is(h2, h3) {
+  margin-top: 0;
 }
 .prose li > p {
   padding-bottom: 0;
@@ -645,17 +690,27 @@ p {
 }
 .prose ul,
 .prose ol {
-  padding: 0 0 23px 1em;
-  line-height: 26px;
+  padding: 0 0 1.2em 1.4em;
+  line-height: 1.6;
+}
+.prose li + li,
+.prose li > :is(ul, ol) {
+  margin-top: 0.3em;
+}
+.prose li > :is(ul, ol) {
+  padding-bottom: 0;
+}
+.prose li::marker {
+  color: var(--brand);
 }
 .columns .prose {
   max-width: none;
 }
-.prose a:not(.button) {
-  color: var(--brand);
-}
 .prose > :first-child {
   margin-top: 0;
+}
+.prose > :last-child {
+  padding-bottom: 0;
 }
 .prose p,
 .prose ul,
@@ -663,36 +718,100 @@ p {
   margin: 0;
 }
 .prose blockquote {
-  margin: 1em 0;
-  padding: 4px 0 4px 16px;
+  margin: 0 0 1.2em;
+  padding: 12px 18px;
   border-left: 4px solid var(--brand);
-  color: #444;
+  background: var(--surface);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--heading);
+  font-style: italic;
+}
+.prose blockquote > :last-child {
+  padding-bottom: 0;
+}
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 8px 0 24px;
 }
 .rt-figure {
-  margin: 1.2em 0;
+  margin: 0 0 1.2em;
 }
 .rt-figure img {
   border-radius: var(--radius);
+  display: block;
 }
+/* A one-cell table in the old content was a boxed notice: a callout. */
+.rt-callout {
+  background: var(--surface);
+  border-left: 4px solid var(--brand);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 18px 22px;
+  margin: 8px 0 1.4em;
+  color: var(--heading);
+}
+.prose .rt-callout :is(h2, h3) {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.55;
+  margin: 0;
+  padding: 0 0 0.6em;
+}
+.rt-callout > :last-child {
+  padding-bottom: 0;
+}
+@media (max-width: 600px) {
+  .rt-callout {
+    padding: 14px 16px;
+  }
+}
+/* Real tables: clean horizontal rules, no grid. */
 .rt-table {
   overflow-x: auto;
-  margin: 1em 0;
+  margin: 0 0 1.4em;
+  /* Words in cells never break mid-word ("20/22"); a wide table scrolls instead. */
+  overflow-wrap: normal;
+}
+@media (max-width: 600px) {
+  .prose .rt-table :is(p, li) {
+    font-size: 15px;
+  }
 }
 .rt-table table {
   border-collapse: collapse;
   min-width: 100%;
+  border-top: 2px solid var(--heading);
 }
 .rt-table td,
 .rt-table th {
-  border: 1px solid var(--line);
-  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  padding: 10px 14px 10px 0;
   text-align: left;
   vertical-align: top;
 }
 .rt-table th {
-  background: var(--surface);
+  color: var(--heading);
+  font-weight: 700;
+}
+.rt-table tr:first-child > * {
+  color: var(--heading);
+}
+.rt-table tr:hover > td {
+  background: #fafafa;
 }
 .rt-table p {
+  margin: 0;
+  padding: 0;
+}
+.rt-table p + p {
+  padding-top: 0.5em;
+}
+.rt-table :is(h2, h3) {
+  font-size: 16px;
+  font-weight: 700;
+  padding: 0;
+}
+.rt-table .rt-figure {
   margin: 0;
 }
 .rt-video {
@@ -705,25 +824,40 @@ p {
   background: var(--surface);
   color: var(--heading);
   border-radius: var(--radius);
-  padding: 12px 18px;
+  padding: 16px 20px;
 }
 .box.boxLeft {
   border-left: 4px solid var(--brand);
+  border-radius: 0 var(--radius) var(--radius) 0;
 }
 .box.boxTop {
   border-top: 4px solid var(--brand);
+  border-radius: 0 0 var(--radius) var(--radius);
 }
 .box h2 {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 21px;
+  font-weight: 700;
 }
 .box.boxLeft h2,
 .box.boxLeft h3 {
   font-size: 18px;
-  font-weight: 400;
+  font-weight: 600;
 }
+.box > :last-child,
 .box p:last-child {
   padding-bottom: 0;
+  margin-bottom: 0;
+}
+/* Boxes side by side in a row line up: a box alone in its column fills the row height. */
+@media (min-width: 981px) {
+  .column > .box:only-child {
+    height: 100%;
+  }
+}
+@media (max-width: 600px) {
+  .box {
+    padding: 16px 18px;
+  }
 }
 
 .link-boxes {
@@ -868,6 +1002,176 @@ p {
   color: #444 !important;
   background-color: transparent !important;
 }
+/* Group titles ("Terminskurser bugg - grund") read as small section headings. */
+.dansse .cwEvents th.title {
+  color: var(--heading);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 28px 0 4px;
+}
+.dansse .cwEvents tr:first-child th.title {
+  padding-top: 8px;
+}
+/* Column labels: quiet small caps instead of italics. */
+.dansse .cwEvents tr.headerRow th:not(.title) {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding: 4px 8px 0;
+}
+.dansse .cwEvents tr.spacingRow {
+  height: 8px;
+}
+.dansse .cwEvents td.numberOfOccasions {
+  white-space: nowrap;
+}
+/* "Info" / "Info/Book": an outline pill that fills on row hover. */
+.dansse .cwEvents tr.dataRow td.status a.regLink {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1.5px solid var(--brand-ink);
+  border-radius: 999px;
+  color: var(--brand-ink) !important;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+.dansse .cwEvents tr.dataRow:hover td.status a.regLink {
+  background-color: var(--brand-ink) !important;
+  color: #fff !important;
+}
+/* Phones: the tiny grey "»" box becomes a red chevron. */
+.dansse .cwEvents .regIcon {
+  width: 28px;
+  height: 28px;
+  line-height: 26px;
+  border: 1.5px solid var(--brand-ink);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--brand-ink) !important;
+  font-size: 15px;
+}
+.dansse .cwEvents td.statusIcon {
+  vertical-align: middle;
+  text-align: center;
+  width: 40px;
+}
+.dansse .cwEvents .smallScreenEventSubTitle {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 2px;
+}
+/* The filter bar: brand outline pills instead of grey browser buttons. */
+.dansse .cwShopSearchForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 0 8px;
+}
+.dansse .cwShopFilterDropdown {
+  margin: 0;
+}
+.dansse .cwShopFilterLabel {
+  appearance: none;
+  margin: 0;
+  gap: 6px;
+  padding: 7px 16px;
+  border: 2px solid var(--brand-ink);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--brand-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.dansse .cwShopFilterLabel::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: translateY(-2px) rotate(45deg);
+}
+.dansse .cwShopFilterLabel:hover,
+.dansse .cwShopFilterLabel[aria-expanded="true"] {
+  background: var(--brand-ink);
+  color: #fff;
+}
+.dansse .cwShopFilterLabelSelected:empty {
+  display: none;
+}
+.dansse .cwShopFilterLabelSelected {
+  margin: 0;
+  opacity: 1;
+}
+.dansse .cwShopFilterList {
+  margin-top: 6px;
+  min-width: 220px;
+  max-height: 320px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+.dansse .cwShopFilterOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  color: var(--heading);
+  font-size: 14px;
+  cursor: pointer;
+}
+.dansse .cwShopFilterOption:hover {
+  background: var(--surface);
+}
+.dansse .cwShopFilterOption input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--brand-ink);
+}
+.dansse .cwShopFilterTextSearchInputWrap:hover {
+  background: none;
+}
+.dansse .cwShopFilterTextSearchInput {
+  width: min(260px, 70vw);
+  padding: 8px 32px 8px 12px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 15px;
+  color: var(--heading);
+}
+.dansse .cwShopFilterTextSearchInput:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+/* dans.se hides the column labels below 800px; drop their now-empty row too. */
+@media (max-width: 799px) {
+  .dansse .cwEvents tr.headerRow:has(th.start) {
+    display: none;
+  }
+  .dansse .cwEvents th.title {
+    padding-bottom: 8px;
+  }
+}
+@media (max-width: 600px) {
+  .dansse .cwShopFilterLabel {
+    font-size: 13px;
+    padding: 6px 13px;
+  }
+}
 .file-list ul {
   padding-left: 1.2em;
 }
@@ -883,10 +1187,23 @@ p {
 .post-card {
   margin-bottom: 60px;
 }
+.post-card-img {
+  display: block;
+}
 .post-card-img img {
   display: block;
   width: 100%;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
+  border-radius: var(--radius);
+}
+/* In full-width lists (e.g. Tävlingsnyheter) a portrait photo would fill the
+   screen; cap the height and keep the whole picture. */
+@media (min-width: 981px) {
+  .post-card-img img {
+    width: auto;
+    max-width: 100%;
+    max-height: 560px;
+  }
 }
 .post-card h2 {
   font-size: 31px;
@@ -915,8 +1232,12 @@ p {
 }
 @media (max-width: 600px) {
   .post-card h2 {
-    font-size: 18px;
-    line-height: 1.2;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+  .post-card {
+    margin-bottom: 44px;
   }
 }
 .older-posts a {
@@ -966,8 +1287,24 @@ p {
 .post-main .prose h3 {
   font-weight: 500;
 }
-.post-layout .post-meta {
-  margin-bottom: 40px;
+/* ...and smaller than the page title above them. */
+.post-main .prose h2 {
+  font-size: 26px;
+}
+.post-main .prose h3 {
+  font-size: 20px;
+}
+.post-main > .post-meta {
+  margin-bottom: 32px;
+}
+/* Plain WordPress pages (e.g. /nyheter/): the title stands apart from the content below. */
+.page .post-main > .post-title {
+  font-weight: 800;
+  margin-bottom: 36px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--brand);
+  width: fit-content;
+  max-width: 100%;
 }
 .post-meta a {
   color: var(--muted);
@@ -1439,4 +1776,26 @@ p {
 .footer-badges img {
   height: 40px;
   width: auto;
+}
+/* Phones: name and address on top, then the links as one tidy wrapped row. */
+@media (max-width: 600px) {
+  .site-footer {
+    padding-top: 80px;
+    font-size: 14px;
+  }
+  .footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .footer-inner > div {
+    flex-direction: column;
+  }
+  .footer-links {
+    gap: 6px 18px;
+  }
+  .footer-links a {
+    display: inline-block;
+    padding: 4px 0;
+  }
 }
