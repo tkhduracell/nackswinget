@@ -441,21 +441,20 @@ p {
   }
 }
 
+/* The star sits inside the photo hero, lower right (the old theme's .powerpuff),
+   without taking space in the page below. The wrapper is a zero-height marker
+   at the hero's bottom edge. */
 .star-wrap {
   position: relative;
-  max-width: var(--max);
-  margin: -56px auto 0;
-  padding: 0 var(--gutter);
-  display: flex;
-  justify-content: flex-end;
   height: 0;
   z-index: 5;
 }
 .star {
-  position: relative;
-  width: 130px;
-  height: 130px;
-  margin-top: -40px;
+  position: absolute;
+  left: 65vw;
+  bottom: 170px;
+  width: 120px;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -469,6 +468,16 @@ p {
   background: #ffeff4;
   box-shadow: 0 10px 80px rgba(249, 6, 75, 0.25);
   padding: 8px;
+}
+@media (max-width: 600px) {
+  .star {
+    left: auto;
+    right: 6vw;
+    bottom: 24px;
+    width: 100px;
+    height: 100px;
+    font-size: 12px;
+  }
 }
 .star::before,
 .star::after {
