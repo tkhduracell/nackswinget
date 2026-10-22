@@ -16,7 +16,7 @@ export async function PostArchive({ title, category, page, basePath }: { title: 
     <article className="page">
       <div className="container post-layout">
         <div className="post-main">
-          <h1 className="sr-only">{title}</h1>
+          <h1 className="post-title">{title}</h1>
           <ul className="posts">
             {posts.map((p) => (
               <li key={p.id}>
