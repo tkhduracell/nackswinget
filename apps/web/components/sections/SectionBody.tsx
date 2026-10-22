@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import { DancerIcon } from "@/components/DancerIcon";
 import { Img } from "@/components/Img";
+import { builtinIcon } from "@/lib/content/icons";
 import { publicUrl } from "@/lib/media/urls";
 import { HeroVideo } from "./HeroVideo";
 import { RichText } from "@/components/RichText";
@@ -83,8 +85,12 @@ export function SectionView({ section, slots, index, first }: { section: Section
           {section.items.map((item) => (
             <li key={item.href + item.title}>
               <a href={item.href} {...ext(item.href)}>
-                {/* eslint-disable-next-line @next/next/no-img-element -- tiny inline icon */}
-                {item.icon && <img src={item.icon.startsWith("data:") ? item.icon : publicUrl(item.icon)} alt="" width={28} height={28} decoding="async" />}
+                {builtinIcon(item.icon) === "dancer" ? (
+                  <DancerIcon />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element -- tiny inline icon
+                  item.icon && <img src={item.icon.startsWith("data:") ? item.icon : publicUrl(item.icon)} alt="" width={28} height={28} decoding="async" />
+                )}
                 <span>{item.title}</span>
               </a>
             </li>

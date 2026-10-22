@@ -1,7 +1,10 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { parseHTML } from "linkedom";
 import { describe, expect, it } from "vitest";
+import { BUILTIN_DANCER, DANCER_PNG_SHA1, builtinIcon } from "@/lib/content/icons";
 import type { ImageAttrs, Section } from "@/lib/content/types";
-import { contentToSections, isAllowedEmbed, mergeLinkBoxes } from "./divi";
+import { contentToSections, isAllowedEmbed, linkBoxIcon, mergeLinkBoxes } from "./divi";
 import { docToText, htmlElementToDoc, youtubeId } from "./html";
 
 function root(html: string) {
@@ -122,6 +125,31 @@ describe("contentToSections", () => {
     expect(cols.columns[1].sections).toEqual([
       { type: "linkBoxes", items: [{ title: "Kurser", href: "/kurser/" }, { title: "Kalender", href: "/kalender/" }] },
     ]);
+  });
+
+  it("maps the WordPress dancer PNG to the built-in animated icon", () => {
+    const dancer = `data:image/png;base64,${readFileSync(path.resolve(import.meta.dirname, "../../test/fixtures/dancer-icon.png")).toString("base64")}`;
+    const other = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+    expect(linkBoxIcon(dancer)).toBe(BUILTIN_DANCER);
+    expect(linkBoxIcon(other)).toBe(other);
+    expect(linkBoxIcon("https://nackswinget.se/wp-content/uploads/a.png")).toBeUndefined();
+    expect(linkBoxIcon(undefined)).toBeUndefined();
+
+    const box = (src: string) =>
+      `<div class="et_pb_module et_pb_text nswStartPageLink"><div class="et_pb_text_inner"><a href="https://nackswinget.se/kurser/"><img src="${src}">Våra Kurser &amp; träningar</a></div></div>`;
+    const sections = contentToSections(root(`<div class="et_pb_section"><div class="et_pb_row"><div class="et_pb_column et_pb_column_4_4">${box(dancer)}${box(other)}</div></div></div>`), diviCtx);
+    expect(sections).toEqual([
+      {
+        type: "linkBoxes",
+        items: [
+          { title: "Våra Kurser & träningar", href: "/kurser/", icon: "builtin:dancer" },
+          { title: "Våra Kurser & träningar", href: "/kurser/", icon: other },
+        ],
+      },
+    ]);
+    expect(builtinIcon("builtin:dancer")).toBe("dancer");
+    expect(builtinIcon(`web/icons/${DANCER_PNG_SHA1.slice(0, 16)}.png`)).toBe("dancer");
+    expect(builtinIcon(other)).toBeNull();
   });
 
   it("skips breadcrumbs and turns powerpuff into a banner", () => {
