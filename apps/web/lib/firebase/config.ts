@@ -23,7 +23,7 @@ export const firebaseConfig = USE_EMULATORS ? emulator : production;
 /**
  * Admin sign-in: the App Hosting web app "nsw-web". Its key allows Identity
  * Toolkit and is referrer-restricted to the preview host, nackswinget.se,
- * www.nackswinget.se, localhost:3100 and the firebaseapp.com auth domain.
+ * www.nackswinget.se, ny.nackswinget.se, localhost:3100 and the firebaseapp.com auth domain.
  */
 export const authConfig = USE_EMULATORS
   ? emulator
