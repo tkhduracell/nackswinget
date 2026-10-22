@@ -22,3 +22,5 @@ apps/mobile/android/.idea/deploymentTargetDropDown.xml
 _*.md
 report.json
 eslint_report.json
+firestore-debug.log
+firebase-debug.log

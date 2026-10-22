@@ -31,3 +31,13 @@ env:
     secret: CRON_TOKEN
     availability:
       - RUNTIME
+  # Admin sign-in mail (lib/admin/login-mail.ts). "unset" = Firebase sends the email instead.
+  # Set with: gcloud secrets versions add SMTP_URL --data-file=- (smtps://user:pass@host:465)
+  - variable: SMTP_URL
+    secret: SMTP_URL
+    availability:
+      - RUNTIME
+  - variable: SMTP_FROM
+    value: "Dansklubben Nackswinget <noreply@nackswinget.se>"
+    availability:
+      - RUNTIME
