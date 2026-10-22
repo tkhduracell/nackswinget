@@ -571,9 +571,12 @@ p {
 /* The old theme set body text larger on phones. */
 @media (max-width: 600px) {
   .prose p,
-  .prose li,
-  .post-excerpt {
+  .prose li {
     font-size: 17px;
+  }
+  /* Post list excerpts stayed small, with airy lines. */
+  .post-excerpt {
+    line-height: 2.07;
   }
 }
 /* Images the old content showed small (app store badges) sit side by side. */
