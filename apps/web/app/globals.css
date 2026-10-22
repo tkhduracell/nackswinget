@@ -172,6 +172,68 @@ p {
   display: block;
 }
 
+/* 40-års jubileum: a thin gold line with a slow shimmer and a few twinkling
+   sparkles along the bottom of the header (above the red band). */
+.gold-line {
+  position: relative;
+  height: 3px;
+  background: linear-gradient(90deg, #7a5c14, #c9a227 12%, #f7e7a1 18%, #c9a227 24%, #8f6d1a 40%, #d8b445 58%, #fff4c2 64%, #d8b445 70%, #7a5c14 88%, #c9a227);
+  background-size: 200% 100%;
+  animation: gold-shimmer 8s linear infinite;
+}
+.gold-line span {
+  position: absolute;
+  top: -2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffbe6 0, #f7d774 35%, rgba(247, 215, 116, 0) 70%);
+  opacity: 0;
+  animation: gold-twinkle 4.2s ease-in-out infinite;
+}
+.gold-line span:nth-child(1) {
+  left: 9%;
+}
+.gold-line span:nth-child(2) {
+  left: 31%;
+  animation-delay: 1.3s;
+}
+.gold-line span:nth-child(3) {
+  left: 52%;
+  animation-delay: 2.6s;
+}
+.gold-line span:nth-child(4) {
+  left: 74%;
+  animation-delay: 0.7s;
+}
+.gold-line span:nth-child(5) {
+  left: 92%;
+  animation-delay: 3.4s;
+}
+@keyframes gold-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes gold-twinkle {
+  0%,
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gold-line,
+  .gold-line span {
+    animation: none;
+  }
+}
+
 .nav-desktop {
   display: none;
 }
