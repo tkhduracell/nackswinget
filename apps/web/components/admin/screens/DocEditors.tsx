@@ -8,6 +8,7 @@ import { RichTextEditor } from "../RichTextEditor";
 import { SectionsEditor } from "../SectionsEditor";
 import { slugify, type SaveState, useDraft } from "../useDraft";
 import { imageUrl } from "@/lib/media/urls";
+import { Icon } from "../icons";
 
 export function useSiteBasics() {
   const { api } = useAdmin();
@@ -22,7 +23,13 @@ export function useSiteBasics() {
 
 function SaveBadge({ state, hasDraft }: { state: SaveState; hasDraft: boolean }) {
   const text = { idle: hasDraft ? "Opublicerat utkast" : "Publicerad", dirty: "Ändrad…", saving: "Sparar…", saved: hasDraft ? "Utkast sparat" : "Publicerad", error: "Kunde inte spara" }[state];
-  return <span className={`save-badge ${state}`}>{text}</span>;
+  const tone = state === "error" ? "error" : state === "dirty" || state === "saving" ? "busy" : hasDraft ? "draft" : "live";
+  return (
+    <span className={`save-badge ${state} ${tone}`} role="status">
+      <span className="save-dot" aria-hidden="true" />
+      {text}
+    </span>
+  );
 }
 
 interface Version {
@@ -41,17 +48,22 @@ function Versions({ kind, id, onRestore }: { kind: "pages" | "posts"; id: string
   }, [api, kind, id, open]);
   return (
     <details className="versions" onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
-      <summary>Tidigare versioner</summary>
+      <summary>
+        <Icon name="history" size={16} />
+        Tidigare versioner
+      </summary>
       {list === null ? (
         <p className="muted">Laddar…</p>
       ) : list.length === 0 ? (
         <p className="muted">Inga tidigare versioner.</p>
       ) : (
-        <ul>
+        <ul className="versions-list">
           {list.map((v) => (
             <li key={v.versionId}>
-              {new Date(v.savedAt).toLocaleString("sv-SE")} – {v.savedBy}{" "}
-              <button type="button" className="link-button" onClick={() => window.confirm("Ladda in den här versionen i redigeraren? (Publiceras först när du trycker Publicera.)") && onRestore(v.data)}>
+              <span>
+                {new Date(v.savedAt).toLocaleString("sv-SE")} – <span className="muted">{v.savedBy}</span>
+              </span>{" "}
+              <button type="button" className="button button-ghost button-sm" onClick={() => window.confirm("Ladda in den här versionen i redigeraren? (Publiceras först när du trycker Publicera.)") && onRestore(v.data)}>
                 Återställ
               </button>
             </li>
@@ -75,25 +87,39 @@ function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, 
 }) {
   return (
     <div className="editor-bar">
-      <Link href={back} className="link-button">
-        ← Tillbaka
-      </Link>
-      <h1>{title}</h1>
-      <SaveBadge state={state} hasDraft={hasDraft} />
-      {extra}
-      {viewHref && (
-        <a href={viewHref} target="_blank" rel="noreferrer" className="link-button">
-          Visa sidan ↗
+      <div className="editor-bar-main">
+        <Link href={back} className="icon-btn back-btn" aria-label="Tillbaka" title="Tillbaka">
+          <Icon name="back" />
+          <span className="back-label">Tillbaka</span>
+        </Link>
+        <div className="editor-bar-title">
+          <h1>{title}</h1>
+          <SaveBadge state={state} hasDraft={hasDraft} />
+        </div>
+      </div>
+      <div className="editor-actions">
+        {extra && <div className="editor-extra">{extra}</div>}
+        {viewHref && (
+          <a href={viewHref} target="_blank" rel="noreferrer" className="button button-ghost">
+            <Icon name="external" size={16} />
+            <span className="hide-xs">Visa sidan ↗</span>
+          </a>
+        )}
+        {hasDraft && (
+          <button type="button" className="button button-danger-ghost" onClick={() => window.confirm("Släng utkastet och gå tillbaka till publicerad version?") && onDiscard()}>
+            <Icon name="trash" size={16} />
+            <span className="hide-xs">Släng utkast</span>
+          </button>
+        )}
+        <a href="#forhandsvisning" className="button button-ghost preview-jump">
+          <Icon name="eye" size={16} />
+          <span className="hide-xs">Förhandsvisning</span>
         </a>
-      )}
-      {hasDraft && (
-        <button type="button" className="link-button" onClick={() => window.confirm("Släng utkastet och gå tillbaka till publicerad version?") && onDiscard()}>
-          Släng utkast
+        <button type="button" className="button" onClick={onPublish} disabled={state === "saving"}>
+          <Icon name="send" size={16} />
+          Publicera
         </button>
-      )}
-      <button type="button" className="button" onClick={onPublish} disabled={state === "saving"}>
-        Publicera
-      </button>
+      </div>
       {error && <p className="admin-error">{error}</p>}
     </div>
   );
@@ -129,14 +155,15 @@ export function PageEditor({ id }: { id: string }) {
       />
       <div className="editor-split">
         <div className="editor-form">
+          <div className="form-card">
           <label className="field">
             <span>Sidans titel</span>
             <input value={doc.title} onChange={(e) => update({ ...doc, title: e.target.value })} />
           </label>
           <label className="field">
             <span>Adress</span>
-            <div className="row url-field">
-              <span className="muted">nackswinget.se/</span>
+            <div className="url-field">
+              <span className="url-prefix">nackswinget.se/</span>
               <input
                 value={doc.path}
                 disabled={isHome}
@@ -144,11 +171,11 @@ export function PageEditor({ id }: { id: string }) {
                 onChange={(e) => update({ ...doc, path: e.target.value.toLowerCase().replace(/[^a-z0-9/-]/g, "") })}
                 onBlur={() => !doc.path && !isHome && update({ ...doc, path: slugify(doc.title) })}
               />
-              <span className="muted">/</span>
+              <span className="url-suffix">/</span>
             </div>
             {published && published.path !== doc.path && <small className="muted">Den gamla adressen omdirigeras automatiskt.</small>}
           </label>
-          <details className="field">
+          <details className="field disclosure">
             <summary>Sökmotorer och delning (SEO)</summary>
             <label className="field">
               <span>Titel i Google</span>
@@ -159,6 +186,7 @@ export function PageEditor({ id }: { id: string }) {
               <textarea rows={3} maxLength={300} value={doc.seo.description ?? ""} placeholder="Lämna tomt för att använda början av sidans text" onChange={(e) => update({ ...doc, seo: { ...doc.seo, description: e.target.value || undefined } })} />
             </label>
           </details>
+          </div>
           <h2 className="editor-subhead">Innehåll</h2>
           <SectionsEditor sections={doc.sections} onChange={(sections) => update({ ...doc, sections })} feeds={feeds} categories={categories} />
           {published && <Versions kind="pages" id={id} onRestore={(data) => update({ ...(data as Page), id })} />}
@@ -224,19 +252,20 @@ export function PostEditor({ id }: { id: string }) {
       />
       <div className="editor-split">
         <div className="editor-form">
+          <div className="form-card">
           <label className="field">
             <span>Rubrik</span>
             <input value={doc.title} onChange={(e) => update({ ...doc, title: e.target.value })} onBlur={() => !doc.slug && doc.title && update({ ...doc, slug: slugify(doc.title) })} />
           </label>
           <label className="field">
             <span>Adress</span>
-            <div className="row url-field">
-              <span className="muted">nackswinget.se/</span>
+            <div className="url-field">
+              <span className="url-prefix">nackswinget.se/</span>
               <input value={doc.slug} onChange={(e) => update({ ...doc, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })} />
-              <span className="muted">/</span>
+              <span className="url-suffix">/</span>
             </div>
           </label>
-          <div className="row">
+          <div className="field-row">
             <label className="field">
               <span>Status</span>
               <select value={doc.status === "draft" ? "draft" : "published"} onChange={(e) => update({ ...doc, status: e.target.value as Post["status"] })}>
@@ -252,9 +281,9 @@ export function PostEditor({ id }: { id: string }) {
           </div>
           <fieldset className="field">
             <legend>Kategorier</legend>
-            <div className="row wrap">
+            <div className="chips">
               {categories.map((c) => (
-                <label key={c.slug} className="check">
+                <label key={c.slug} className="check chip">
                   <input
                     type="checkbox"
                     checked={doc.categories.includes(c.slug)}
@@ -272,20 +301,26 @@ export function PostEditor({ id }: { id: string }) {
                 // eslint-disable-next-line @next/next/no-img-element -- admin preview
                 <img src={imageUrl(doc.image.src, doc.image.variants.length ? [Math.min(...doc.image.variants)] : [])} alt="" />
               ) : (
-                <span className="muted">Ingen bild (en delningsbild skapas automatiskt)</span>
+                <span className="image-empty">
+                  <Icon name="image" size={22} />
+                  <span className="muted">Ingen bild (en delningsbild skapas automatiskt)</span>
+                </span>
               )}
               <div className="row">
-                <button type="button" className="button button-ghost" onClick={() => setPicking(true)}>
+                <button type="button" className="button button-ghost button-sm" onClick={() => setPicking(true)}>
+                  <Icon name="image" size={16} />
                   {doc.image ? "Byt bild" : "Välj bild"}
                 </button>
                 {doc.image && (
-                  <button type="button" className="link-button" onClick={() => update({ ...doc, image: undefined })}>
+                  <button type="button" className="button button-danger-ghost button-sm" onClick={() => update({ ...doc, image: undefined })}>
                     Ta bort
                   </button>
                 )}
               </div>
             </div>
           </div>
+          </div>
+          <div className="form-card">
           <label className="field">
             <span>Ingress</span>
             <textarea rows={3} maxLength={300} value={doc.excerpt} onChange={(e) => update({ ...doc, excerpt: e.target.value })} placeholder="Kort sammanfattning som visas i listor och i notisen" />
@@ -293,6 +328,7 @@ export function PostEditor({ id }: { id: string }) {
           <div className="field">
             <span>Text</span>
             <RichTextEditor value={doc.body} onChange={(body) => update({ ...doc, body })} />
+          </div>
           </div>
           {published && <Versions kind="posts" id={id} onRestore={(data) => update({ ...(data as Post), id })} />}
         </div>

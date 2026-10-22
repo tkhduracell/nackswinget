@@ -3,7 +3,8 @@ import { Img } from "@/components/Img";
 import { RichText } from "@/components/RichText";
 import { SectionList, type SectionSlots } from "@/components/sections/SectionBody";
 import type { Page, Post } from "@/lib/content/types";
-import { formatDate } from "@/lib/format";
+import { formatShortDate } from "@/lib/format";
+import { Icon } from "./icons";
 
 export type PreviewMessage = { type: "nsw-preview"; kind: "page"; data: Page } | { type: "nsw-preview"; kind: "post"; data: Post };
 
@@ -26,45 +27,67 @@ export function PreviewView() {
   }, []);
 
   if (!msg) return <p className="admin-loading">Väntar på innehåll…</p>;
+  // Same markup as the public PostView/PageView, inside the public site wrapper.
   if (msg.kind === "post") {
     const p = msg.data;
     return (
-      <article className="post">
-        <header className="page-header">
-          <div className="container">
-            <h1>{p.title}</h1>
-            <p className="post-meta">{formatDate(p.publishedAt)}</p>
+      <div className="site">
+        <main>
+        <article className="post">
+          <div className="container post-layout">
+            <div className="post-main">
+              <h1 className="post-title">{p.title}</h1>
+              <p className="post-meta">{formatShortDate(p.publishedAt)}</p>
+              {p.image?.src && (
+                <figure className="post-image">
+                  <Img image={p.image} priority />
+                </figure>
+              )}
+              <RichText doc={p.body} />
+            </div>
+            <aside className="post-sidebar" aria-hidden="true">
+              <h2 className="widget-title">Senaste nyheter</h2>
+            </aside>
           </div>
-        </header>
-        <div className="container with-sidebar">
-          <div className="main-col">
-            {p.image?.src && (
-              <figure className="post-image">
-                <Img image={p.image} priority />
-              </figure>
-            )}
-            <RichText doc={p.body} />
-          </div>
-        </div>
-      </article>
+        </article>
+        </main>
+      </div>
     );
   }
   const page = msg.data;
   const hasHero = page.sections[0]?.type === "hero";
   return (
-    <article className="page">
-      {!hasHero && (
-        <header className="page-header">
-          <div className="container">
-            <h1>{page.title}</h1>
-          </div>
-        </header>
-      )}
-      {hasHero && <SectionList sections={page.sections.slice(0, 1)} slots={slots} />}
-      <div className="container page-body">
-        <SectionList sections={hasHero ? page.sections.slice(1) : page.sections} slots={slots} prefix={hasHero ? "b" : "s"} />
-      </div>
-    </article>
+    <div className="site">
+      <main>
+      <article className="page">
+        {!hasHero && (
+          <>
+            <header className="page-header">
+              <div className="container">
+                <h1>{page.title}</h1>
+              </div>
+            </header>
+            <div className="breadcrumbs-bar">
+              <nav className="breadcrumbs container" aria-label="Brödsmulor">
+                <ol>
+                  <li>
+                    <span>Hem</span>
+                  </li>
+                  <li>
+                    <span aria-current="page">{page.title}</span>
+                  </li>
+                </ol>
+              </nav>
+            </div>
+          </>
+        )}
+        {hasHero && <SectionList sections={page.sections.slice(0, 1)} slots={slots} />}
+        <div className="container page-body">
+          <SectionList sections={hasHero ? page.sections.slice(1) : page.sections} slots={slots} prefix={hasHero ? "b" : "s"} />
+        </div>
+      </article>
+      </main>
+    </div>
   );
 }
 
@@ -89,14 +112,19 @@ export function PreviewPane({ message }: { message: PreviewMessage }) {
   }, [message, ready]);
 
   return (
-    <div className="preview-pane">
+    <div className="preview-pane" id="forhandsvisning">
       <div className="preview-toolbar">
-        <span>Förhandsvisning</span>
-        <div className="row">
-          <button type="button" className={device === "desktop" ? "tb-btn active" : "tb-btn"} onClick={() => setDevice("desktop")}>
+        <span className="preview-title">
+          <span className="live-dot" aria-hidden="true" />
+          Förhandsvisning
+        </span>
+        <div className="segmented" role="group" aria-label="Förhandsvisning">
+          <button type="button" className={device === "desktop" ? "seg active" : "seg"} aria-pressed={device === "desktop"} onClick={() => setDevice("desktop")}>
+            <Icon name="monitor" size={15} />
             Dator
           </button>
-          <button type="button" className={device === "mobile" ? "tb-btn active" : "tb-btn"} onClick={() => setDevice("mobile")}>
+          <button type="button" className={device === "mobile" ? "seg active" : "seg"} aria-pressed={device === "mobile"} onClick={() => setDevice("mobile")}>
+            <Icon name="phone" size={15} />
             Mobil
           </button>
         </div>

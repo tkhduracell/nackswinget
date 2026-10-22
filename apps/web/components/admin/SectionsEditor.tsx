@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { CalendarFeed, ColumnWidth, ImageAttrs, Section } from "@/lib/content/types";
 import { imageUrl } from "@/lib/media/urls";
 import { MediaPicker, type PickedMedia } from "./MediaPicker";
+import { Icon } from "./icons";
 import { RichTextEditor } from "./RichTextEditor";
 
 type S<T extends Section["type"]> = Extract<Section, { type: T }>;
@@ -70,14 +71,18 @@ function ImageField({ value, onChange }: { value: ImageAttrs | undefined; onChan
         // eslint-disable-next-line @next/next/no-img-element -- admin preview
         <img src={imageUrl(value.src, value.variants.length ? [Math.min(...value.variants)] : [])} alt="" />
       ) : (
-        <span className="muted">Ingen bild vald</span>
+        <span className="image-empty">
+          <Icon name="image" size={22} />
+          <span className="muted">Ingen bild vald</span>
+        </span>
       )}
       <div className="row">
-        <button type="button" className="button button-ghost" onClick={() => setOpen(true)}>
+        <button type="button" className="button button-ghost button-sm" onClick={() => setOpen(true)}>
+          <Icon name="image" size={16} />
           {value?.src ? "Byt bild" : "Välj bild"}
         </button>
         {value?.src && (
-          <button type="button" className="link-button" onClick={() => onChange(undefined)}>
+          <button type="button" className="button button-danger-ghost button-sm" onClick={() => onChange(undefined)}>
             Ta bort
           </button>
         )}
@@ -123,18 +128,19 @@ function ListEditor<T>({ items, onChange, render, add, addLabel }: { items: T[];
           <div className="list-fields">{render(item, (v) => onChange(items.map((x, j) => (j === i ? v : x))))}</div>
           <div className="list-actions">
             <button type="button" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Flytta upp">
-              ↑
+              <Icon name="up" size={16} />
             </button>
             <button type="button" disabled={i === items.length - 1} onClick={() => move(i, 1)} aria-label="Flytta ner">
-              ↓
+              <Icon name="down" size={16} />
             </button>
             <button type="button" onClick={() => onChange(items.filter((_, j) => j !== i))} aria-label="Ta bort">
-              ✕
+              <Icon name="close" size={16} />
             </button>
           </div>
         </div>
       ))}
-      <button type="button" className="button button-ghost" onClick={() => onChange([...items, add()])}>
+      <button type="button" className="button button-ghost button-sm add-row" onClick={() => onChange([...items, add()])}>
+        <Icon name="plus" size={16} />
         {addLabel}
       </button>
     </div>
@@ -402,7 +408,8 @@ function FileListForm({ section, onChange }: { section: S<"fileList">; onChange:
           </>
         )}
       />
-      <button type="button" className="button" onClick={() => setPicking(true)}>
+      <button type="button" className="button button-ghost button-sm" onClick={() => setPicking(true)}>
+        <Icon name="upload" size={16} />
         Ladda upp / välj fil
       </button>
       {picking && (
@@ -445,21 +452,23 @@ export function SectionsEditor({
   const types = (Object.keys(SECTION_LABELS) as Section["type"][]).filter((t) => !(nested && (t === "columns" || t === "hero")));
 
   return (
-    <div className="sections-editor">
+    <div className={nested ? "sections-editor nested" : "sections-editor"}>
       {sections.map((s, i) => (
         <div key={i} className={open === i ? "section-card open" : "section-card"}>
           <div className="section-head">
             <button type="button" className="section-title" onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}>
+              <Icon name="right" size={16} className="icon section-chevron" />
+              <span className="section-index">{i + 1}</span>
               <strong>{SECTION_LABELS[s.type]}</strong>
               {s.type === "richText" && s.needsReview && <span className="badge">Granska</span>}
             </button>
             <div className="list-actions">
               <button type="button" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Flytta upp">
-                ↑
-              </button>
+              <Icon name="up" size={16} />
+            </button>
               <button type="button" disabled={i === sections.length - 1} onClick={() => move(i, 1)} aria-label="Flytta ner">
-                ↓
-              </button>
+              <Icon name="down" size={16} />
+            </button>
               <button
                 type="button"
                 onClick={() => {
@@ -467,7 +476,7 @@ export function SectionsEditor({
                 }}
                 aria-label="Ta bort sektion"
               >
-                ✕
+                <Icon name="trash" size={16} />
               </button>
             </div>
           </div>
@@ -478,7 +487,7 @@ export function SectionsEditor({
           )}
         </div>
       ))}
-      <div className="row add-section">
+      <div className="add-section">
         <select value={adding} onChange={(e) => setAdding(e.target.value as Section["type"])} aria-label="Typ av sektion">
           {types.map((t) => (
             <option key={t} value={t}>
@@ -488,12 +497,13 @@ export function SectionsEditor({
         </select>
         <button
           type="button"
-          className="button"
+          className={nested ? "button button-ghost button-sm" : "button button-ghost"}
           onClick={() => {
             onChange([...sections, newSection(adding, feeds)]);
             setOpen(sections.length);
           }}
         >
+          <Icon name="plus" size={16} />
           Lägg till sektion
         </button>
       </div>

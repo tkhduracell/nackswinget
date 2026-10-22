@@ -3,7 +3,9 @@ import type { MediaDoc } from "@/lib/admin/media";
 import type { ImageAttrs } from "@/lib/content/types";
 import { imageUrl, publicUrl } from "@/lib/media/urls";
 import { useAdmin } from "./AuthProvider";
+import { Icon } from "./icons";
 import { uploadFile } from "./upload";
+import { EmptyState, LoadingRow } from "./ui";
 
 export type PickedMedia =
   | { kind: "image"; image: ImageAttrs; name: string }
@@ -28,7 +30,11 @@ export function MediaThumb({ m }: { m: MediaDoc }) {
     // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail
     return <img src={publicUrl(m.renditions.poster)} alt="" loading="lazy" />;
   }
-  return <span className="media-icon">{m.kind === "video" ? "🎬" : "📄"}</span>;
+  return (
+    <span className={`media-icon ${m.kind}`}>
+      <Icon name={m.kind === "video" ? "film" : "file"} size={30} />
+    </span>
+  );
 }
 
 /** Library modal with upload. `accept` filters what can be picked. */
@@ -66,19 +72,27 @@ export function MediaPicker({ accept, onPick, onClose }: { accept: "image" | "vi
       <div className="modal">
         <div className="modal-head">
           <h2>Mediebibliotek</h2>
-          <button type="button" className="link-button" onClick={onClose}>
+          <button type="button" className="button button-ghost button-sm" onClick={onClose}>
+            <Icon name="close" size={16} />
             Stäng
           </button>
         </div>
+        <div className="modal-body">
         <label className="upload-drop">
           <input type="file" accept={acceptAttr} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
-          {progress === null ? "Ladda upp ny fil…" : `Laddar upp ${Math.round(progress * 100)} %`}
+          <Icon name="upload" size={20} />
+          <span>{progress === null ? "Ladda upp ny fil…" : `Laddar upp ${Math.round(progress * 100)} %`}</span>
+          {progress !== null && (
+            <span className="progress" aria-hidden="true">
+              <span style={{ width: `${Math.round(progress * 100)}%` }} />
+            </span>
+          )}
         </label>
         {error && <p className="admin-error">{error}</p>}
         {items === null ? (
-          <p>Laddar…</p>
+          <LoadingRow />
         ) : shown.length === 0 ? (
-          <p className="muted">Inga filer ännu.</p>
+          <EmptyState icon="image">Inga filer ännu.</EmptyState>
         ) : (
           <ul className="media-grid">
             {shown.map((m) => {
@@ -94,6 +108,7 @@ export function MediaPicker({ accept, onPick, onClose }: { accept: "image" | "vi
             })}
           </ul>
         )}
+        </div>
       </div>
     </div>
   );

@@ -2,26 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { AuthProvider, useAdmin } from "./AuthProvider";
+import { AdminLogo } from "./brand";
+import { Icon, type IconName } from "./icons";
 import { PreviewView } from "./PreviewFrame";
 import { PageEditor, PostEditor } from "./screens/DocEditors";
 import { Dashboard, PageList, PostList } from "./screens/Lists";
 import { BannerScreen, MediaScreen, MenuScreen, RedirectsScreen, SettingsScreen, UsersScreen } from "./screens/SiteScreens";
 
-const NAV = [
-  { href: "/admin/", label: "Översikt" },
-  { href: "/admin/sidor/", label: "Sidor" },
-  { href: "/admin/nyheter/", label: "Nyheter" },
-  { href: "/admin/stjarna/", label: "Stjärnan" },
-  { href: "/admin/media/", label: "Bilder & filer" },
-  { href: "/admin/meny/", label: "Meny", admin: true },
-  { href: "/admin/installningar/", label: "Inställningar", admin: true },
-  { href: "/admin/omdirigeringar/", label: "Omdirigeringar", admin: true },
-  { href: "/admin/anvandare/", label: "Användare", admin: true },
+const NAV: { href: string; label: string; icon: IconName; admin?: boolean }[] = [
+  { href: "/admin/", label: "Översikt", icon: "dashboard" },
+  { href: "/admin/sidor/", label: "Sidor", icon: "page" },
+  { href: "/admin/nyheter/", label: "Nyheter", icon: "news" },
+  { href: "/admin/stjarna/", label: "Stjärnan", icon: "star" },
+  { href: "/admin/media/", label: "Bilder & filer", icon: "image" },
+  { href: "/admin/meny/", label: "Meny", icon: "menu", admin: true },
+  { href: "/admin/installningar/", label: "Inställningar", icon: "settings", admin: true },
+  { href: "/admin/omdirigeringar/", label: "Omdirigeringar", icon: "redirect", admin: true },
+  { href: "/admin/anvandare/", label: "Användare", icon: "users", admin: true },
 ];
 
 function Shell({ segs }: { segs: string[] }) {
   const { me, logout } = useAdmin();
+  const [navOpen, setNavOpen] = useState(false);
   const [section, id] = segs;
   const adminOnly = ["meny", "installningar", "omdirigeringar", "anvandare"];
   let screen: React.ReactNode;
@@ -36,27 +40,65 @@ function Shell({ segs }: { segs: string[] }) {
   else if (section === "anvandare") screen = <UsersScreen />;
   else screen = <Dashboard />;
 
+  // Escape closes the mobile navigation drawer.
+  useEffect(() => {
+    if (!navOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setNavOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [navOpen]);
+
   const active = `/admin/${section ? `${section}/` : ""}`;
+  const items = NAV.filter((n) => !n.admin || me.role === "admin");
+  const close = () => setNavOpen(false);
+  const link = (n: (typeof NAV)[number]) => (
+    <Link key={n.href} href={n.href} className={n.href === active ? "nav-item active" : "nav-item"} aria-current={n.href === active ? "page" : undefined} onClick={close}>
+      <Icon name={n.icon} />
+      <span>{n.label}</span>
+    </Link>
+  );
   return (
-    <div className="admin">
-      <header className="admin-header">
-        <Link href="/admin/" className="admin-brand">
-          Nackswinget admin
-        </Link>
-        <nav aria-label="Administration">
-          {NAV.filter((n) => !n.admin || me.role === "admin").map((n) => (
-            <Link key={n.href} href={n.href} className={n.href === active ? "active" : undefined}>
-              {n.label}
-            </Link>
-          ))}
-        </nav>
-        <a href="/" className="link-button" target="_blank" rel="noreferrer">
-          Webbplatsen ↗
-        </a>
-        <button type="button" className="link-button" onClick={() => void logout()}>
-          Logga ut
+    <div className={navOpen ? "admin nav-open" : "admin"}>
+      <header className="admin-topbar">
+        <button type="button" className="icon-btn on-dark" onClick={() => setNavOpen(!navOpen)} aria-expanded={navOpen} aria-controls="admin-sidebar" aria-label="Meny">
+          <Icon name={navOpen ? "close" : "menu"} size={22} />
         </button>
+        <Link href="/admin/" className="admin-brand" aria-label="Nackswinget admin" onClick={close}>
+          <AdminLogo />
+          <span className="admin-brand-tag">Admin</span>
+        </Link>
       </header>
+      <aside id="admin-sidebar" className="admin-sidebar">
+        <Link href="/admin/" className="admin-brand" aria-label="Nackswinget admin" onClick={close}>
+          <AdminLogo />
+          <span className="admin-brand-tag">Admin</span>
+        </Link>
+        <nav aria-label="Administration" className="admin-nav">
+          <div className="nav-group">{items.filter((n) => !n.admin).map(link)}</div>
+          {me.role === "admin" && <div className="nav-group">{items.filter((n) => n.admin).map(link)}</div>}
+        </nav>
+        <div className="admin-sidebar-foot">
+          <a href="/" className="nav-item" target="_blank" rel="noreferrer">
+            <Icon name="external" />
+            <span>Webbplatsen ↗</span>
+          </a>
+          <div className="admin-user">
+            <span className="avatar" aria-hidden="true">
+              {me.email.slice(0, 1).toUpperCase()}
+            </span>
+            <span className="admin-user-text">
+              <span className="admin-user-email" title={me.email}>
+                {me.email}
+              </span>
+              <span className="admin-user-role">{me.role === "admin" ? "administratör" : "redaktör"}</span>
+            </span>
+            <button type="button" className="icon-btn on-dark" onClick={() => void logout()} title="Logga ut" aria-label="Logga ut">
+              <Icon name="logout" />
+            </button>
+          </div>
+        </div>
+      </aside>
+      <div className="admin-scrim" onClick={close} aria-hidden="true" />
       <main className="admin-main">{screen}</main>
     </div>
   );
