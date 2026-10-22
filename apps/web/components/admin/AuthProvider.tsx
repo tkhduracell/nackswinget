@@ -61,7 +61,18 @@ function LoginForm({ error }: { error?: string }) {
     e.preventDefault();
     setState("sending");
     try {
-      await sendSignInLinkToEmail(clientAuth(), email.trim(), { url: `${window.location.origin}/admin/`, handleCodeInApp: true });
+      // The site mails the link itself (direct /admin/ link, Swedish email).
+      // Without SMTP configured (503 + fallback) Firebase sends its own email.
+      const res = await fetch("/api/admin/login-link/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (res.status === 503 && (await res.json().catch(() => ({}))).fallback) {
+        await sendSignInLinkToEmail(clientAuth(), email.trim(), { url: `${window.location.origin}/admin/`, handleCodeInApp: true });
+      } else if (!res.ok) {
+        throw new Error(String(res.status));
+      }
       window.localStorage.setItem(EMAIL_KEY, email.trim());
       setState("sent");
     } catch {
@@ -74,7 +85,7 @@ function LoginForm({ error }: { error?: string }) {
       {error && <p className="admin-error">{error}</p>}
       {state === "sent" ? (
         <p>
-          En inloggningslänk har skickats till <strong>{email}</strong>. Öppna den på den här enheten.
+          Om <strong>{email}</strong> har behörighet har en inloggningslänk skickats dit. Öppna den i den här webbläsaren.
         </p>
       ) : (
         <form onSubmit={send}>

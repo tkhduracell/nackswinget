@@ -30,7 +30,8 @@ function bootstrapAdmins(): Set<string> {
 
 const roleCache = new Map<string, { role: Role | null; at: number }>();
 
-async function roleFor(email: string): Promise<Role | null> {
+/** The allowlisted role for an email, or null (used for sign-in links too). */
+export async function roleFor(email: string): Promise<Role | null> {
   if (bootstrapAdmins().has(email)) return "admin";
   const hit = roleCache.get(email);
   if (hit && Date.now() - hit.at < 30_000) return hit.role;
