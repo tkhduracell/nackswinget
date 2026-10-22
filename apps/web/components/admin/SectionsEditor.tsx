@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { CalendarFeed, ColumnWidth, HeroVideo, ImageAttrs, Section } from "@/lib/content/types";
+import { type CalendarFeed, type ColumnWidth, type HeroVideo, heroVideoFrom, type ImageAttrs, type Section } from "@/lib/content/types";
 import { imageUrl } from "@/lib/media/urls";
 import { MediaPicker, type PickedMedia } from "./MediaPicker";
 import { Icon } from "./icons";
@@ -68,7 +68,7 @@ function VideoField({ value, onChange }: { value: HeroVideo | undefined; onChang
   const [open, setOpen] = useState(false);
   return (
     <div className="image-field">
-      <input value={value?.src ?? ""} placeholder="web/hero/…mp4 eller https://…" onChange={(e) => onChange(e.target.value.trim() ? { src: e.target.value.trim() } : undefined)} />
+      <input value={value?.src ?? ""} placeholder="web/hero/…mp4 eller https://…" onChange={(e) => onChange(e.target.value.trim() ? heroVideoFrom(e.target.value.trim()) : undefined)} />
       <div className="row">
         <button type="button" className="button button-ghost button-sm" onClick={() => setOpen(true)}>
           <Icon name="film" size={16} />

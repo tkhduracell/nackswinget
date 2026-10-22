@@ -58,6 +58,15 @@ export const heroVideoSchema = z.object({
 });
 export type HeroVideo = z.infer<typeof heroVideoSchema>;
 
+/**
+ * A hero video from an address. Pre-made clips follow a naming convention:
+ * web/hero/<name>-blur.mp4 has <name>-blur.webm and <name>-blur-poster.webp beside it.
+ */
+export function heroVideoFrom(src: string): HeroVideo {
+  const m = src.match(/^(.*)-blur\.mp4$/);
+  return m ? { src, webm: `${m[1]}-blur.webm`, poster: `${m[1]}-blur-poster.webp`, blurred: true } : { src };
+}
+
 export const videoAttrsSchema = z.discriminatedUnion("provider", [
   z.object({ provider: z.literal("youtube"), id: z.string(), title: z.string().default("") }),
   z.object({
