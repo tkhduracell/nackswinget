@@ -41,6 +41,10 @@ export const imageAttrsSchema = z.object({
   // Widths that exist as WebP variants (see lib/media/urls.ts).
   variants: z.array(z.number().int().positive()).default([]),
   focal: z.object({ x: z.number(), y: z.number() }).optional(),
+  /** Shown at most this wide (CSS px), e.g. app store badges sized down in the old content. */
+  displayWidth: z.number().int().positive().optional(),
+  /** The image links here (rich text images wrapped in <a>). */
+  href: z.string().optional(),
 });
 export type ImageAttrs = z.infer<typeof imageAttrsSchema>;
 
@@ -211,7 +215,9 @@ export const pageSchema = z.object({
   /** Text in the red title band when it should differ from the title (e.g. "Hitta hit" on Kontakt). */
   bandTitle: z.string().optional(),
   parentId: z.string().nullable().default(null),
-  template: z.enum(["default", "blank"]).default("default"),
+  // default: red title band + breadcrumbs; plain: content only (old Divi pages without a band);
+  // sidebar: WordPress's default page (title in the text, recent posts beside); blank: no chrome (TV calendar).
+  template: z.enum(["default", "plain", "sidebar", "blank"]).default("default"),
   sections: z.array(sectionSchema),
   seo: seoSchema.default({}),
   status: z.enum(["draft", "published"]).default("published"),

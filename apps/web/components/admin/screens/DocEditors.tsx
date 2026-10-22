@@ -166,6 +166,16 @@ export function PageEditor({ id }: { id: string }) {
               <input value={doc.bandTitle ?? ""} placeholder={doc.title} onChange={(e) => update({ ...doc, bandTitle: e.target.value || undefined })} />
             </label>
           )}
+          {!isHome && doc.template !== "blank" && (
+            <label className="field">
+              <span>Utseende</span>
+              <select value={doc.template} onChange={(e) => update({ ...doc, template: e.target.value as Page["template"] })}>
+                <option value="default">Rött band med rubrik</option>
+                <option value="plain">Bara innehållet (inget band)</option>
+                <option value="sidebar">Rubrik i texten, senaste nyheterna bredvid</option>
+              </select>
+            </label>
+          )}
           <label className="field">
             <span>Adress</span>
             <div className="url-field">

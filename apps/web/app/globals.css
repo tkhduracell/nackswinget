@@ -57,10 +57,12 @@ body {
    the old theme's body background. */
 .site {
   font-weight: 500;
-  background: #fff var(--bg-texture);
+  background: #fff;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  /* Nothing may make phones scroll sideways (clip keeps the sticky header working). */
+  overflow-x: clip;
 }
 .site > main {
   background: #fff;
@@ -202,7 +204,8 @@ p {
   color: #fff;
 }
 .nav-list a:hover,
-.nav-list a:focus-visible {
+.nav-list a:focus-visible,
+.nav-list > li > a[aria-current] {
   color: var(--brand);
 }
 .nav-list .has-children > a::after {
@@ -553,6 +556,38 @@ p {
 
 .prose {
   max-width: none;
+  /* Long runs without spaces ("______" dividers, URLs) wrap instead of widening the page. */
+  overflow-wrap: anywhere;
+}
+/* The old theme set body text larger on phones. */
+@media (max-width: 600px) {
+  .prose p,
+  .prose li,
+  .post-excerpt {
+    font-size: 17px;
+  }
+}
+/* Images the old content showed small (app store badges) sit side by side. */
+.rt-figure.rt-figure-sized {
+  display: inline-block;
+  vertical-align: top;
+  margin: 0 10px 10px 0;
+}
+.rt-figure-sized img {
+  display: block;
+}
+/* Buttons inside text: the old theme's white button with red text. */
+.prose .button {
+  background: #fff;
+  color: var(--brand-ink);
+  font-size: 20px;
+  font-weight: 500;
+  padding: 0.3em 1em;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+.prose .button:hover {
+  background: var(--brand-tint);
+  color: var(--brand-dark);
 }
 .prose a:not(.button) {
   color: var(--brand-ink);
@@ -890,6 +925,11 @@ p {
   font-weight: 500;
   line-height: 1;
 }
+/* WordPress's default templates (posts, plain pages) used light headings. */
+.post-main .prose h2,
+.post-main .prose h3 {
+  font-weight: 500;
+}
 .post-layout .post-meta {
   margin-bottom: 40px;
 }
@@ -1118,6 +1158,18 @@ p {
 .cal-month .ev {
   hyphens: auto;
 }
+.cal-key-all {
+  background: none;
+  font-weight: 500;
+}
+.cal-grid .ev-end {
+  display: none;
+}
+@media (max-width: 782px) {
+  .cal-grid .ev-end {
+    display: inline;
+  }
+}
 
 .cal-grid {
   width: 100%;
@@ -1304,7 +1356,10 @@ p {
 /* The old theme had no footer: the tiled photo (body background) fades to white
    below the content. The links sit small on that fade. */
 .site-footer {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #fff 100%);
+  /* One scaled copy of the photo (no tile seams), fading to white. */
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #fff 100%),
+    var(--bg-texture) center top / cover;
   color: var(--heading);
   padding: 100px 0 24px;
   font-size: 13px;

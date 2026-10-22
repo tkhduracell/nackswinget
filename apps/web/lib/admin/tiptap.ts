@@ -49,6 +49,8 @@ function fromNode(n: TTNode): RichNode | null {
         ...(typeof a.width === "number" ? { width: a.width } : {}),
         ...(typeof a.height === "number" ? { height: a.height } : {}),
         variants: Array.isArray(a.variants) ? (a.variants as number[]) : [],
+        ...(typeof a.displayWidth === "number" ? { displayWidth: a.displayWidth } : {}),
+        ...(typeof a.href === "string" && a.href ? { href: a.href } : {}),
       },
     };
   }

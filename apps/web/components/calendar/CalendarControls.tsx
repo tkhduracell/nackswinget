@@ -15,8 +15,11 @@ export function CalendarControls({ id }: { id: string }) {
     const select = root.querySelector<HTMLSelectElement>(`[data-cal-month="${id}"]`);
     const title = root.querySelector<HTMLElement>(`[data-cal-title="${id}"]`);
 
-    const onLegend = () => {
-      const boxes = legend ? Array.from(legend.querySelectorAll<HTMLInputElement>("input[type=checkbox]")) : [];
+    const onLegend = (e?: Event) => {
+      const all = legend?.querySelector<HTMLInputElement>("input.cal-all");
+      const boxes = legend ? Array.from(legend.querySelectorAll<HTMLInputElement>("input[type=checkbox]:not(.cal-all)")) : [];
+      if (all && e?.target === all) for (const b of boxes) b.checked = all.checked;
+      if (all) all.checked = boxes.every((b) => b.checked);
       root.dataset.hide = boxes.filter((b) => !b.checked).map((b) => b.value).join(" ");
     };
     const onMonth = () => {

@@ -120,9 +120,10 @@ export function SectionView({ section, slots, index, first }: { section: Section
         </div>
       );
     case "image": {
-      const img = <Img image={section.image} priority={first} sizes="(min-width: 1080px) 1080px, 100vw" />;
+      const shown = section.image.displayWidth;
+      const img = <Img image={section.image} priority={first} sizes={shown ? `${shown}px` : "(min-width: 1080px) 1080px, 100vw"} />;
       return (
-        <figure className="image-section">
+        <figure className="image-section" style={shown ? { maxWidth: shown } : undefined}>
           {section.href ? (
             <a href={section.href} {...ext(section.href)} aria-label={linkLabel(section.caption || section.image.alt, section.href)}>
               {img}

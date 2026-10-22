@@ -1,7 +1,7 @@
 // Maps rendered Divi page HTML (et_pb_* modules) onto the fixed section set.
 
 import type { ColumnWidth, Section } from "@/lib/content/types";
-import { type ConvertContext, docIsEmpty, htmlElementToDoc } from "./html";
+import { type ConvertContext, displayWidth, docIsEmpty, htmlElementToDoc } from "./html";
 
 export interface DiviContext extends ConvertContext {
   /** Calendar section config for the n-th calendar on this page, if known. */
@@ -115,8 +115,10 @@ class DiviMapper {
     if (hasClass(el, "et_pb_image")) {
       const img = el.querySelector("img");
       if (!img) return [];
-      const attrs = this.ctx.resolveImage(img.getAttribute("src") ?? "", img.getAttribute("alt") ?? "", undefined, undefined);
-      if (!attrs) return [];
+      const resolved = this.ctx.resolveImage(img.getAttribute("src") ?? "", img.getAttribute("alt") ?? "", undefined, undefined);
+      if (!resolved) return [];
+      const shown = displayWidth(img);
+      const attrs = shown && (!resolved.width || shown < resolved.width) ? { ...resolved, displayWidth: shown } : resolved;
       const link = el.querySelector("a")?.getAttribute("href");
       return [{ type: "image", image: attrs, ...(link ? { href: this.ctx.rewriteHref(link) } : {}) }];
     }
@@ -244,9 +246,9 @@ export function contentToSections(root: Element, ctx: DiviContext): Section[] {
   return sections.flatMap((s) => mapper.section(s));
 }
 
-/** data-bg is set by the exporter on sections the theme gives a background colour. */
+/** Divi marks sections that have a background (the red title band) with et_pb_with_background. */
 function isTitleBand(sec: Element | undefined): boolean {
-  if (!sec?.hasAttribute("data-bg")) return false;
+  if (!sec || !hasClass(sec, "et_pb_with_background")) return false;
   const mods = Array.from(sec.querySelectorAll(".et_pb_module"));
   if (mods.length !== 1 || !hasClass(mods[0], "et_pb_text")) return false;
   const inner = mods[0].querySelector(".et_pb_text_inner") ?? mods[0];

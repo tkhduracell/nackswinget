@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { NavItem } from "@/lib/content/types";
 import { publicUrl, variantPath } from "@/lib/media/urls";
 import { SearchButton } from "@/components/search/SearchButton";
+import { NavCurrent } from "./NavCurrent";
 
 function NavLinks({ items, mobile }: { items: NavItem[]; mobile?: boolean }) {
   return (
@@ -41,6 +42,7 @@ export function Header({ nav, logo, siteName }: { nav: NavItem[]; logo?: string;
         <nav className="nav-desktop" aria-label="Huvudmeny">
           <NavLinks items={nav} />
         </nav>
+        <NavCurrent />
         <SearchButton />
         <details className="nav-mobile">
           <summary aria-label="Meny">
