@@ -48,6 +48,16 @@ export const imageAttrsSchema = z.object({
 });
 export type ImageAttrs = z.infer<typeof imageAttrsSchema>;
 
+/** Looping, muted background video behind the start page hero (Storage paths or URLs). */
+export const heroVideoSchema = z.object({
+  src: z.string(),
+  webm: z.string().optional(),
+  poster: z.string().optional(),
+  /** The file is already blurred (no CSS blur needed). */
+  blurred: z.boolean().optional(),
+});
+export type HeroVideo = z.infer<typeof heroVideoSchema>;
+
 export const videoAttrsSchema = z.discriminatedUnion("provider", [
   z.object({ provider: z.literal("youtube"), id: z.string(), title: z.string().default("") }),
   z.object({
@@ -104,7 +114,7 @@ const linkSchema = z.object({ label: z.string(), href: z.string() });
 export const calendarViewSchema = z.enum(["list", "month", "week"]);
 
 export type Section =
-  | { type: "hero"; title: string; subtitle?: string; image?: ImageAttrs; video?: string; buttons: { label: string; href: string }[] }
+  | { type: "hero"; title: string; subtitle?: string; image?: ImageAttrs; video?: HeroVideo; buttons: { label: string; href: string }[] }
   | { type: "richText"; doc: RichDoc; variant?: "plain" | "boxTop" | "boxLeft"; needsReview?: boolean }
   | { type: "columns"; columns: { width: ColumnWidth; sections: Section[] }[] }
   | { type: "linkBoxes"; items: { title: string; href: string; icon?: string }[] }
@@ -138,8 +148,7 @@ export const sectionSchema: z.ZodType<Section> = z.lazy(() =>
       title: z.string(),
       subtitle: z.string().optional(),
       image: imageAttrsSchema.optional(),
-      /** Looping background video (Storage path or URL), shown blurred behind the text. */
-      video: z.string().optional(),
+      video: heroVideoSchema.optional(),
       buttons: z.array(linkSchema).max(2).default([]),
     }),
     z.object({

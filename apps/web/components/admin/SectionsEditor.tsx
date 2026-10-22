@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { CalendarFeed, ColumnWidth, ImageAttrs, Section } from "@/lib/content/types";
+import type { CalendarFeed, ColumnWidth, HeroVideo, ImageAttrs, Section } from "@/lib/content/types";
 import { imageUrl } from "@/lib/media/urls";
 import { MediaPicker, type PickedMedia } from "./MediaPicker";
 import { Icon } from "./icons";
@@ -64,11 +64,11 @@ function Field({ label, children, hint }: { label: string; children: React.React
 }
 
 /** A looping background video: a library video (720p rendition) or any video address. */
-function VideoField({ value, onChange }: { value: string | undefined; onChange: (v: string | undefined) => void }) {
+function VideoField({ value, onChange }: { value: HeroVideo | undefined; onChange: (v: HeroVideo | undefined) => void }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="image-field">
-      <input value={value ?? ""} placeholder="web/hero/…mp4 eller https://…" onChange={(e) => onChange(e.target.value.trim() || undefined)} />
+      <input value={value?.src ?? ""} placeholder="web/hero/…mp4 eller https://…" onChange={(e) => onChange(e.target.value.trim() ? { src: e.target.value.trim() } : undefined)} />
       <div className="row">
         <button type="button" className="button button-ghost button-sm" onClick={() => setOpen(true)}>
           <Icon name="film" size={16} />
@@ -84,7 +84,7 @@ function VideoField({ value, onChange }: { value: string | undefined; onChange: 
         <MediaPicker
           accept="video"
           onPick={(m) => {
-            if (m.kind === "video") onChange(m.renditions.src720);
+            if (m.kind === "video") onChange({ src: m.renditions.src720, ...(m.renditions.poster ? { poster: m.renditions.poster } : {}) });
             setOpen(false);
           }}
           onClose={() => setOpen(false)}

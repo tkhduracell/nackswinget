@@ -407,6 +407,9 @@ p {
   width: calc(100% + 48px);
   height: calc(100% + 48px);
   object-fit: cover;
+}
+/* Videos that aren't pre-blurred (picked from the media library). */
+.hero-video-blur {
   filter: blur(14px);
 }
 .hero:has(.hero-video)::after {
