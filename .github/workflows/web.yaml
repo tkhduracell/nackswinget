@@ -51,8 +51,21 @@ jobs:
       - name: Build (fixture content)
         run: pnpm build:fixture
 
+      # Browser binaries are cached per Playwright version. No --with-deps: the
+      # runner image already has Chrome's system libraries, and the apt step
+      # has hung on Ubuntu mirrors until the job timed out.
+      - name: Playwright version
+        id: pw
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
       - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
+        timeout-minutes: 5
+        run: pnpm exec playwright install chromium || pnpm exec playwright install chromium
 
       - name: Smoke tests
         run: pnpm e2e --reporter=line
