@@ -25,6 +25,9 @@ function NavLinks({ items, mobile }: { items: NavItem[]; mobile?: boolean }) {
   );
 }
 
+/** The 40th anniversary (16/1 2027): a gold shimmer line under the header until the end of January. */
+const JUBILEE_UNTIL = Date.parse("2027-02-01T00:00:00+01:00");
+
 /** Pure HTML/CSS navigation: hover/focus dropdowns on desktop, <details> menu on mobile. */
 export function Header({ nav, logo, siteName }: { nav: NavItem[]; logo?: string; siteName: string }) {
   return (
@@ -53,6 +56,15 @@ export function Header({ nav, logo, siteName }: { nav: NavItem[]; logo?: string;
           </nav>
         </details>
       </div>
+      <div className="gold-line" id="gold-line" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
+      {/* The header is static HTML; the visitor's clock retires the line after the anniversary. */}
+      <script dangerouslySetInnerHTML={{ __html: `Date.now()>=${JUBILEE_UNTIL}&&document.getElementById("gold-line")?.remove()` }} />
     </header>
   );
 }
