@@ -24,10 +24,11 @@ function dayLabel(day: string): string {
 /** The old list widget's solid colours (white text); feeds not listed use their own colour. */
 const LIST_COLORS: Record<string, string> = {
   huvud: "#800080",
-  kurs: "#ffa500",
-  tavlingskalender: "#2980b9",
-  event: "#f9064b",
-  fritraning: "#008000",
+  // The old widget's colours, darkened where needed for AA contrast with white text.
+  kurs: "#a35f00",
+  tavlingskalender: "#2471a3",
+  event: "#e0053d",
+  fritraning: "#007a00",
 };
 
 /** "tor 22/10", like the old theme's list widget. */
@@ -212,7 +213,12 @@ export async function Calendar({ section, feeds: allFeeds, siteUrl, id }: { sect
               <h3 className="ev-dayhead">{shortDay(day)}</h3>
               <ul className="ev-list">
                 {list.map((e) => (
-                  <li key={`${e.uid}-${e.start}`} className="ev ev-block" data-feed={e.feed} style={{ ["--ev-color" as string]: LIST_COLORS[e.feed] ?? colors.get(e.feed) }}>
+                  <li
+                    key={`${e.uid}-${e.start}`}
+                    className={LIST_COLORS[e.feed] ? "ev ev-block" : "ev ev-block ev-light"}
+                    data-feed={e.feed}
+                    style={{ ["--ev-color" as string]: LIST_COLORS[e.feed] ?? colors.get(e.feed) }}
+                  >
                     <span className="ev-time">{timeRange(e)}</span>
                     <span className="ev-title">{e.title}</span>
                   </li>

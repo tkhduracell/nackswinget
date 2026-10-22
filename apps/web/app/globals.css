@@ -49,16 +49,20 @@ body {
   margin: 0;
   font-family: var(--font-sans), Helvetica, Arial, sans-serif;
   font-size: var(--fs-base);
-  font-weight: 500;
   line-height: 1.7;
   color: var(--ink);
-  /* The tiled photo shows above the footer, like the old theme's body background. */
+  background: #fff;
+}
+/* Public site only (not /admin): the tiled photo shows above the footer, like
+   the old theme's body background. */
+.site {
+  font-weight: 500;
   background: #fff var(--bg-texture);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
-main {
+.site > main {
   background: #fff;
   flex: 1;
 }
@@ -482,7 +486,7 @@ p {
 
 .button {
   display: inline-block;
-  background: var(--brand);
+  background: var(--brand-ink);
   color: #fff;
   border: 0;
   border-radius: 3px;
@@ -514,7 +518,8 @@ p {
 /* ---------- layout sections ---------- */
 
 /* Divi rows: 5.5% gutters, 30px between stacked columns on phones. */
-.columns {
+.columns,
+.page-body > .columns {
   display: grid;
   gap: 30px;
   margin: 0 0 54px;
@@ -549,7 +554,7 @@ p {
   max-width: none;
 }
 .prose a:not(.button) {
-  color: var(--brand);
+  color: var(--brand-ink);
 }
 .prose h2 {
   font-size: 37px;
@@ -667,14 +672,14 @@ p {
   border-left: 4px solid var(--brand);
   border-radius: var(--radius);
   padding: 12px 18px;
-  color: var(--brand);
+  color: var(--brand-ink);
   font-size: 16px;
   font-weight: 700;
   line-height: normal;
   transition: transform 0.2s ease-in-out;
 }
 .link-boxes a:hover {
-  color: var(--brand);
+  color: var(--brand-ink);
   transform: scale(1.1);
 }
 .link-boxes img {
@@ -834,7 +839,7 @@ p {
 .more-link {
   display: block;
   font-weight: 600;
-  color: var(--brand);
+  color: var(--brand-ink);
 }
 @media (max-width: 600px) {
   .post-card h2 {
@@ -843,7 +848,7 @@ p {
   }
 }
 .older-posts a {
-  color: var(--brand);
+  color: var(--brand-ink);
 }
 /* Sidebar lists: small titles on light cards inside a grey box. */
 .post-list-compact {
@@ -957,7 +962,7 @@ p {
   gap: 16px;
 }
 .pagination a {
-  color: var(--brand);
+  color: var(--brand-ink);
 }
 
 /* ---------- calendar ---------- */
@@ -993,6 +998,10 @@ p {
 }
 .ev-block .ev-time {
   display: block;
+}
+/* Feeds without a list colour use their pastel colour: dark text. */
+.cal .ev.ev-block.ev-light {
+  color: #1a1a1a;
 }
 .cal .ev-list {
   list-style: none;
