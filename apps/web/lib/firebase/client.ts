@@ -1,13 +1,16 @@
 "use client";
 
-import { type FirebaseApp, getApps, initializeApp } from "firebase/app";
+import { type FirebaseApp, getApp, getApps, initializeApp } from "firebase/app";
 import { type Auth, browserLocalPersistence, connectAuthEmulator, getAuth, setPersistence } from "firebase/auth";
-import { firebaseConfig, USE_EMULATORS } from "./config";
+import { authConfig, USE_EMULATORS } from "./config";
 
 let auth: Auth | null = null;
 
+// A named app so it never collides with the push widget's default app.
+const ADMIN_APP = "nsw-admin";
+
 export function clientApp(): FirebaseApp {
-  return getApps()[0] ?? initializeApp(firebaseConfig);
+  return getApps().some((a) => a.name === ADMIN_APP) ? getApp(ADMIN_APP) : initializeApp(authConfig, ADMIN_APP);
 }
 
 export function clientAuth(): Auth {
