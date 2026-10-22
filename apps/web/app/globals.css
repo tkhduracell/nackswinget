@@ -475,8 +475,9 @@ p {
 }
 .star {
   position: absolute;
-  left: 65vw;
-  bottom: 170px;
+  /* Lower right of the hero, below the title row at every width, never past the edge. */
+  left: min(65vw, calc(100vw - 4vw - 120px));
+  bottom: 48px;
   width: 120px;
   height: 120px;
   display: flex;
