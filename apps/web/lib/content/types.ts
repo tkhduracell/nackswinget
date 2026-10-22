@@ -104,7 +104,7 @@ const linkSchema = z.object({ label: z.string(), href: z.string() });
 export const calendarViewSchema = z.enum(["list", "month", "week"]);
 
 export type Section =
-  | { type: "hero"; title: string; subtitle?: string; image?: ImageAttrs; buttons: { label: string; href: string }[] }
+  | { type: "hero"; title: string; subtitle?: string; image?: ImageAttrs; video?: string; buttons: { label: string; href: string }[] }
   | { type: "richText"; doc: RichDoc; variant?: "plain" | "boxTop" | "boxLeft"; needsReview?: boolean }
   | { type: "columns"; columns: { width: ColumnWidth; sections: Section[] }[] }
   | { type: "linkBoxes"; items: { title: string; href: string; icon?: string }[] }
@@ -138,6 +138,8 @@ export const sectionSchema: z.ZodType<Section> = z.lazy(() =>
       title: z.string(),
       subtitle: z.string().optional(),
       image: imageAttrsSchema.optional(),
+      /** Looping background video (Storage path or URL), shown blurred behind the text. */
+      video: z.string().optional(),
       buttons: z.array(linkSchema).max(2).default([]),
     }),
     z.object({

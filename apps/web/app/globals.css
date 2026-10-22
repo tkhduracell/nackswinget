@@ -400,8 +400,29 @@ p {
   object-fit: cover;
   opacity: 0.45;
 }
+/* Background video: blurred, under the same top-to-bottom darkening as the photo. */
+.hero-video {
+  position: absolute;
+  inset: -24px;
+  width: calc(100% + 48px);
+  height: calc(100% + 48px);
+  object-fit: cover;
+  filter: blur(14px);
+}
+.hero:has(.hero-video)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.85) 8%, rgba(0, 0, 0, 0.15) 100%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-video {
+    display: none;
+  }
+}
 .hero-inner {
   position: relative;
+  z-index: 1;
   width: 80%;
   max-width: var(--max);
   margin: 0 auto;

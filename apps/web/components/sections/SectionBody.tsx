@@ -46,6 +46,9 @@ export function SectionView({ section, slots, index, first }: { section: Section
       return (
         <section className={section.image ? "hero hero-image" : "hero"}>
           {section.image && <Img image={section.image} sizes="100vw" priority className="hero-bg" alt="" />}
+          {section.video && (
+            <video className="hero-video" autoPlay muted loop playsInline preload="auto" aria-hidden="true" src={/^(https?:)?\//.test(section.video) ? section.video : publicUrl(section.video)} />
+          )}
           <div className="hero-inner">
             <h1>{section.title}</h1>
             {section.subtitle && <p className="hero-sub">{section.subtitle}</p>}

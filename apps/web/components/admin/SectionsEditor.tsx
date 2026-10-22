@@ -63,6 +63,37 @@ function Field({ label, children, hint }: { label: string; children: React.React
   );
 }
 
+/** A looping background video: a library video (720p rendition) or any video address. */
+function VideoField({ value, onChange }: { value: string | undefined; onChange: (v: string | undefined) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="image-field">
+      <input value={value ?? ""} placeholder="web/hero/…mp4 eller https://…" onChange={(e) => onChange(e.target.value.trim() || undefined)} />
+      <div className="row">
+        <button type="button" className="button button-ghost button-sm" onClick={() => setOpen(true)}>
+          <Icon name="film" size={16} />
+          Välj video
+        </button>
+        {value && (
+          <button type="button" className="button button-danger-ghost button-sm" onClick={() => onChange(undefined)}>
+            Ta bort
+          </button>
+        )}
+      </div>
+      {open && (
+        <MediaPicker
+          accept="video"
+          onPick={(m) => {
+            if (m.kind === "video") onChange(m.renditions.src720);
+            setOpen(false);
+          }}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
 function ImageField({ value, onChange }: { value: ImageAttrs | undefined; onChange: (v: ImageAttrs | undefined) => void }) {
   const [open, setOpen] = useState(false);
   return (
@@ -161,6 +192,9 @@ function SectionForm({ section, onChange, feeds, categories }: { section: Sectio
           </Field>
           <Field label="Bakgrundsbild (valfri)">
             <ImageField value={s.image} onChange={(image) => onChange({ ...s, image })} />
+          </Field>
+          <Field label="Bakgrundsvideo (valfri, visas suddig och utan ljud)">
+            <VideoField value={s.video} onChange={(video) => onChange({ ...s, video })} />
           </Field>
           <Field label="Knappar (max 2)">
             <ListEditor
