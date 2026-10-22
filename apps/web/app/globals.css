@@ -519,7 +519,7 @@ p {
 
 /* Divi rows: 5.5% gutters, 30px between stacked columns on phones. */
 .columns,
-.page-body > .columns {
+.page-body.page-body > .columns:not(:last-child) {
   display: grid;
   gap: 30px;
   margin: 0 0 54px;
@@ -541,12 +541,13 @@ p {
 .page-body > * + * {
   margin-top: 0;
 }
-.column > *,
-.page-body > * {
+/* Module spacing; doubled class so section rules (margin: 0) can't override it. */
+.column.column > *,
+.page-body.page-body > * {
   margin-bottom: 18px;
 }
-.column > :last-child,
-.page-body > :last-child {
+.column.column > :last-child,
+.page-body.page-body > :last-child {
   margin-bottom: 0;
 }
 
