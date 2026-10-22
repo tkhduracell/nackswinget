@@ -32,12 +32,12 @@ env:
     availability:
       - RUNTIME
   # Admin sign-in mail (lib/admin/login-mail.ts). "unset" = Firebase sends the email instead.
-  # Set with: gcloud secrets versions add SMTP_URL --data-file=- (smtps://user:pass@host:465)
+  # Set with: gcloud secrets versions add SMTP_URL --data-file=- (smtps://outgoing%40nackswinget.se:PASSWORD@smtp.m101.websupport.se:465)
   - variable: SMTP_URL
     secret: SMTP_URL
     availability:
       - RUNTIME
   - variable: SMTP_FROM
-    value: "Dansklubben Nackswinget <noreply@nackswinget.se>"
+    value: "Dansklubben Nackswinget <outgoing@nackswinget.se>"
     availability:
       - RUNTIME

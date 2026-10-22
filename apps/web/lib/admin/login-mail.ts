@@ -10,8 +10,8 @@ import { getAdminAuth } from "@/lib/firebase/admin";
 // - Branded Swedish email from the club's own address.
 // - Links are only created for allowlisted addresses.
 //
-// SMTP_URL (Secret Manager), e.g. smtps://noreply%40nackswinget.se:PASSWORD@mailcluster.example:465
-// SMTP_FROM, e.g. "Dansklubben Nackswinget <noreply@nackswinget.se>"
+// SMTP_URL (Secret Manager), e.g. smtps://outgoing%40nackswinget.se:PASSWORD@smtp.m101.websupport.se:465
+// SMTP_FROM, e.g. "Dansklubben Nackswinget <outgoing@nackswinget.se>"
 
 const PLACEHOLDER = "unset";
 
@@ -52,7 +52,7 @@ export async function sendLoginMail(email: string, link: string): Promise<void> 
   const logOnly = process.env.SMTP_URL === "log";
   transport ??= logOnly ? nodemailer.createTransport({ jsonTransport: true }) : nodemailer.createTransport(process.env.SMTP_URL!);
   if (logOnly) console.log(`[login-mail] ${email}: ${link}`);
-  const from = process.env.SMTP_FROM ?? "Dansklubben Nackswinget <noreply@nackswinget.se>";
+  const from = process.env.SMTP_FROM ?? "Dansklubben Nackswinget <outgoing@nackswinget.se>";
   const text = [
     "Hej!",
     "",
