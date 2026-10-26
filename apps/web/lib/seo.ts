@@ -160,12 +160,23 @@ export function articleJsonLd(settings: Settings, post: PostSummary) {
   };
 }
 
+const offsetFormat = new Intl.DateTimeFormat("en", { timeZone: "Europe/Stockholm", timeZoneName: "longOffset" });
+
+/** Stockholm's UTC offset in minutes at an instant. */
+function offsetMinutesAt(ms: number): number {
+  const name = offsetFormat.formatToParts(new Date(ms)).find((p) => p.type === "timeZoneName")?.value ?? "GMT";
+  const m = /([+-])(\d\d):(\d\d)/.exec(name);
+  return m ? (m[1] === "-" ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3])) : 0;
+}
+
 /** UTC offset ("+01:00"/"+02:00") of a Stockholm wall time "YYYY-MM-DDTHH:mm". */
 export function stockholmOffset(wall: string): string {
-  const name = new Intl.DateTimeFormat("en", { timeZone: "Europe/Stockholm", timeZoneName: "longOffset" })
-    .formatToParts(new Date(`${wall.slice(0, 16)}:00Z`))
-    .find((p) => p.type === "timeZoneName")?.value;
-  return !name || name === "GMT" ? "+00:00" : name.slice(3);
+  const asUtc = Date.parse(`${wall.slice(0, 16)}:00Z`);
+  // Guess with the offset at the UTC reading, then settle on the offset at the real instant.
+  const guess = offsetMinutesAt(asUtc);
+  const mins = offsetMinutesAt(asUtc - guess * 60_000);
+  const abs = Math.abs(mins);
+  return `${mins < 0 ? "-" : "+"}${String(Math.floor(abs / 60)).padStart(2, "0")}:${String(abs % 60).padStart(2, "0")}`;
 }
 
 const eventDate = (wall: string, allDay: boolean) => (allDay ? wall : `${wall}:00${stockholmOffset(wall)}`);

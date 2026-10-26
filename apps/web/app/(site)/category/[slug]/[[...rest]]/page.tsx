@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { archivePageCount, PostArchive } from "@/components/views/PostArchive";
 import { getSite, listPosts } from "@/lib/content/cached";
 import { buildMetadata } from "@/lib/seo";
@@ -49,10 +49,7 @@ async function load(params: Params) {
 }
 
 export async function generateMetadata({ params }: PageProps<"/category/[slug]/[[...rest]]">): Promise<Metadata> {
-  const p = await params;
-  // Old WordPress pagination (/page/N/) moved to /sida/N/.
-  if (p.rest?.[0] === "page" && pageNumber(p.rest)) permanentRedirect(`/category/${p.slug}/sida/${p.rest[1]}/`);
-  const found = await load(p);
+  const found = await load(await params);
   // Thrown here, before the page streams, so the response really is a 404.
   if (!found) notFound();
   const { settings } = await getSite();

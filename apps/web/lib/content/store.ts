@@ -61,13 +61,12 @@ export function getStore(): Promise<ContentStore> {
 }
 
 /**
- * The one URL a path should live at: no repeated slashes, ASCII lowercase
- * (page paths and slugs are lowercase; non-ASCII stays percent-encoded as
- * sent), and WordPress's /nyheter/page/N/ as /nyheter/sida/N/.
+ * The one URL a page path should live at: no repeated slashes, ASCII
+ * lowercase (page paths and slugs are lowercase; non-ASCII stays
+ * percent-encoded as sent). File names keep their case.
  */
 export function canonicalPathname(pathname: string): string {
-  return pathname
-    .replace(/\/{2,}/g, "/")
-    .replace(/%[0-9A-Fa-f]{2}|[A-Z]+/g, (m) => (m.startsWith("%") ? m : m.toLowerCase()))
-    .replace(/^\/nyheter\/page\/(\d+)\/?$/, "/nyheter/sida/$1/");
+  const collapsed = pathname.replace(/\/{2,}/g, "/");
+  if (/\.[^/]+$/.test(collapsed)) return collapsed;
+  return collapsed.replace(/%[0-9A-Fa-f]{2}|[A-Z]+/g, (m) => (m.startsWith("%") ? m : m.toLowerCase()));
 }

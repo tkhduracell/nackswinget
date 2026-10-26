@@ -34,6 +34,11 @@ describe("stockholmOffset", () => {
   it("follows daylight saving time", () => {
     expect(stockholmOffset("2026-07-01T18:00")).toBe("+02:00");
     expect(stockholmOffset("2026-12-01T18:00")).toBe("+01:00");
+    // Around the October switch (03:00 CEST -> 02:00 CET on 2026-10-25).
+    expect(stockholmOffset("2026-10-25T01:30")).toBe("+02:00");
+    expect(stockholmOffset("2026-10-25T03:30")).toBe("+01:00");
+    expect(stockholmOffset("2026-03-29T01:30")).toBe("+01:00");
+    expect(stockholmOffset("2026-03-29T03:30")).toBe("+02:00");
   });
 });
 
@@ -82,10 +87,10 @@ describe("buildMetadata", () => {
 });
 
 describe("canonicalPathname", () => {
-  it("folds case and slash variants and old WordPress pagination", () => {
+  it("folds case and slash variants", () => {
     expect(canonicalPathname("/Kalender/")).toBe("/kalender/");
     expect(canonicalPathname("/kontakt//")).toBe("/kontakt/");
-    expect(canonicalPathname("/nyheter/page/2/")).toBe("/nyheter/sida/2/");
+    expect(canonicalPathname("/media/Logo.PNG")).toBe("/media/Logo.PNG");
     expect(canonicalPathname("/om-oss/%C3%A5rsm%C3%B6te/")).toBe("/om-oss/%C3%A5rsm%C3%B6te/");
     expect(canonicalPathname("/kurser/")).toBe("/kurser/");
   });
