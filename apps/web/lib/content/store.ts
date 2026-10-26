@@ -26,6 +26,7 @@ export function toSummary(p: Post): PostSummary {
     categories: p.categories,
     image: p.image,
     publishedAt: p.publishedAt,
+    updatedAt: p.updatedAt,
   };
 }
 
@@ -57,4 +58,15 @@ export function getStore(): Promise<ContentStore> {
       ? import("./snapshot-store").then((m) => m.createSnapshotStore())
       : import("./firestore-store").then((m) => m.createFirestoreStore());
   return store;
+}
+
+/**
+ * The one URL a page path should live at: no repeated slashes, ASCII
+ * lowercase (page paths and slugs are lowercase; non-ASCII stays
+ * percent-encoded as sent). File names keep their case.
+ */
+export function canonicalPathname(pathname: string): string {
+  const collapsed = pathname.replace(/\/{2,}/g, "/");
+  if (/\.[^/]+$/.test(collapsed)) return collapsed;
+  return collapsed.replace(/%[0-9A-Fa-f]{2}|[A-Z]+/g, (m) => (m.startsWith("%") ? m : m.toLowerCase()));
 }

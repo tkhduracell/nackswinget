@@ -17,6 +17,7 @@ import {
   settingsSchema,
 } from "@/lib/content/types";
 import { getDb } from "@/lib/firebase/admin";
+import { needsSeoTitle, suggestSeoTitle } from "@/lib/ai/seo-title";
 import { type AdminUser, HttpError } from "./auth";
 
 export type Kind = "pages" | "posts";
@@ -92,9 +93,18 @@ export async function publish(kind: Kind, id: string, data: unknown, user: Admin
 
   const db = getDb();
   const ref = db.collection(kind).doc(id);
+  const previous = await ref.get();
+  if (kind === "posts") {
+    const post = doc as Post;
+    if (needsSeoTitle(post, previous.exists ? String(previous.get("title") ?? "") : undefined)) {
+      const title = await suggestSeoTitle(post);
+      if (title) post.seo = { ...post.seo, title, titleAuto: true };
+      // A generated title for an old headline is worse than none: fall back to the headline.
+      else if (post.seo.titleAuto) post.seo = { ...post.seo, title: undefined, titleAuto: undefined };
+    }
+  }
   const { id: _id, ...body } = doc;
   void _id;
-  const previous = await ref.get();
   const batch = db.batch();
   if (previous.exists) {
     batch.set(ref.collection("versions").doc(), { data: previous.data(), savedAt: now, savedBy: user.email });

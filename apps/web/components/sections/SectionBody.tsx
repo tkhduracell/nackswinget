@@ -43,15 +43,23 @@ function ext(href: string) {
   return /^https?:\/\//.test(href) && !/^https?:\/\/(www\.)?nackswinget\.se/.test(href) ? { target: "_blank", rel: "noopener noreferrer" } : {};
 }
 
-export function SectionView({ section, slots, index, first }: { section: Section; slots: SectionSlots; index: string; first: boolean }) {
+/** `sizes` for an image in a column that takes `share` of the content width (columns stack below 981px). */
+function imageSizes(share: number, shown?: number): string {
+  const desktop = Math.round(Math.min(shown ?? Infinity, 1080 * share));
+  return `(min-width: 981px) ${desktop}px, ${shown ? `min(${shown}px, 100vw)` : "100vw"}`;
+}
+
+export function SectionView({ section, slots, index, first, share = 1 }: { section: Section; slots: SectionSlots; index: string; first: boolean; share?: number }) {
   switch (section.type) {
-    case "hero":
+    case "hero": {
+      // The page's h1 when it opens the page; a later hero is a section heading.
+      const Title = first ? "h1" : "h2";
       return (
         <section className={section.image ? "hero hero-image" : "hero"}>
           {section.image && <Img image={section.image} sizes="100vw" priority className="hero-bg" alt="" />}
           {section.video && <HeroVideo video={section.video} />}
           <div className="hero-inner">
-            <h1>{section.title}</h1>
+            <Title className="hero-title">{section.title}</Title>
             {section.subtitle && <p className="hero-sub">{section.subtitle}</p>}
             {section.buttons.length > 0 && (
               <p className="hero-buttons">
@@ -65,6 +73,7 @@ export function SectionView({ section, slots, index, first }: { section: Section
           </div>
         </section>
       );
+    }
     case "richText":
       return <RichText doc={section.doc} className={section.variant && section.variant !== "plain" ? `box ${section.variant}` : undefined} />;
     case "columns": {
@@ -73,7 +82,7 @@ export function SectionView({ section, slots, index, first }: { section: Section
         <div className="columns" style={{ ["--cols" as string]: grid.cols }}>
           {section.columns.map((c, i) => (
             <div key={i} className="column" style={{ ["--span" as string]: grid.spans[i] }}>
-              <SectionList sections={c.sections} slots={slots} prefix={`${index}-${i}`} />
+              <SectionList sections={c.sections} slots={slots} prefix={`${index}-${i}`} share={(share * grid.spans[i]) / grid.cols} />
             </div>
           ))}
         </div>
@@ -129,7 +138,7 @@ export function SectionView({ section, slots, index, first }: { section: Section
       );
     case "image": {
       const shown = section.image.displayWidth;
-      const img = <Img image={section.image} priority={first} sizes={shown ? `${shown}px` : "(min-width: 1080px) 1080px, 100vw"} />;
+      const img = <Img image={section.image} priority={first} sizes={imageSizes(share, shown)} />;
       return (
         <figure className="image-section" style={shown ? { maxWidth: shown } : undefined}>
           {section.href ? (
@@ -152,11 +161,11 @@ export function SectionView({ section, slots, index, first }: { section: Section
   }
 }
 
-export function SectionList({ sections, slots, prefix = "s" }: { sections: Section[]; slots: SectionSlots; prefix?: string }) {
+export function SectionList({ sections, slots, prefix = "s", share }: { sections: Section[]; slots: SectionSlots; prefix?: string; share?: number }) {
   return (
     <>
       {sections.map((s, i) => (
-        <SectionView key={`${prefix}-${i}`} section={s} slots={slots} index={`${prefix}-${i}`} first={prefix === "s" && i === 0} />
+        <SectionView key={`${prefix}-${i}`} section={s} slots={slots} index={`${prefix}-${i}`} first={prefix === "s" && i === 0} share={share} />
       ))}
     </>
   );

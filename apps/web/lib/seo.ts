@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { docToText } from "@/lib/import/html";
-import type { Page, PostSummary, Section, Settings } from "@/lib/content/types";
+import type { CalendarEvent } from "@/lib/calendar/ics";
+import type { Page, Post, PostSummary, Section, Settings } from "@/lib/content/types";
 import { imageUrl, publicUrl } from "@/lib/media/urls";
 import { truncate } from "@/lib/format";
 
@@ -32,26 +33,59 @@ export function ogImageFor(title: string, image?: { src: string; variants: numbe
   return `/og/?title=${encodeURIComponent(title)}`;
 }
 
+/**
+ * What a page or post shares as: the og/twitter title, description and image.
+ * Used by the site's metadata and by the admin's share preview, so the two agree.
+ */
+export function shareCard(settings: Settings, item: { kind: "page"; doc: Page } | { kind: "post"; doc: Post }) {
+  if (item.kind === "page") {
+    const p = item.doc;
+    const title = p.seo.title || (p.path ? p.title : settings.siteName);
+    return { title, description: p.seo.description || sectionsText(p.sections), path: pageUrl(p), image: p.seo.image || ogImageFor(title) };
+  }
+  const post = item.doc;
+  return {
+    title: post.seo.title || post.title,
+    description: post.seo.description || post.excerpt || docToText(post.body),
+    path: `/${post.slug}/`,
+    image: post.seo.image || ogImageFor(post.title, post.image),
+  };
+}
+
+/** The description as emitted: whitespace collapsed, tagline when empty, at most 160 characters. */
+export function metaDescription(settings: Settings, text?: string): string {
+  return truncate((text || settings.tagline).replace(/\s+/g, " ").trim(), 160);
+}
+
 export function buildMetadata(opts: {
   settings: Settings;
   title: string;
   description?: string;
   path: string;
   image?: string;
+  /** False for routes without a /md/ twin (archives). */
+  markdown?: boolean;
   type?: "website" | "article";
   publishedTime?: string;
   modifiedTime?: string;
 }): Metadata {
   const { settings } = opts;
-  const description = truncate((opts.description || settings.tagline).replace(/\s+/g, " ").trim(), 160);
+  const description = metaDescription(settings, opts.description);
   const url = absolute(settings, opts.path);
-  const image = opts.image ? absolute(settings, opts.image.startsWith("web/") ? publicUrl(opts.image) : opts.image) : undefined;
+  const raw = opts.image ?? ogImageFor(opts.title);
+  const image = absolute(settings, raw.startsWith("web/") ? publicUrl(raw) : raw);
+  // The generated card is the only image whose size we know.
+  const size = image.includes("/og/?") ? { width: 1200, height: 630 } : {};
   return {
     title: opts.title,
     description,
     alternates: {
       canonical: url,
-      types: { "text/markdown": absolute(settings, `/md${opts.path === "/" ? "/index" : opts.path.replace(/\/$/, "")}.md`) },
+      // Replaces the root layout's alternates (shallow merge), so the feed is repeated here.
+      types: {
+        "application/rss+xml": absolute(settings, "/feed/"),
+        ...(opts.markdown === false ? {} : { "text/markdown": absolute(settings, `/md${opts.path === "/" ? "/index" : opts.path.replace(/\/$/, "")}.md`) }),
+      },
     },
     openGraph: {
       type: opts.type ?? "website",
@@ -60,45 +94,142 @@ export function buildMetadata(opts: {
       description,
       siteName: settings.siteName,
       locale: "sv_SE",
-      ...(image ? { images: [{ url: image, width: 1200, height: 630, alt: opts.title }] } : {}),
+      images: [{ url: image, ...size, alt: opts.title }],
       ...(opts.publishedTime ? { publishedTime: opts.publishedTime } : {}),
       ...(opts.modifiedTime ? { modifiedTime: opts.modifiedTime } : {}),
     },
-    twitter: { card: "summary_large_image", title: opts.title, description, ...(image ? { images: [image] } : {}) },
+    twitter: { card: "summary_large_image", title: opts.title, description, images: [image] },
   };
 }
 
-export function organizationJsonLd(settings: Settings) {
+/** Serializes JSON-LD for a <script> tag; `<` is escaped so data can't close the tag. */
+export function jsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+}
+
+/** Where the club trains and holds its events. */
+export const VENUE = {
+  name: "Ceylon",
+  streetAddress: "Fredrik Jahns gränd 16",
+  postalCode: "131 36",
+  addressLocality: "Nacka",
+  addressRegion: "Stockholms län",
+  addressCountry: "SE",
+};
+
+type SiteRef = Pick<Settings, "siteUrl" | "siteName">;
+
+const base = (site: SiteRef) => site.siteUrl.replace(/\/$/, "");
+export const orgId = (site: SiteRef) => `${base(site)}/#organization`;
+const venueId = (site: SiteRef) => `${base(site)}/#venue`;
+
+function postalAddress() {
+  const { streetAddress, postalCode, addressLocality, addressRegion, addressCountry } = VENUE;
+  return { "@type": "PostalAddress", streetAddress, postalCode, addressLocality, addressRegion, addressCountry };
+}
+
+function venuePlace(site: SiteRef) {
+  return { "@type": "Place", "@id": venueId(site), name: VENUE.name, address: postalAddress() };
+}
+
+/** Club, venue and website, emitted once per page by the site layout. */
+export function siteJsonLd(settings: Settings) {
   return {
     "@context": "https://schema.org",
-    "@type": "SportsClub",
-    name: settings.siteName,
-    url: settings.siteUrl,
-    description: settings.tagline,
-    sport: "Dans",
-    ...(settings.logo ? { logo: publicUrl(settings.logo) } : {}),
-    address: { "@type": "PostalAddress", addressLocality: "Nacka", addressCountry: "SE" },
-    sameAs: [settings.social.facebook, settings.social.instagram].filter(Boolean),
+    "@graph": [
+      {
+        "@type": "SportsClub",
+        "@id": orgId(settings),
+        name: settings.siteName,
+        alternateName: "Nackswinget",
+        url: `${base(settings)}/`,
+        description: settings.tagline,
+        ...(settings.logo ? { logo: publicUrl(settings.logo), image: publicUrl(settings.logo) } : {}),
+        address: postalAddress(),
+        location: { "@id": venueId(settings) },
+        ...(settings.footer.email ? { email: settings.footer.email } : {}),
+        ...(settings.orgNumber ? { taxID: settings.orgNumber } : {}),
+        sameAs: [settings.social.facebook, settings.social.instagram].filter(Boolean),
+      },
+      venuePlace(settings),
+      {
+        "@type": "WebSite",
+        "@id": `${base(settings)}/#website`,
+        url: `${base(settings)}/`,
+        name: settings.siteName,
+        alternateName: "Nackswinget",
+        inLanguage: "sv-SE",
+        publisher: { "@id": orgId(settings) },
+      },
+    ],
   };
 }
 
-export function articleJsonLd(settings: Settings, post: PostSummary & { updatedAt?: string }) {
+export function articleJsonLd(settings: Settings, post: PostSummary) {
+  const url = absolute(settings, `/${post.slug}/`);
   return {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
     headline: post.title,
     datePublished: post.publishedAt,
-    ...(post.updatedAt ? { dateModified: post.updatedAt } : {}),
-    url: absolute(settings, `/${post.slug}/`),
-    ...(post.image ? { image: [imageUrl(post.image.src, post.image.variants)] } : {}),
-    author: { "@type": "Organization", name: settings.siteName, url: settings.siteUrl },
-    publisher: {
-      "@type": "Organization",
-      name: settings.siteName,
-      ...(settings.logo ? { logo: { "@type": "ImageObject", url: publicUrl(settings.logo) } } : {}),
-    },
-    description: post.excerpt,
+    ...(post.updatedAt && post.updatedAt !== post.publishedAt ? { dateModified: post.updatedAt } : {}),
+    url,
+    mainEntityOfPage: url,
+    inLanguage: "sv-SE",
+    // Google requires an image for article rich results; fall back to the generated card.
+    image: [post.image ? imageUrl(post.image.src, post.image.variants) : absolute(settings, ogImageFor(post.title))],
+    author: { "@type": "Organization", "@id": orgId(settings), name: settings.siteName, url: settings.siteUrl },
+    publisher: { "@type": "Organization", "@id": orgId(settings), name: settings.siteName },
+    ...(post.excerpt ? { description: post.excerpt } : {}),
   };
+}
+
+const offsetFormat = new Intl.DateTimeFormat("en", { timeZone: "Europe/Stockholm", timeZoneName: "longOffset" });
+
+/** Stockholm's UTC offset in minutes at an instant. */
+function offsetMinutesAt(ms: number): number {
+  const name = offsetFormat.formatToParts(new Date(ms)).find((p) => p.type === "timeZoneName")?.value ?? "GMT";
+  const m = /([+-])(\d\d):(\d\d)/.exec(name);
+  return m ? (m[1] === "-" ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3])) : 0;
+}
+
+/** UTC offset ("+01:00"/"+02:00") of a Stockholm wall time "YYYY-MM-DDTHH:mm". */
+export function stockholmOffset(wall: string): string {
+  const asUtc = Date.parse(`${wall.slice(0, 16)}:00Z`);
+  // Guess with the offset at the UTC reading, then settle on the offset at the real instant.
+  const guess = offsetMinutesAt(asUtc);
+  const mins = offsetMinutesAt(asUtc - guess * 60_000);
+  const abs = Math.abs(mins);
+  return `${mins < 0 ? "-" : "+"}${String(Math.floor(abs / 60)).padStart(2, "0")}:${String(abs % 60).padStart(2, "0")}`;
+}
+
+const eventDate = (wall: string, allDay: boolean) => (allDay ? wall : `${wall}:00${stockholmOffset(wall)}`);
+
+/**
+ * Feeds holding public, club-organised events. Course slots, member training
+ * and other clubs' competitions are not events Google should list for us.
+ */
+export const PUBLIC_EVENT_FEEDS = new Set(["event"]);
+
+export function eventsJsonLd(site: SiteRef, events: CalendarEvent[]) {
+  return events
+    .filter((e) => PUBLIC_EVENT_FEEDS.has(e.feed))
+    .map((e) => {
+      const atVenue = !e.location || /ceylon|fredrik jahns/i.test(e.location);
+      return {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        name: e.title,
+        startDate: eventDate(e.start, e.allDay),
+        ...(e.end ? { endDate: eventDate(e.end, e.allDay) } : {}),
+        eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+        eventStatus: "https://schema.org/EventScheduled",
+        location: atVenue ? venuePlace(site) : { "@type": "Place", name: e.location, address: e.location },
+        organizer: { "@type": "SportsClub", "@id": orgId(site), name: site.siteName, url: site.siteUrl },
+        ...(e.description ? { description: truncate(e.description.replace(/\s+/g, " ").trim(), 300) } : {}),
+        url: e.url || `${base(site)}/kalender/`,
+      };
+    });
 }
 
 export function breadcrumbJsonLd(settings: Settings, crumbs: { name: string; path: string }[]) {

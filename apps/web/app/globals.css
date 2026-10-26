@@ -513,7 +513,7 @@ p {
   margin: 0 auto;
   padding: 22px 0 11px;
 }
-.hero h1 {
+.hero .hero-title {
   color: #fff;
   font-size: 56px;
   line-height: 1;
@@ -535,7 +535,7 @@ p {
   padding: 6px 20px;
 }
 @media (max-width: 600px) {
-  .hero h1 {
+  .hero .hero-title {
     font-size: 40px;
   }
   .hero-sub {

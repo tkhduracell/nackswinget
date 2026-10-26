@@ -12,6 +12,7 @@
     "test": "vitest run",
     "export:wp": "tsx scripts/wp-export.ts",
     "import": "tsx scripts/import-snapshot.ts",
+    "seo:fill": "tsx scripts/seo-fill.ts",
     "emulators": "cd ../.. && firebase emulators:start --only auth,firestore --project demo-nsw",
     "dev:emulators": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIREBASE_PROJECT_ID=demo-nsw NEXT_PUBLIC_EMULATORS=1 IMPORT_TOKEN=local-dev-token CRON_TOKEN=local-cron-token SMTP_URL=log ADMIN_EMAILS=admin@example.test next dev",
     "build:fixture": "CONTENT_SOURCE=snapshot CONTENT_SNAPSHOT=test/fixtures/snapshot.json next build",
@@ -20,6 +21,7 @@
     "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
+    "@google/genai": "^2.31.0",
     "@tiptap/core": "^3.32.0",
     "@tiptap/extension-placeholder": "^3.32.0",
     "@tiptap/extension-table": "^3.32.0",
@@ -40,6 +42,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^1.3.0",
     "@playwright/test": "^1.64.1",
     "@types/node": "^24",
     "@types/nodemailer": "^8.0.2",
