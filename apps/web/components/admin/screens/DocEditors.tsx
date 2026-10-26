@@ -95,7 +95,7 @@ function Versions({ kind, id, onRestore }: { kind: "pages" | "posts"; id: string
   );
 }
 
-function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, viewHref, extra, blockedReason, publishing }: {
+function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, viewHref, blockedReason, publishing }: {
   title: string;
   back: string;
   state: SaveState;
@@ -104,7 +104,6 @@ function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, 
   onPublish: () => void;
   onDiscard: () => void;
   viewHref?: string;
-  extra?: React.ReactNode;
   /** Publishing isn't possible yet: the button is greyed out and this shows on hover. */
   blockedReason?: string;
   /** Busy before the save itself (the phone's Autofyll on publish). */
@@ -123,7 +122,6 @@ function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, 
         </div>
       </div>
       <div className="editor-actions">
-        {extra && <div className="editor-extra">{extra}</div>}
         {viewHref && (
           <a href={viewHref} target="_blank" rel="noreferrer" className="button button-ghost">
             <Icon name="external" size={16} />
@@ -268,8 +266,6 @@ export function PostEditor({ id }: { id: string }) {
   const now = useMemo(() => new Date().toISOString(), []);
   const blank = (): Post => ({ id, slug: "", title: "", excerpt: "", body: { type: "doc", content: [] }, categories: ["foreningsnyhet"], status: "published", publishedAt: now, updatedAt: now, seo: {} });
   const { doc, update, published, publish, discard, state, error, hasDraft } = useDraft<Post>("posts", id, blank);
-  const [push, setPush] = useState(false);
-  const [pushResult, setPushResult] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
   const [filling, setFilling] = useState(false);
   const [seoError, setSeoError] = useState<string | null>(null);
@@ -326,15 +322,8 @@ export function PostEditor({ id }: { id: string }) {
       if (!filled || seoMissing(filled)) return;
       toPublish = filled;
     }
-    const saved = await publish(toPublish);
-    if (saved && push && !scheduled && withSlug.status !== "draft") {
-      try {
-        await api("/push", { method: "POST" });
-        setPushResult("Notis skickad till appen.");
-      } catch (e) {
-        setPushResult(`Notisen kunde inte skickas: ${(e as Error).message}`);
-      }
-    }
+    // The app push follows on its own: news-api's 30-minute schedule picks up the newest post from /feed/.
+    await publish(toPublish);
   };
 
   return (
@@ -344,17 +333,12 @@ export function PostEditor({ id }: { id: string }) {
         back="/admin/nyheter/"
         state={state}
         hasDraft={hasDraft}
-        error={error ?? pushResult ?? (isPhone ? seoError : null)}
+        error={error ?? (isPhone ? seoError : null)}
         onPublish={() => void onPublish()}
         onDiscard={() => void discard()}
         viewHref={published && !scheduled ? `/${published.slug}/` : undefined}
         blockedReason={!isPhone && seoMissing(doc) ? "Fyll i titel och beskrivning under Sökmotorer och delning (eller tryck Autofyll) för att publicera" : undefined}
         publishing={filling}
-        extra={
-          <label className="check">
-            <input type="checkbox" checked={push} disabled={scheduled || doc.status === "draft"} onChange={(e) => setPush(e.target.checked)} /> Skicka notis till appen
-          </label>
-        }
       />
       <div className="editor-split">
         <div className="editor-form">

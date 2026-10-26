@@ -1282,16 +1282,6 @@
   align-items: center;
   gap: 8px;
 }
-.admin .editor-extra {
-  display: flex;
-  align-items: center;
-  margin-right: 4px;
-}
-.admin .editor-extra .check {
-  color: var(--a-text-2);
-  font-size: 13px;
-  white-space: nowrap;
-}
 .admin .editor-bar .admin-error {
   flex-basis: 100%;
   margin: 0;
@@ -1499,10 +1489,6 @@
     backdrop-filter: blur(10px);
     box-shadow: 0 -4px 16px rgba(16, 16, 24, 0.06);
   }
-  .admin .editor-extra {
-    flex: 1 1 auto;
-    margin-right: auto;
-  }
   .admin .editor-actions .publish-wrap .button {
     min-width: 120px;
   }
@@ -1537,9 +1523,6 @@
   .admin .editor-actions .button-danger-ghost {
     width: 38px;
     padding: 0;
-  }
-  .admin .editor-extra {
-    flex-basis: 100%;
   }
   .admin .editor {
     padding-bottom: 110px;
