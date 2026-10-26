@@ -25,7 +25,7 @@ function NavLinks({ items, mobile }: { items: NavItem[]; mobile?: boolean }) {
   );
 }
 
-/** The 40th anniversary (16/1 2027): a gold shimmer line under the header until the end of January. */
+/** The 40th anniversary (16/1 2027): a gold shimmer line and logo sheen in the header until the end of January. */
 const JUBILEE_UNTIL = Date.parse("2027-02-01T00:00:00+01:00");
 
 /** Pure HTML/CSS navigation: hover/focus dropdowns on desktop, <details> menu on mobile. */
@@ -35,9 +35,17 @@ export function Header({ nav, logo, siteName }: { nav: NavItem[]; logo?: string;
       <div className="header-inner">
         <Link href="/" className="logo" aria-label={`${siteName} – startsida`} prefetch={false}>
           {logo ? (
-            // 480w WebP variant (~5 KB) instead of the 35 KB PNG original.
-            // eslint-disable-next-line @next/next/no-img-element -- small static logo
-            <img src={publicUrl(/\.(png|jpe?g)$/i.test(logo) ? variantPath(logo, 480) : logo)} alt={siteName} width={210} height={42} decoding="async" />
+            <span className="logo-mark logo-gold" id="logo-mark">
+              {/* 480w WebP variant (~5 KB) instead of the 35 KB PNG original. */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- small static logo */}
+              <img src={publicUrl(/\.(png|jpe?g)$/i.test(logo) ? variantPath(logo, 480) : logo)} alt={siteName} width={210} height={42} decoding="async" />
+              <span className="glints logo-glints" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+                <span />
+              </span>
+            </span>
           ) : (
             <span>{siteName}</span>
           )}
@@ -63,8 +71,12 @@ export function Header({ nav, logo, siteName }: { nav: NavItem[]; logo?: string;
         <span />
         <span />
       </div>
-      {/* The header is static HTML; the visitor's clock retires the line after the anniversary. */}
-      <script dangerouslySetInnerHTML={{ __html: `Date.now()>=${JUBILEE_UNTIL}&&document.getElementById("gold-line")?.remove()` }} />
+      {/* The header is static HTML; the visitor's clock retires the gold line and logo after the anniversary. */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `if(Date.now()>=${JUBILEE_UNTIL}){document.getElementById("gold-line")?.remove();document.getElementById("logo-mark")?.classList.remove("logo-gold")}`,
+        }}
+      />
     </header>
   );
 }
