@@ -101,6 +101,7 @@ const PATHS = {
     </>
   ),
   send: <path d="m22 2-7 20-4-9-9-4zM22 2 11 13" />,
+  wand: <path d="m15 4 5 5M4 20l11-11M15 4l-1.5 3.5L10 9l3.5 1.5L15 14l1.5-3.5L20 9l-3.5-1.5zM6 3v4M4 5h4M19 15v4M17 17h4" />,
 } as const;
 
 export type IconName = keyof typeof PATHS;

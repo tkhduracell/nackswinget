@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { CalendarFeed, Category, Page, Post, Settings } from "@/lib/content/types";
 import { useAdmin } from "../AuthProvider";
 import { MediaPicker } from "../MediaPicker";
@@ -26,6 +26,20 @@ export function useSiteBasics() {
     api<Category[] | null>("/site/categories").then((c) => setCategories(c ?? [])).catch(() => {});
   }, [api]);
   return { feeds, categories, settings };
+}
+
+/** Phone layout (matches the admin's narrowest breakpoint). */
+const PHONE = "(max-width: 639px)";
+function useIsPhone(): boolean {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mq = window.matchMedia(PHONE);
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia(PHONE).matches,
+    () => false,
+  );
 }
 
 function SaveBadge({ state, hasDraft }: { state: SaveState; hasDraft: boolean }) {
@@ -81,7 +95,7 @@ function Versions({ kind, id, onRestore }: { kind: "pages" | "posts"; id: string
   );
 }
 
-function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, viewHref, extra }: {
+function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, viewHref, blockedReason, publishing }: {
   title: string;
   back: string;
   state: SaveState;
@@ -90,7 +104,10 @@ function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, 
   onPublish: () => void;
   onDiscard: () => void;
   viewHref?: string;
-  extra?: React.ReactNode;
+  /** Publishing isn't possible yet: the button is greyed out and this shows on hover. */
+  blockedReason?: string;
+  /** Busy before the save itself (the phone's Autofyll on publish). */
+  publishing?: boolean;
 }) {
   return (
     <div className="editor-bar">
@@ -105,7 +122,6 @@ function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, 
         </div>
       </div>
       <div className="editor-actions">
-        {extra && <div className="editor-extra">{extra}</div>}
         {viewHref && (
           <a href={viewHref} target="_blank" rel="noreferrer" className="button button-ghost">
             <Icon name="external" size={16} />
@@ -122,10 +138,25 @@ function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, 
           <Icon name="eye" size={16} />
           <span className="hide-xs">Förhandsvisning</span>
         </a>
-        <button type="button" className="button" onClick={onPublish} disabled={state === "saving"}>
-          <Icon name="send" size={16} />
-          Publicera
-        </button>
+        {/* aria-disabled rather than disabled: a disabled button gets no hover, so no hint, and can't be clicked to jump to what's missing. */}
+        <span className={blockedReason ? "publish-wrap has-tip" : "publish-wrap"} data-tip={blockedReason}>
+          <button
+            type="button"
+            className={blockedReason ? "button button-blocked" : "button"}
+            onClick={onPublish}
+            disabled={state === "saving" || publishing}
+            aria-disabled={blockedReason ? true : undefined}
+            aria-describedby={blockedReason ? "publish-blocked" : undefined}
+          >
+            <Icon name="send" size={16} />
+            {publishing ? "Fyller i…" : "Publicera"}
+          </button>
+          {blockedReason && (
+            <span id="publish-blocked" className="sr-only">
+              {blockedReason}
+            </span>
+          )}
+        </span>
       </div>
       {error && <p className="admin-error">{error}</p>}
     </div>
@@ -235,26 +266,64 @@ export function PostEditor({ id }: { id: string }) {
   const now = useMemo(() => new Date().toISOString(), []);
   const blank = (): Post => ({ id, slug: "", title: "", excerpt: "", body: { type: "doc", content: [] }, categories: ["foreningsnyhet"], status: "published", publishedAt: now, updatedAt: now, seo: {} });
   const { doc, update, published, publish, discard, state, error, hasDraft } = useDraft<Post>("posts", id, blank);
-  const [push, setPush] = useState(false);
-  const [pushResult, setPushResult] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
+  const [filling, setFilling] = useState(false);
+  const [seoError, setSeoError] = useState<string | null>(null);
+  // On a phone the SEO card is hidden: publishing fills the fields itself.
+  const isPhone = useIsPhone();
   const [nowMs] = useState(() => Date.now());
 
   if (!doc) return <p className="admin-loading">{error ?? "Laddar…"}</p>;
   const scheduled = new Date(doc.publishedAt).getTime() > nowMs;
 
+  const seoMissing = (p: Post) => !p.seo.title?.trim() || !p.seo.description?.trim();
+
+  /** Gemini's title and description; `onlyEmpty` keeps what the editor already wrote. */
+  const autofill = async (base: Post = doc, onlyEmpty = false): Promise<Post | null> => {
+    if (!base.title.trim()) {
+      setSeoError("Skriv en rubrik först.");
+      return null;
+    }
+    setFilling(true);
+    setSeoError(null);
+    try {
+      const seo = await api<{ title: string; description: string }>("/seo-suggest", { method: "POST", json: base });
+      const keepTitle = onlyEmpty && base.seo.title?.trim();
+      const next: Post = {
+        ...base,
+        seo: {
+          ...base.seo,
+          ...(keepTitle ? {} : { title: seo.title, titleAuto: true }),
+          description: onlyEmpty && base.seo.description?.trim() ? base.seo.description : seo.description,
+        },
+      };
+      update(next);
+      return next;
+    } catch (e) {
+      setSeoError((e as Error).message);
+      return null;
+    } finally {
+      setFilling(false);
+    }
+  };
+
   const onPublish = async () => {
     const withSlug = doc.slug ? doc : { ...doc, slug: slugify(doc.title) };
     if (!withSlug.title.trim()) return window.alert("Nyheten behöver en rubrik.");
-    const saved = await publish(withSlug);
-    if (saved && push && !scheduled && withSlug.status !== "draft") {
-      try {
-        await api("/push", { method: "POST" });
-        setPushResult("Notis skickad till appen.");
-      } catch (e) {
-        setPushResult(`Notisen kunde inte skickas: ${(e as Error).message}`);
+    let toPublish = withSlug;
+    if (seoMissing(withSlug)) {
+      if (!isPhone) {
+        setSeoError("Fyll i titel och beskrivning för Google innan du publicerar, eller tryck Autofyll.");
+        document.getElementById("seo")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
       }
+      // Phone: one Autofyll run, then publish.
+      const filled = await autofill(withSlug, true);
+      if (!filled || seoMissing(filled)) return;
+      toPublish = filled;
     }
+    // The app push follows on its own: news-api's 30-minute schedule picks up the newest post from /feed/.
+    await publish(toPublish);
   };
 
   return (
@@ -264,15 +333,12 @@ export function PostEditor({ id }: { id: string }) {
         back="/admin/nyheter/"
         state={state}
         hasDraft={hasDraft}
-        error={error ?? pushResult}
+        error={error ?? (isPhone ? seoError : null)}
         onPublish={() => void onPublish()}
         onDiscard={() => void discard()}
         viewHref={published && !scheduled ? `/${published.slug}/` : undefined}
-        extra={
-          <label className="check">
-            <input type="checkbox" checked={push} disabled={scheduled || doc.status === "draft"} onChange={(e) => setPush(e.target.checked)} /> Skicka notis till appen
-          </label>
-        }
+        blockedReason={!isPhone && seoMissing(doc) ? "Fyll i titel och beskrivning under Sökmotorer och delning (eller tryck Autofyll) för att publicera" : undefined}
+        publishing={filling}
       />
       <div className="editor-split">
         <div className="editor-form">
@@ -354,24 +420,34 @@ export function PostEditor({ id }: { id: string }) {
             <RichTextEditor value={doc.body} onChange={(body) => update({ ...doc, body })} />
           </div>
           </div>
-          <div className="form-card">
-          <details className="field disclosure">
-            <summary>Sökmotorer och delning (SEO)</summary>
-            <label className="field">
-              <span>Titel i Google</span>
-              <input
-                value={doc.seo.title ?? ""}
-                placeholder={`${doc.title || "Rubriken"} (fylls i av AI när du publicerar)`}
-                // Typing makes it the editor's title: AI won't rewrite it.
-                onChange={(e) => update({ ...doc, seo: { ...doc.seo, title: e.target.value || undefined, titleAuto: undefined } })}
-              />
-              {doc.seo.titleAuto && <small className="muted">Skriven av AI. Ändra fritt, eller töm fältet för att få ett nytt förslag.</small>}
-            </label>
-            <label className="field">
-              <span>Beskrivning (visas i Google och på Facebook)</span>
-              <textarea rows={3} maxLength={300} value={doc.seo.description ?? ""} placeholder="Lämna tomt för att använda ingressen" onChange={(e) => update({ ...doc, seo: { ...doc.seo, description: e.target.value || undefined } })} />
-            </label>
-          </details>
+          <div className="form-card seo-card" id="seo">
+          <div className="card-head">
+            <h2>Sökmotorer och delning</h2>
+            <button type="button" className="button button-ghost button-sm" onClick={() => void autofill()} disabled={filling}>
+              <Icon name="wand" size={16} />
+              {filling ? "Skriver…" : "Autofyll"}
+            </button>
+          </div>
+          <label className="field">
+            <span>Titel i Google *</span>
+            <input
+              required
+              maxLength={70}
+              value={doc.seo.title ?? ""}
+              placeholder={doc.title || "Rubriken"}
+              // Typing makes it the editor's title: AI won't rewrite it.
+              onChange={(e) => update({ ...doc, seo: { ...doc.seo, title: e.target.value || undefined, titleAuto: undefined } })}
+            />
+            <small className="muted">
+              {(doc.seo.title ?? "").length}/50 tecken{doc.seo.titleAuto ? " · skriven av AI, ändra fritt" : ""}
+            </small>
+          </label>
+          <label className="field">
+            <span>Beskrivning (visas i Google och på Facebook) *</span>
+            <textarea required rows={3} maxLength={300} value={doc.seo.description ?? ""} placeholder="En eller två meningar om vad nyheten handlar om" onChange={(e) => update({ ...doc, seo: { ...doc.seo, description: e.target.value || undefined } })} />
+            <small className="muted">{(doc.seo.description ?? "").length}/155 tecken</small>
+          </label>
+          {seoError && <p className="admin-error">{seoError}</p>}
           {settings && <SharePreview settings={settings} item={{ kind: "post", doc }} />}
           </div>
           {published && <Versions kind="posts" id={id} onRestore={(data) => update({ ...(data as Post), id })} />}
