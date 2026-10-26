@@ -16,6 +16,8 @@ import { PushSubscribe } from "./PushSubscribe";
 export interface SectionSlots {
   calendar(section: Extract<Section, { type: "calendar" }>, id: string): ReactNode;
   postList(section: Extract<Section, { type: "postList" }>): ReactNode;
+  /** Extra content flowed into the hero after its buttons (the start page star). */
+  heroAside?(): ReactNode;
 }
 
 const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
@@ -82,6 +84,7 @@ export function SectionView({ section, slots, index, first, share = 1 }: { secti
               </p>
             )}
           </div>
+          {slots.heroAside?.()}
         </section>
       );
     }

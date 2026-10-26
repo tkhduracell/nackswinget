@@ -666,19 +666,16 @@ body:has(.logo-gold) .hero-glints {
   }
 }
 
-/* The star sits inside the photo hero, lower right (the old theme's .powerpuff),
-   without taking space in the page below. The wrapper is a zero-height marker
-   at the hero's bottom edge. */
+/* The star flows in the hero right after the buttons, pulled up beside them
+   (the old theme's .powerpuff), so it follows the title when that wraps. */
 .star-wrap {
   position: relative;
-  height: 0;
-  z-index: 5;
+  z-index: 1;
 }
 .star {
-  position: absolute;
-  /* Lower right of the hero, below the title row at every width, never past the edge. */
-  left: min(65vw, calc(100vw - 4vw - 120px));
-  bottom: 48px;
+  position: relative;
+  /* Level with the buttons, right of them, never past the edge (the rotated star bleeds ~10px). */
+  margin: -56px 0 10px min(65vw, calc(96vw - 130px));
   width: 120px;
   height: 120px;
   display: flex;
@@ -695,14 +692,26 @@ body:has(.logo-gold) .hero-glints {
   box-shadow: 0 10px 80px rgba(249, 6, 75, 0.25);
   padding: 8px;
 }
+/* Phones stack the buttons: the star sits beside them. */
 @media (max-width: 600px) {
   .star {
-    left: auto;
-    right: 6vw;
-    bottom: 24px;
+    margin: -100px 0 0 min(60vw, calc(96vw - 130px));
+  }
+}
+/* Smallest phones: a smaller star so it clears the "Bli medlem" button. */
+@media (max-width: 380px) {
+  .star {
+    margin: -64px 0 0 calc(96vw - 110px);
     width: 100px;
     height: 100px;
     font-size: 12px;
+    padding: 4px;
+  }
+}
+/* No room beside the buttons: tuck it under them. */
+@media (max-width: 340px) {
+  .star {
+    margin-top: -24px;
   }
 }
 .star::before,

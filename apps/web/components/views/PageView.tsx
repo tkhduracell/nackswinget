@@ -66,12 +66,7 @@ export async function PageView({ page }: { page: Page }) {
         </header>
       )}
       {crumbs.length > 0 && page.template !== "plain" && <Breadcrumbs crumbs={crumbs} settings={settings} />}
-      {hasHero && (
-        <>
-          <Sections sections={page.sections.slice(0, 1)} env={env} />
-          {banner && <StarBanner banner={banner} />}
-        </>
-      )}
+      {hasHero && <Sections sections={page.sections.slice(0, 1)} env={env} heroAside={banner && <StarBanner banner={banner} />} />}
       <div className="container page-body">
         {!hasHero && page.template === "plain" && <h1 className="sr-only">{page.title}</h1>}
         <Sections sections={hasHero ? page.sections.slice(1) : page.sections} env={env} prefix={hasHero ? "b" : "s"} />
