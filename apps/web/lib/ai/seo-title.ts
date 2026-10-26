@@ -11,7 +11,10 @@ import type { Post } from "@/lib/content/types";
 const MODEL = "gemini-3.8-flash";
 // Always the real project (the emulators run as demo-nsw, which has no Vertex AI).
 const VERTEX_PROJECT = process.env.VERTEX_PROJECT ?? "nackswinget-af7ef";
-const TIMEOUT_MS = 8000;
+// Gemini 3.8 Flash answers in 6–14 s even at low thinking. Publishing waits at most
+// PUBLISH_TIMEOUT_MS; the Autofyll button, where the editor is watching, waits longer.
+const PUBLISH_TIMEOUT_MS = 8000;
+const BUTTON_TIMEOUT_MS = 30_000;
 /** The site appends " | Nackswinget" (14 chars); Google shows about 60. */
 export const MAX_SEO_TITLE = 50;
 export const MIN_DESCRIPTION = 120;
@@ -41,7 +44,7 @@ const clean = (s: unknown) =>
     .replace(/^["'”„«»]+|["'”„«»]+$/g, "")
     .trim();
 
-async function generate(post: Post, task: string, schema: Record<string, { type: "string" }>): Promise<Record<string, string> | null> {
+async function generate(post: Post, task: string, schema: Record<string, { type: "string" }>, timeoutMs: number): Promise<Record<string, string> | null> {
   if (!enabled() || !post.title.trim()) return null;
   client ??= new GoogleGenAI({ vertexai: true, project: VERTEX_PROJECT, location: "global" });
   const text = [post.excerpt, docToText(post.body)].filter(Boolean).join("\n\n").slice(0, 3000);
@@ -53,7 +56,7 @@ async function generate(post: Post, task: string, schema: Record<string, { type:
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         responseMimeType: "application/json",
         responseJsonSchema: { type: "object", properties: schema, required: Object.keys(schema) },
-        abortSignal: AbortSignal.timeout(TIMEOUT_MS),
+        abortSignal: AbortSignal.timeout(timeoutMs),
       },
     });
     const out = JSON.parse(res.text ?? "{}") as Record<string, unknown>;
@@ -68,7 +71,7 @@ async function generate(post: Post, task: string, schema: Record<string, { type:
 const fitTitle = (t: string | undefined) => (t && t.length <= MAX_SEO_TITLE + 10 ? t : null);
 
 export async function suggestSeoTitle(post: Post): Promise<string | null> {
-  return fitTitle((await generate(post, "Skriv titeln.", { title: { type: "string" } }))?.title);
+  return fitTitle((await generate(post, "Skriv titeln.", { title: { type: "string" } }, PUBLISH_TIMEOUT_MS))?.title);
 }
 
 /** Title and description together, for the editor's Autofyll button. */
@@ -76,7 +79,7 @@ export async function suggestSeo(post: Post): Promise<{ title: string; descripti
   const out = await generate(post, `Skriv titeln, och en beskrivning för Google och Facebook: ${MIN_DESCRIPTION}–${MAX_DESCRIPTION} tecken, en eller två meningar om vad nyheten handlar om, bara fakta från texten. Nämn gärna Nackswinget i beskrivningen där det faller sig naturligt.`, {
     title: { type: "string" },
     description: { type: "string" },
-  });
+  }, BUTTON_TIMEOUT_MS);
   const title = fitTitle(out?.title);
   return title && out?.description ? { title, description: out.description } : null;
 }
