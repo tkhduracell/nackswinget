@@ -3,19 +3,21 @@ import { RichText } from "@/components/RichText";
 import { getSite, listPosts } from "@/lib/content/cached";
 import type { Post } from "@/lib/content/types";
 import { formatShortDate } from "@/lib/format";
-import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo";
+import { JsonLd } from "@/components/JsonLd";
+import { Breadcrumbs } from "@/components/views/Breadcrumbs";
+import { articleJsonLd } from "@/lib/seo";
 
 /** A post the way the old theme showed it: title and meta above the text, recent posts in a ruled-off sidebar. */
 export async function PostView({ post }: { post: Post }) {
   const [{ settings, categories }, latest] = await Promise.all([getSite(), listPosts(undefined, 6)]);
   const cats = post.categories.map((slug) => categories.find((c) => c.slug === slug)).filter((c) => !!c);
   const crumbs = [
-    { name: "Hem", path: "/" },
     { name: "Nyheter", path: "/nyheter/" },
     { name: post.title, path: `/${post.slug}/` },
   ];
   return (
     <article className="post">
+      <Breadcrumbs crumbs={crumbs} settings={settings} />
       <div className="container post-layout">
         <div className="post-main">
           <h1 className="post-title">{post.title}</h1>
@@ -30,7 +32,7 @@ export async function PostView({ post }: { post: Post }) {
           </p>
           {post.image && (
             <figure className="post-image">
-              <Img image={post.image} priority sizes="(min-width: 1080px) 760px, 80vw" />
+              <Img image={post.image} alt={post.image.alt || post.title} priority sizes="(min-width: 1080px) 760px, 80vw" />
             </figure>
           )}
           <RichText doc={post.body} />
@@ -46,8 +48,7 @@ export async function PostView({ post }: { post: Post }) {
           </ul>
         </aside>
       </div>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(settings, crumbs)) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd(settings, post)) }} />
+      <JsonLd data={articleJsonLd(settings, post)} />
     </article>
   );
 }

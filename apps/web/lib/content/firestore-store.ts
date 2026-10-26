@@ -29,7 +29,7 @@ export function redirectKey(from: string): string {
   return encodeURIComponent(normalizePath(from)) || "_root";
 }
 
-const SUMMARY_FIELDS = ["slug", "title", "excerpt", "categories", "image", "publishedAt", "status"] as const;
+const SUMMARY_FIELDS = ["slug", "title", "excerpt", "categories", "image", "publishedAt", "updatedAt", "status"] as const;
 
 export async function createFirestoreStore(): Promise<ContentStore> {
   const db = getDb();

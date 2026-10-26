@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getRouteIndex } from "@/lib/content/route-index";
-import { normalizePath } from "@/lib/content/store";
+import { canonicalPathname, normalizePath } from "@/lib/content/store";
 
 // Pages stream their HTML, so a redirect or notFound() decided inside the
 // catch-all route can't change the status code any more. This proxy answers
@@ -8,6 +8,13 @@ import { normalizePath } from "@/lib/content/store";
 // If the route index can't be read it steps aside (fail open).
 
 export async function proxy(req: NextRequest) {
+  // Case and slash variants are duplicates of a real page: one 308 to it.
+  const canonical = canonicalPathname(req.nextUrl.pathname);
+  if (canonical !== req.nextUrl.pathname) {
+    const url = req.nextUrl.clone();
+    url.pathname = canonical;
+    return NextResponse.redirect(url, 308);
+  }
   // Local dev/CI with a snapshot file has no Firestore route index.
   if (process.env.CONTENT_SOURCE === "snapshot") return NextResponse.next();
   const index = await getRouteIndex();

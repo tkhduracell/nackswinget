@@ -70,8 +70,11 @@ export function useDraft<T extends { id: string }>(kind: "pages" | "posts", id: 
     if (!toPublish) return null;
     if (next) setDoc(next);
     setState("saving");
+    const editsBefore = pending.current;
     try {
       const saved = await api<T>(`/docs/${kind}/${id}`, { method: "POST", json: toPublish });
+      // The server may fill fields in (an AI SEO title); show them unless the editor typed meanwhile.
+      if (pending.current === editsBefore) setDoc(saved);
       pending.current = null;
       setPublished(saved);
       setHasDraft(false);

@@ -11,5 +11,5 @@ export async function GET() {
       .map((p) => ({ id: p.id, url: p.path ? `/${p.path}/` : "/", title: p.title, text: sectionsText(p.sections).slice(0, 2000) })),
     ...posts.map((p) => ({ id: p.id, url: `/${p.slug}/`, title: p.title, text: docToText(p.body).slice(0, 1500), date: p.publishedAt.slice(0, 10) })),
   ];
-  return Response.json(docs);
+  return Response.json(docs, { headers: { "X-Robots-Tag": "noindex" } });
 }

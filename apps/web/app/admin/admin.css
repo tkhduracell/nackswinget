@@ -2299,3 +2299,58 @@
     padding: 24px 20px 28px;
   }
 }
+
+/* Facebook share preview (SharePreview.tsx): Facebook's link card, 1.91:1 image. */
+.share-preview {
+  margin: 16px 0 0;
+}
+.share-preview-label {
+  color: var(--a-muted);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.fb-card {
+  max-width: 500px;
+  border: 1px solid #dadde1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f0f2f5;
+  font-family: Helvetica, Arial, sans-serif;
+}
+.fb-card-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.91 / 1;
+  object-fit: cover;
+  background: #e4e6eb;
+}
+.fb-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid #dadde1;
+}
+.fb-card-host {
+  color: #65676b;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.fb-card-title {
+  color: #050505;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.fb-card-desc {
+  color: #65676b;
+  font-size: 14px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -593,7 +593,7 @@ body:has(.logo-gold) .hero-glints {
   margin: 0 auto;
   padding: 22px 0 11px;
 }
-.hero-title {
+.hero-title-text {
   position: relative;
   display: inline-block;
 }
@@ -632,7 +632,7 @@ body:has(.logo-gold) .hero-glints {
   height: 9px;
   animation-delay: 2.8s;
 }
-.hero h1 {
+.hero .hero-title {
   color: #fff;
   font-size: 56px;
   line-height: 1;
@@ -654,7 +654,7 @@ body:has(.logo-gold) .hero-glints {
   padding: 6px 20px;
 }
 @media (max-width: 600px) {
-  .hero h1 {
+  .hero .hero-title {
     font-size: 40px;
   }
   .hero-sub {

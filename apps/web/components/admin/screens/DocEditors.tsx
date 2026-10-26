@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type { CalendarFeed, Category, Page, Post } from "@/lib/content/types";
+import type { CalendarFeed, Category, Page, Post, Settings } from "@/lib/content/types";
 import { useAdmin } from "../AuthProvider";
 import { MediaPicker } from "../MediaPicker";
 import { PreviewPane } from "../PreviewFrame";
 import { RichTextEditor } from "../RichTextEditor";
 import { SectionsEditor } from "../SectionsEditor";
+import { SharePreview } from "../SharePreview";
 import { slugify, type SaveState, useDraft } from "../useDraft";
 import { imageUrl } from "@/lib/media/urls";
 import { Icon } from "../icons";
@@ -14,11 +15,17 @@ export function useSiteBasics() {
   const { api } = useAdmin();
   const [feeds, setFeeds] = useState<CalendarFeed[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [settings, setSettings] = useState<Settings | null>(null);
   useEffect(() => {
-    api<{ calendarFeeds: CalendarFeed[] } | null>("/site/settings").then((s) => setFeeds(s?.calendarFeeds ?? [])).catch(() => {});
+    api<Settings | null>("/site/settings")
+      .then((s) => {
+        setFeeds(s?.calendarFeeds ?? []);
+        setSettings(s);
+      })
+      .catch(() => {});
     api<Category[] | null>("/site/categories").then((c) => setCategories(c ?? [])).catch(() => {});
   }, [api]);
-  return { feeds, categories };
+  return { feeds, categories, settings };
 }
 
 function SaveBadge({ state, hasDraft }: { state: SaveState; hasDraft: boolean }) {
@@ -128,7 +135,7 @@ function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, 
 // ---------------------------------------------------------------------------
 
 export function PageEditor({ id }: { id: string }) {
-  const { feeds, categories } = useSiteBasics();
+  const { feeds, categories, settings } = useSiteBasics();
   const now = useMemo(() => new Date().toISOString(), []);
   const blank = (): Page => ({ id, path: "", title: "Ny sida", parentId: null, template: "default", sections: [], seo: {}, status: "published", publishedAt: now, updatedAt: now });
   const { doc, update, published, publish, discard, state, error, hasDraft } = useDraft<Page>("pages", id, blank);
@@ -202,6 +209,7 @@ export function PageEditor({ id }: { id: string }) {
               <textarea rows={3} maxLength={300} value={doc.seo.description ?? ""} placeholder="Lämna tomt för att använda början av sidans text" onChange={(e) => update({ ...doc, seo: { ...doc.seo, description: e.target.value || undefined } })} />
             </label>
           </details>
+          {settings && <SharePreview settings={settings} item={{ kind: "page", doc }} />}
           </div>
           <h2 className="editor-subhead">Innehåll</h2>
           <SectionsEditor sections={doc.sections} onChange={(sections) => update({ ...doc, sections })} feeds={feeds} categories={categories} />
@@ -223,7 +231,7 @@ function toLocalInput(iso: string): string {
 
 export function PostEditor({ id }: { id: string }) {
   const { api } = useAdmin();
-  const { categories } = useSiteBasics();
+  const { categories, settings } = useSiteBasics();
   const now = useMemo(() => new Date().toISOString(), []);
   const blank = (): Post => ({ id, slug: "", title: "", excerpt: "", body: { type: "doc", content: [] }, categories: ["foreningsnyhet"], status: "published", publishedAt: now, updatedAt: now, seo: {} });
   const { doc, update, published, publish, discard, state, error, hasDraft } = useDraft<Post>("posts", id, blank);
@@ -345,6 +353,26 @@ export function PostEditor({ id }: { id: string }) {
             <span>Text</span>
             <RichTextEditor value={doc.body} onChange={(body) => update({ ...doc, body })} />
           </div>
+          </div>
+          <div className="form-card">
+          <details className="field disclosure">
+            <summary>Sökmotorer och delning (SEO)</summary>
+            <label className="field">
+              <span>Titel i Google</span>
+              <input
+                value={doc.seo.title ?? ""}
+                placeholder={`${doc.title || "Rubriken"} (fylls i av AI när du publicerar)`}
+                // Typing makes it the editor's title: AI won't rewrite it.
+                onChange={(e) => update({ ...doc, seo: { ...doc.seo, title: e.target.value || undefined, titleAuto: undefined } })}
+              />
+              {doc.seo.titleAuto && <small className="muted">Skriven av AI. Ändra fritt, eller töm fältet för att få ett nytt förslag.</small>}
+            </label>
+            <label className="field">
+              <span>Beskrivning (visas i Google och på Facebook)</span>
+              <textarea rows={3} maxLength={300} value={doc.seo.description ?? ""} placeholder="Lämna tomt för att använda ingressen" onChange={(e) => update({ ...doc, seo: { ...doc.seo, description: e.target.value || undefined } })} />
+            </label>
+          </details>
+          {settings && <SharePreview settings={settings} item={{ kind: "post", doc }} />}
           </div>
           {published && <Versions kind="posts" id={id} onRestore={(data) => update({ ...(data as Post), id })} />}
         </div>

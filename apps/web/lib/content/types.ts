@@ -222,6 +222,8 @@ export const sectionSchema: z.ZodType<Section> = z.lazy(() =>
 
 export const seoSchema = z.object({
   title: z.string().optional(),
+  /** The title was written by AI (lib/ai/seo-title.ts) and is rewritten when the headline changes. */
+  titleAuto: z.boolean().optional(),
   description: z.string().optional(),
   image: z.string().optional(),
 });
@@ -269,7 +271,7 @@ export const postSchema = z.object({
 });
 export type Post = z.infer<typeof postSchema>;
 
-export type PostSummary = Pick<Post, "id" | "slug" | "title" | "excerpt" | "categories" | "image" | "publishedAt">;
+export type PostSummary = Pick<Post, "id" | "slug" | "title" | "excerpt" | "categories" | "image" | "publishedAt" | "updatedAt">;
 
 export const navItemSchema = z.object({
   label: z.string(),

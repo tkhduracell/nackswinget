@@ -2,6 +2,8 @@ import { cacheLife, cacheTag } from "next/cache";
 import { loadEvents } from "@/lib/calendar/fetch";
 import { addDays, type CalendarEvent, dayOf, isoWeek, isoWeekday, timeOf, todayStockholm } from "@/lib/calendar/ics";
 import type { CalendarFeed, Section } from "@/lib/content/types";
+import { JsonLd } from "@/components/JsonLd";
+import { eventsJsonLd, PUBLIC_EVENT_FEEDS } from "@/lib/seo";
 import { CalendarControls } from "./CalendarControls";
 
 type CalendarSection = Extract<Section, { type: "calendar" }>;
@@ -184,22 +186,8 @@ function Legend({ feeds, hidden, id }: { feeds: CalendarFeed[]; hidden: string[]
   );
 }
 
-function eventJsonLd(events: CalendarEvent[], siteUrl: string) {
-  return events.map((e) => ({
-    "@context": "https://schema.org",
-    "@type": "Event",
-    name: e.title,
-    startDate: e.allDay ? e.start : `${e.start}:00`,
-    ...(e.end ? { endDate: e.allDay ? e.end : `${e.end}:00` } : {}),
-    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-    eventStatus: "https://schema.org/EventScheduled",
-    location: { "@type": "Place", name: e.location || "Dansklubben Nackswinget", address: "Nacka, Sverige" },
-    organizer: { "@type": "SportsClub", name: "Dansklubben Nackswinget", url: siteUrl },
-  }));
-}
-
 /** Cached as a whole for 5 minutes (feeds update every 5 minutes; "today" moves). */
-export async function Calendar({ section, feeds: allFeeds, siteUrl, id }: { section: CalendarSection; feeds: CalendarFeed[]; siteUrl: string; id: string }) {
+export async function Calendar({ section, feeds: allFeeds, site, id }: { section: CalendarSection; feeds: CalendarFeed[]; site: { siteUrl: string; siteName: string }; id: string }) {
   "use cache";
   cacheTag("calendar");
   cacheLife({ stale: 60, revalidate: 300, expire: 86_400 });
@@ -239,7 +227,7 @@ export async function Calendar({ section, feeds: allFeeds, siteUrl, id }: { sect
             </div>
           ))
         )}
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd(upcoming, siteUrl)) }} />
+        {upcoming.some((e) => PUBLIC_EVENT_FEEDS.has(e.feed)) && <JsonLd data={eventsJsonLd(site, upcoming)} />}
       </div>
     );
   }
