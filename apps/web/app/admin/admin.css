@@ -2414,3 +2414,10 @@
   opacity: 1;
   transform: none;
 }
+
+/* Phones: no SEO card; Publicera runs Autofyll once when the fields are empty (DocEditors.tsx). */
+@media (max-width: 639px) {
+  .admin .seo-card {
+    display: none;
+  }
+}
