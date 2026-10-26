@@ -1503,8 +1503,13 @@
     flex: 1 1 auto;
     margin-right: auto;
   }
-  .admin .editor-actions .button:last-child {
+  .admin .editor-actions .publish-wrap .button {
     min-width: 120px;
+  }
+  /* The bar sits at the bottom here: show the hint above the button. */
+  .admin .publish-wrap.has-tip::after {
+    top: auto;
+    bottom: calc(100% + 8px);
   }
 }
 @media (max-width: 479px) {
@@ -2367,4 +2372,45 @@
   margin: 0;
   font-size: 15px;
   font-weight: 600;
+}
+
+/* Publish button while required fields are missing: grey, with the reason on hover/focus. */
+.admin .button.button-blocked {
+  background: var(--a-border-strong);
+  border-color: var(--a-border-strong);
+  color: var(--a-muted);
+  box-shadow: none;
+}
+.admin .button.button-blocked:hover {
+  background: var(--a-border-strong);
+  color: var(--a-text-2);
+}
+.admin .publish-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.admin .publish-wrap.has-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  width: max-content;
+  max-width: 280px;
+  padding: 8px 10px;
+  border-radius: var(--a-radius-sm);
+  background: var(--a-text);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.35;
+  box-shadow: var(--a-shadow-md);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.12s, transform 0.12s;
+}
+.admin .publish-wrap.has-tip:hover::after,
+.admin .publish-wrap.has-tip:focus-within::after {
+  opacity: 1;
+  transform: none;
 }

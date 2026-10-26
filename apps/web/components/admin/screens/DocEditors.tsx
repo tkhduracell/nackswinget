@@ -81,7 +81,7 @@ function Versions({ kind, id, onRestore }: { kind: "pages" | "posts"; id: string
   );
 }
 
-function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, viewHref, extra }: {
+function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, viewHref, extra, blockedReason }: {
   title: string;
   back: string;
   state: SaveState;
@@ -91,6 +91,8 @@ function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, 
   onDiscard: () => void;
   viewHref?: string;
   extra?: React.ReactNode;
+  /** Publishing isn't possible yet: the button is greyed out and this shows on hover. */
+  blockedReason?: string;
 }) {
   return (
     <div className="editor-bar">
@@ -122,10 +124,25 @@ function EditorBar({ title, back, state, hasDraft, error, onPublish, onDiscard, 
           <Icon name="eye" size={16} />
           <span className="hide-xs">Förhandsvisning</span>
         </a>
-        <button type="button" className="button" onClick={onPublish} disabled={state === "saving"}>
-          <Icon name="send" size={16} />
-          Publicera
-        </button>
+        {/* aria-disabled rather than disabled: a disabled button gets no hover, so no hint, and can't be clicked to jump to what's missing. */}
+        <span className={blockedReason ? "publish-wrap has-tip" : "publish-wrap"} data-tip={blockedReason}>
+          <button
+            type="button"
+            className={blockedReason ? "button button-blocked" : "button"}
+            onClick={onPublish}
+            disabled={state === "saving"}
+            aria-disabled={blockedReason ? true : undefined}
+            aria-describedby={blockedReason ? "publish-blocked" : undefined}
+          >
+            <Icon name="send" size={16} />
+            Publicera
+          </button>
+          {blockedReason && (
+            <span id="publish-blocked" className="sr-only">
+              {blockedReason}
+            </span>
+          )}
+        </span>
       </div>
       {error && <p className="admin-error">{error}</p>}
     </div>
@@ -289,6 +306,7 @@ export function PostEditor({ id }: { id: string }) {
         onPublish={() => void onPublish()}
         onDiscard={() => void discard()}
         viewHref={published && !scheduled ? `/${published.slug}/` : undefined}
+        blockedReason={!doc.seo.title?.trim() || !doc.seo.description?.trim() ? "Fyll i titel och beskrivning under Sökmotorer och delning (eller tryck Autofyll) för att publicera" : undefined}
         extra={
           <label className="check">
             <input type="checkbox" checked={push} disabled={scheduled || doc.status === "draft"} onChange={(e) => setPush(e.target.checked)} /> Skicka notis till appen
