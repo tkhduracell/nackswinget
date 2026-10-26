@@ -9,10 +9,15 @@
 // Needs ANTHROPIC_API_KEY (or an `ant auth login` profile) for `suggest`, and the
 // IMPORT_TOKEN in $NSW_IMPORT_TOKEN or ~/.config/nsw/import-token (or --token-file) for both steps.
 // `suggest` resumes: gaps already in the output file are not sent again.
+//
+// --llm claude-cli: use the local `claude` CLI (your Claude Code login, Haiku)
+// instead of the API, in batches of 10; images are downloaded and read by the CLI.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
-import { readFile, writeFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { promisify } from "node:util";
 import os from "node:os";
 import path from "node:path";
 import { z } from "zod";
@@ -29,6 +34,9 @@ const tokenFile = arg("--token-file") ?? path.join(os.homedir(), ".config", "nsw
 const only = arg("--only") as Gap["field"] | undefined;
 const limit = Number(arg("--limit") ?? Infinity);
 const dryRun = process.argv.includes("--dry-run");
+const useCli = arg("--llm") === "claude-cli";
+const CLI_MODEL = arg("--model") ?? "haiku";
+const BATCH = 10;
 
 type Entry = Gap & { suggestion: string; approved: boolean; note?: string };
 
@@ -110,6 +118,8 @@ async function suggest() {
   console.log(`${gaps.length} gaps (${gaps.filter((g) => g.field === "alt").length} alt, ${gaps.filter((g) => g.field === "description").length} description); ${todo.length} to suggest now.`);
   if (skippedWithDraft.length) console.log(`Skipped, open draft in admin: ${skippedWithDraft.join(", ")}`);
 
+  if (useCli) return suggestWithCli(todo, entries);
+
   const client = new Anthropic();
   let next = 0;
   let failed = 0;
@@ -129,6 +139,80 @@ async function suggest() {
     }
   };
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  console.log(`\nWrote ${file}. ${failed ? `${failed} failed (re-run to retry). ` : ""}Review it, then run: pnpm seo:fill apply --url ${base}`);
+}
+
+const BatchSchema = {
+  type: "object",
+  properties: {
+    results: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { key: { type: "string" }, value: { type: "string" }, decorative: { type: "boolean" } },
+        required: ["key", "value", "decorative"],
+      },
+    },
+  },
+  required: ["results"],
+};
+
+/** One `claude -p` call per 10 gaps; results matched back by key. */
+async function suggestWithCli(todo: Gap[], entries: Entry[]) {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "seo-fill-"));
+  let failed = 0;
+  for (let i = 0; i < todo.length; i += BATCH) {
+    const batch = todo.slice(i, i + BATCH);
+    const items: string[] = [];
+    for (const [n, g] of batch.entries()) {
+      let image = "";
+      if (g.field === "alt") {
+        const res = await fetch(g.imageUrl);
+        if (res.ok) {
+          image = path.join(dir, `${i + n}.${(res.headers.get("content-type") ?? "image/webp").split("/")[1]?.split(";")[0] ?? "webp"}`);
+          await writeFile(image, Buffer.from(await res.arrayBuffer()));
+        }
+      }
+      items.push(
+        [
+          `### key: ${gapKey(g)}`,
+          `task: ${g.field === "alt" ? "alt text" : "meta description"}`,
+          `page: ${g.title} (${g.url})`,
+          image ? `image file (read it): ${image}` : "",
+          `page text: ${g.context.slice(0, 1500) || "(ingen text)"}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      );
+    }
+    const prompt = `${SYSTEM}\n\nReturn one result per item, with its exact key. For a meta description set decorative to false.\n\n${items.join("\n\n")}`;
+    try {
+      const { stdout } = await promisify(execFile)(
+        "claude",
+        ["-p", "--model", CLI_MODEL, "--output-format", "json", "--json-schema", JSON.stringify(BatchSchema), "--tools", "Read", "--add-dir", dir, "--strict-mcp-config", "--no-session-persistence", prompt],
+        { maxBuffer: 64 * 1024 * 1024, timeout: 10 * 60_000 },
+      );
+      const events = JSON.parse(stdout) as { type: string; structured_output?: { results: { key: string; value: string; decorative: boolean }[] }; total_cost_usd?: number }[];
+      const result = (Array.isArray(events) ? events : [events]).find((e) => e.type === "result");
+      const byKey = new Map((result?.structured_output?.results ?? []).map((r) => [r.key, r]));
+      for (const g of batch) {
+        const r = byKey.get(gapKey(g));
+        if (!r) {
+          failed++;
+          console.error(`MISSING ${gapKey(g)}`);
+          continue;
+        }
+        const suggestion = r.decorative ? "" : r.value.trim();
+        entries.push({ ...g, suggestion, approved: suggestion !== "", ...(r.decorative ? { note: "model: decorative, leave alt empty" } : {}) });
+        console.log(`${g.field.padEnd(11)} ${g.url} ${suggestion ? `-> ${suggestion}` : "(decorative)"}`);
+      }
+      console.log(`batch ${i / BATCH + 1}/${Math.ceil(todo.length / BATCH)} $${(result?.total_cost_usd ?? 0).toFixed(3)}`);
+    } catch (e) {
+      failed += batch.length;
+      console.error(`FAILED batch ${i / BATCH + 1}: ${(e as Error).message.slice(0, 300)}`);
+    }
+    await writeFile(file, `${JSON.stringify(entries, null, 2)}\n`);
+  }
   console.log(`\nWrote ${file}. ${failed ? `${failed} failed (re-run to retry). ` : ""}Review it, then run: pnpm seo:fill apply --url ${base}`);
 }
 
