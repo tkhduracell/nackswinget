@@ -7,7 +7,7 @@
 //     -> writes approved suggestions; fields an editor changed since are skipped
 //
 // Needs ANTHROPIC_API_KEY (or an `ant auth login` profile) for `suggest`, and the
-// IMPORT_TOKEN in ~/.config/nsw/import-token (or --token-file) for both steps.
+// IMPORT_TOKEN in $NSW_IMPORT_TOKEN or ~/.config/nsw/import-token (or --token-file) for both steps.
 // `suggest` resumes: gaps already in the output file are not sent again.
 
 import Anthropic from "@anthropic-ai/sdk";
@@ -49,7 +49,7 @@ const AltSchema = z.object({ alt: z.string(), decorative: z.boolean() });
 const DescriptionSchema = z.object({ description: z.string() });
 
 async function token() {
-  return (await readFile(tokenFile, "utf8")).trim();
+  return process.env.NSW_IMPORT_TOKEN?.trim() || (await readFile(tokenFile, "utf8")).trim();
 }
 
 async function readEntries(): Promise<Entry[]> {

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { CalendarEvent } from "@/lib/calendar/ics";
 import type { Settings } from "@/lib/content/types";
 import { canonicalPathname } from "@/lib/content/store";
-import { articleJsonLd, buildMetadata, eventsJsonLd, jsonLd, siteJsonLd, stockholmOffset } from "./seo";
+import { articleJsonLd, buildMetadata, eventsJsonLd, jsonLd, shareCard, siteJsonLd, stockholmOffset } from "./seo";
 
 const settings: Settings = {
   siteName: "Dansklubben Nackswinget",
@@ -93,5 +93,18 @@ describe("canonicalPathname", () => {
     expect(canonicalPathname("/media/Logo.PNG")).toBe("/media/Logo.PNG");
     expect(canonicalPathname("/om-oss/%C3%A5rsm%C3%B6te/")).toBe("/om-oss/%C3%A5rsm%C3%B6te/");
     expect(canonicalPathname("/kurser/")).toBe("/kurser/");
+  });
+});
+
+describe("shareCard", () => {
+  const post = { id: "1", slug: "nyhet", title: "Nyhet", excerpt: "Ingress.", body: { type: "doc" as const, content: [] }, categories: [], status: "published" as const, publishedAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z", seo: {} };
+
+  it("falls back to headline, excerpt and the generated card", () => {
+    expect(shareCard(settings, { kind: "post", doc: post })).toEqual({ title: "Nyhet", description: "Ingress.", path: "/nyhet/", image: "/og/?title=Nyhet" });
+  });
+
+  it("prefers the SEO fields", () => {
+    const card = shareCard(settings, { kind: "post", doc: { ...post, seo: { title: "SEO-titel", description: "SEO-text", image: "web/uploads/x.jpg" } } });
+    expect(card).toMatchObject({ title: "SEO-titel", description: "SEO-text", image: "web/uploads/x.jpg" });
   });
 });

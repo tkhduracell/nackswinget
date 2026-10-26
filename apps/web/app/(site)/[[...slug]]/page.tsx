@@ -3,8 +3,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { PageView } from "@/components/views/PageView";
 import { PostView } from "@/components/views/PostView";
 import { getPage, getPost, getRedirect, getSite, listAllPosts, listPages } from "@/lib/content/cached";
-import { buildMetadata, ogImageFor, pageUrl, sectionsText } from "@/lib/seo";
-import { docToText } from "@/lib/import/html";
+import { buildMetadata, shareCard } from "@/lib/seo";
 
 type Params = { slug?: string[] };
 
@@ -53,25 +52,15 @@ export async function generateMetadata({ params }: PageProps<"/[[...slug]]">): P
   }
   if (found.kind === "page") {
     const p = found.page;
-    const title = p.seo.title || (p.path ? p.title : settings.siteName);
     return {
-      ...buildMetadata({
-        settings,
-        title,
-        description: p.seo.description || sectionsText(p.sections),
-        path: pageUrl(p),
-        image: p.seo.image || ogImageFor(title),
-      }),
+      ...buildMetadata({ settings, ...shareCard(settings, { kind: "page", doc: p }) }),
       ...(p.path ? {} : { title: { absolute: `${settings.siteName} – ${settings.tagline}` } }),
     };
   }
   const post = found.post;
   return buildMetadata({
     settings,
-    title: post.seo.title || post.title,
-    description: post.seo.description || post.excerpt || docToText(post.body),
-    path: `/${post.slug}/`,
-    image: post.seo.image || ogImageFor(post.title, post.image),
+    ...shareCard(settings, { kind: "post", doc: post }),
     type: "article",
     publishedTime: post.publishedAt,
     modifiedTime: post.updatedAt,

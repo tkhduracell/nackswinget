@@ -21,6 +21,7 @@
     "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
+    "@google/genai": "^2.31.0",
     "@tiptap/core": "^3.32.0",
     "@tiptap/extension-placeholder": "^3.32.0",
     "@tiptap/extension-table": "^3.32.0",

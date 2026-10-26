@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { docToText } from "@/lib/import/html";
 import type { CalendarEvent } from "@/lib/calendar/ics";
-import type { Page, PostSummary, Section, Settings } from "@/lib/content/types";
+import type { Page, Post, PostSummary, Section, Settings } from "@/lib/content/types";
 import { imageUrl, publicUrl } from "@/lib/media/urls";
 import { truncate } from "@/lib/format";
 
@@ -33,6 +33,30 @@ export function ogImageFor(title: string, image?: { src: string; variants: numbe
   return `/og/?title=${encodeURIComponent(title)}`;
 }
 
+/**
+ * What a page or post shares as: the og/twitter title, description and image.
+ * Used by the site's metadata and by the admin's share preview, so the two agree.
+ */
+export function shareCard(settings: Settings, item: { kind: "page"; doc: Page } | { kind: "post"; doc: Post }) {
+  if (item.kind === "page") {
+    const p = item.doc;
+    const title = p.seo.title || (p.path ? p.title : settings.siteName);
+    return { title, description: p.seo.description || sectionsText(p.sections), path: pageUrl(p), image: p.seo.image || ogImageFor(title) };
+  }
+  const post = item.doc;
+  return {
+    title: post.seo.title || post.title,
+    description: post.seo.description || post.excerpt || docToText(post.body),
+    path: `/${post.slug}/`,
+    image: post.seo.image || ogImageFor(post.title, post.image),
+  };
+}
+
+/** The description as emitted: whitespace collapsed, tagline when empty, at most 160 characters. */
+export function metaDescription(settings: Settings, text?: string): string {
+  return truncate((text || settings.tagline).replace(/\s+/g, " ").trim(), 160);
+}
+
 export function buildMetadata(opts: {
   settings: Settings;
   title: string;
@@ -46,7 +70,7 @@ export function buildMetadata(opts: {
   modifiedTime?: string;
 }): Metadata {
   const { settings } = opts;
-  const description = truncate((opts.description || settings.tagline).replace(/\s+/g, " ").trim(), 160);
+  const description = metaDescription(settings, opts.description);
   const url = absolute(settings, opts.path);
   const raw = opts.image ?? ogImageFor(opts.title);
   const image = absolute(settings, raw.startsWith("web/") ? publicUrl(raw) : raw);
