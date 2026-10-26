@@ -51,7 +51,18 @@ export function SectionView({ section, slots, index, first }: { section: Section
           {section.image && <Img image={section.image} sizes="100vw" priority className="hero-bg" alt="" />}
           {section.video && <HeroVideo video={section.video} />}
           <div className="hero-inner">
-            <h1>{section.title}</h1>
+            <h1>
+              <span className="hero-title">
+                {section.title}
+                <span className="glints hero-glints" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </span>
+              </span>
+            </h1>
             {section.subtitle && <p className="hero-sub">{section.subtitle}</p>}
             {section.buttons.length > 0 && (
               <p className="hero-buttons">
