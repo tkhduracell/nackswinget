@@ -2,7 +2,6 @@ import "server-only";
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { docToText } from "@/lib/import/html";
 import type { Post } from "@/lib/content/types";
-import { PROJECT_ID } from "@/lib/firebase/admin";
 
 // Writes a post's SEO title with Gemini on Vertex AI when it is published
 // (lib/admin/content.ts publish()). On App Hosting the runtime service account
@@ -10,9 +9,13 @@ import { PROJECT_ID } from "@/lib/firebase/admin";
 // Any failure leaves the title empty: publishing never waits on or breaks for this.
 
 const MODEL = "gemini-3.8-flash";
+// Always the real project (the emulators run as demo-nsw, which has no Vertex AI).
+const VERTEX_PROJECT = process.env.VERTEX_PROJECT ?? "nackswinget-af7ef";
 const TIMEOUT_MS = 8000;
 /** The site appends " | Nackswinget" (14 chars); Google shows about 60. */
 export const MAX_SEO_TITLE = 50;
+export const MIN_DESCRIPTION = 120;
+export const MAX_DESCRIPTION = 155;
 
 const PROMPT = `Du skriver SEO-titlar för nyheter på Dansklubben Nackswingets webbplats (bugg, fox, socialdans, kurser och tävlingar i Nacka).
 Skriv en titel för Google på svenska, högst ${MAX_SEO_TITLE} tecken.
@@ -32,29 +35,48 @@ export function enabled(): boolean {
 
 let client: GoogleGenAI | null = null;
 
-export async function suggestSeoTitle(post: Post): Promise<string | null> {
+const clean = (s: unknown) =>
+  String(s ?? "")
+    .replace(/\s+/g, " ")
+    .replace(/^["'”„«»]+|["'”„«»]+$/g, "")
+    .trim();
+
+async function generate(post: Post, task: string, schema: Record<string, { type: "string" }>): Promise<Record<string, string> | null> {
   if (!enabled() || !post.title.trim()) return null;
-  client ??= new GoogleGenAI({ vertexai: true, project: PROJECT_ID, location: "global" });
+  client ??= new GoogleGenAI({ vertexai: true, project: VERTEX_PROJECT, location: "global" });
   const text = [post.excerpt, docToText(post.body)].filter(Boolean).join("\n\n").slice(0, 3000);
   try {
     const res = await client.models.generateContent({
       model: MODEL,
-      contents: `${PROMPT}\n\nRubrik: ${post.title}\n\nText:\n${text || "(ingen text)"}`,
+      contents: `${PROMPT}\n\n${task}\n\nRubrik: ${post.title}\n\nText:\n${text || "(ingen text)"}`,
       config: {
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         responseMimeType: "application/json",
-        responseJsonSchema: { type: "object", properties: { title: { type: "string" } }, required: ["title"] },
+        responseJsonSchema: { type: "object", properties: schema, required: Object.keys(schema) },
         abortSignal: AbortSignal.timeout(TIMEOUT_MS),
       },
     });
-    const title = String((JSON.parse(res.text ?? "{}") as { title?: unknown }).title ?? "")
-      .replace(/\s+/g, " ")
-      .replace(/^["'”„«»]+|["'”„«»]+$/g, "")
-      .trim();
-    // A too-long answer would be cut in the results; better to keep the headline.
-    return title && title.length <= MAX_SEO_TITLE + 10 ? title : null;
+    const out = JSON.parse(res.text ?? "{}") as Record<string, unknown>;
+    return Object.fromEntries(Object.keys(schema).map((k) => [k, clean(out[k])]));
   } catch (e) {
     console.error(`[seo-title] ${post.id}: ${(e as Error).message}`);
     return null;
   }
+}
+
+// A too-long title would be cut in the results; better to keep the headline.
+const fitTitle = (t: string | undefined) => (t && t.length <= MAX_SEO_TITLE + 10 ? t : null);
+
+export async function suggestSeoTitle(post: Post): Promise<string | null> {
+  return fitTitle((await generate(post, "Skriv titeln.", { title: { type: "string" } }))?.title);
+}
+
+/** Title and description together, for the editor's Autofyll button. */
+export async function suggestSeo(post: Post): Promise<{ title: string; description: string } | null> {
+  const out = await generate(post, `Skriv titeln, och en beskrivning för Google och Facebook: ${MIN_DESCRIPTION}–${MAX_DESCRIPTION} tecken, en eller två meningar om vad nyheten handlar om, bara fakta från texten. Nämn gärna Nackswinget i beskrivningen där det faller sig naturligt.`, {
+    title: { type: "string" },
+    description: { type: "string" },
+  });
+  const title = fitTitle(out?.title);
+  return title && out?.description ? { title, description: out.description } : null;
 }

@@ -2354,3 +2354,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Card heading with an action on the right (post editor's SEO card). */
+.admin .card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.admin .card-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}

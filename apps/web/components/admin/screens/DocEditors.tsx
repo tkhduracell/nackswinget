@@ -238,14 +238,35 @@ export function PostEditor({ id }: { id: string }) {
   const [push, setPush] = useState(false);
   const [pushResult, setPushResult] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
+  const [filling, setFilling] = useState(false);
+  const [seoError, setSeoError] = useState<string | null>(null);
   const [nowMs] = useState(() => Date.now());
 
   if (!doc) return <p className="admin-loading">{error ?? "Laddar…"}</p>;
   const scheduled = new Date(doc.publishedAt).getTime() > nowMs;
 
+  const autofill = async () => {
+    if (!doc.title.trim()) return setSeoError("Skriv en rubrik först.");
+    setFilling(true);
+    setSeoError(null);
+    try {
+      const seo = await api<{ title: string; description: string }>("/seo-suggest", { method: "POST", json: doc });
+      update({ ...doc, seo: { ...doc.seo, title: seo.title, description: seo.description, titleAuto: true } });
+    } catch (e) {
+      setSeoError((e as Error).message);
+    } finally {
+      setFilling(false);
+    }
+  };
+
   const onPublish = async () => {
     const withSlug = doc.slug ? doc : { ...doc, slug: slugify(doc.title) };
     if (!withSlug.title.trim()) return window.alert("Nyheten behöver en rubrik.");
+    if (!withSlug.seo.title?.trim() || !withSlug.seo.description?.trim()) {
+      setSeoError("Fyll i titel och beskrivning för Google innan du publicerar, eller tryck Autofyll.");
+      document.getElementById("seo")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
     const saved = await publish(withSlug);
     if (saved && push && !scheduled && withSlug.status !== "draft") {
       try {
@@ -354,24 +375,34 @@ export function PostEditor({ id }: { id: string }) {
             <RichTextEditor value={doc.body} onChange={(body) => update({ ...doc, body })} />
           </div>
           </div>
-          <div className="form-card">
-          <details className="field disclosure">
-            <summary>Sökmotorer och delning (SEO)</summary>
-            <label className="field">
-              <span>Titel i Google</span>
-              <input
-                value={doc.seo.title ?? ""}
-                placeholder={`${doc.title || "Rubriken"} (fylls i av AI när du publicerar)`}
-                // Typing makes it the editor's title: AI won't rewrite it.
-                onChange={(e) => update({ ...doc, seo: { ...doc.seo, title: e.target.value || undefined, titleAuto: undefined } })}
-              />
-              {doc.seo.titleAuto && <small className="muted">Skriven av AI. Ändra fritt, eller töm fältet för att få ett nytt förslag.</small>}
-            </label>
-            <label className="field">
-              <span>Beskrivning (visas i Google och på Facebook)</span>
-              <textarea rows={3} maxLength={300} value={doc.seo.description ?? ""} placeholder="Lämna tomt för att använda ingressen" onChange={(e) => update({ ...doc, seo: { ...doc.seo, description: e.target.value || undefined } })} />
-            </label>
-          </details>
+          <div className="form-card" id="seo">
+          <div className="card-head">
+            <h2>Sökmotorer och delning</h2>
+            <button type="button" className="button button-ghost button-sm" onClick={() => void autofill()} disabled={filling}>
+              <Icon name="wand" size={16} />
+              {filling ? "Skriver…" : "Autofyll"}
+            </button>
+          </div>
+          <label className="field">
+            <span>Titel i Google *</span>
+            <input
+              required
+              maxLength={70}
+              value={doc.seo.title ?? ""}
+              placeholder={doc.title || "Rubriken"}
+              // Typing makes it the editor's title: AI won't rewrite it.
+              onChange={(e) => update({ ...doc, seo: { ...doc.seo, title: e.target.value || undefined, titleAuto: undefined } })}
+            />
+            <small className="muted">
+              {(doc.seo.title ?? "").length}/50 tecken{doc.seo.titleAuto ? " · skriven av AI, ändra fritt" : ""}
+            </small>
+          </label>
+          <label className="field">
+            <span>Beskrivning (visas i Google och på Facebook) *</span>
+            <textarea required rows={3} maxLength={300} value={doc.seo.description ?? ""} placeholder="En eller två meningar om vad nyheten handlar om" onChange={(e) => update({ ...doc, seo: { ...doc.seo, description: e.target.value || undefined } })} />
+            <small className="muted">{(doc.seo.description ?? "").length}/155 tecken</small>
+          </label>
+          {seoError && <p className="admin-error">{seoError}</p>}
           {settings && <SharePreview settings={settings} item={{ kind: "post", doc }} />}
           </div>
           {published && <Versions kind="posts" id={id} onRestore={(data) => update({ ...(data as Post), id })} />}
