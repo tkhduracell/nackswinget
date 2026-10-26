@@ -269,7 +269,7 @@ export const postSchema = z.object({
 });
 export type Post = z.infer<typeof postSchema>;
 
-export type PostSummary = Pick<Post, "id" | "slug" | "title" | "excerpt" | "categories" | "image" | "publishedAt">;
+export type PostSummary = Pick<Post, "id" | "slug" | "title" | "excerpt" | "categories" | "image" | "publishedAt" | "updatedAt">;
 
 export const navItemSchema = z.object({
   label: z.string(),

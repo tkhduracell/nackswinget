@@ -1,4 +1,8 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+// Next adds its own noindex for 404s; this keeps the layout's "index, follow" out.
+export const metadata: Metadata = { title: "Sidan hittades inte", robots: { index: false, follow: true } };
 
 export default function NotFound() {
   return (

@@ -9,7 +9,7 @@ export async function PageView({ page }: { page: Page }) {
   const isHome = page.path === "";
   const hasHero = page.sections[0]?.type === "hero";
   const banner = isHome ? banners[0] : undefined;
-  const env = { feeds: settings.calendarFeeds, siteUrl: settings.siteUrl, idPrefix: page.id };
+  const env = { feeds: settings.calendarFeeds, siteUrl: settings.siteUrl, siteName: settings.siteName, idPrefix: page.id };
 
   // Parents for breadcrumbs, e.g. "tavlingsdans/smidans" -> Tävlingsdans > SM i dans.
   const crumbs: { name: string; path: string }[] = [];
@@ -66,6 +66,7 @@ export async function PageView({ page }: { page: Page }) {
         </>
       )}
       <div className="container page-body">
+        {!hasHero && page.template === "plain" && <h1 className="sr-only">{page.title}</h1>}
         <Sections sections={hasHero ? page.sections.slice(1) : page.sections} env={env} prefix={hasHero ? "b" : "s"} />
       </div>
     </article>

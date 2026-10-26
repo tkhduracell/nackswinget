@@ -67,6 +67,6 @@ ${items}
 </channel>
 </rss>`;
   return new Response(xml, {
-    headers: { "Content-Type": "application/rss+xml; charset=utf-8", "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600" },
+    headers: { "Content-Type": "application/rss+xml; charset=utf-8", "X-Robots-Tag": "noindex", "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600" },
   });
 }

@@ -1,4 +1,5 @@
 import type { Settings } from "@/lib/content/types";
+import { JsonLd } from "@/components/JsonLd";
 import { breadcrumbJsonLd } from "@/lib/seo";
 
 export function Breadcrumbs({ crumbs, settings }: { crumbs: { name: string; path: string }[]; settings: Settings }) {
@@ -11,7 +12,7 @@ export function Breadcrumbs({ crumbs, settings }: { crumbs: { name: string; path
           <li key={c.path}>{i === all.length - 1 ? <span aria-current="page">{c.name}</span> : <a href={c.path}>{c.name}</a>}</li>
         ))}
       </ol>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(settings, all)) }} />
+        <JsonLd data={breadcrumbJsonLd(settings, all)} />
       </nav>
     </div>
   );

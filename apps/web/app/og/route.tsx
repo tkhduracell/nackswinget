@@ -11,6 +11,6 @@ export async function GET(req: Request) {
         <div style={{ display: "flex", height: 12, width: 220, background: "#f9064b" }} />
       </div>
     ),
-    { width: 1200, height: 630, headers: { "Cache-Control": "public, max-age=86400, s-maxage=2592000" } },
+    { width: 1200, height: 630, headers: { "Cache-Control": "public, max-age=86400, s-maxage=2592000", "X-Robots-Tag": "noindex" } },
   );
 }

@@ -1,11 +1,25 @@
 import { PostCard } from "@/components/PostCard";
+import { Breadcrumbs } from "@/components/views/Breadcrumbs";
 import { getSite, listPosts } from "@/lib/content/cached";
 
 export const PAGE_SIZE = 12;
 
 /** The old blog index: full post cards on the left, recent posts in a ruled-off sidebar. */
-export async function PostArchive({ title, category, page, basePath }: { title: string; category?: string; page: number; basePath: string }) {
-  const [{ posts, total }, latest, { categories }] = await Promise.all([
+export async function PostArchive({
+  title,
+  category,
+  page,
+  basePath,
+  crumbs,
+}: {
+  title: string;
+  category?: string;
+  page: number;
+  basePath: string;
+  /** Trail below "Hem", ending with this page. */
+  crumbs: { name: string; path: string }[];
+}) {
+  const [{ posts, total }, latest, { categories, settings }] = await Promise.all([
     listPosts(category, PAGE_SIZE, (page - 1) * PAGE_SIZE),
     listPosts(undefined, 5),
     getSite(),
@@ -14,13 +28,15 @@ export async function PostArchive({ title, category, page, basePath }: { title: 
   const href = (n: number) => (n === 1 ? basePath : `${basePath}sida/${n}/`);
   return (
     <article className="page">
+      <Breadcrumbs crumbs={crumbs} settings={settings} />
       <div className="container post-layout">
         <div className="post-main">
           <h1 className="post-title">{title}</h1>
           <ul className="posts">
-            {posts.map((p) => (
+            {posts.map((p, i) => (
               <li key={p.id}>
-                <PostCard post={p} categories={categories} />
+                {/* The first card image is the LCP element of an archive page. */}
+                <PostCard post={p} categories={categories} priority={i === 0} />
               </li>
             ))}
           </ul>

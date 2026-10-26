@@ -45,7 +45,12 @@ async function resolve(path: string) {
 export async function generateMetadata({ params }: PageProps<"/[[...slug]]">): Promise<Metadata> {
   const path = pathOf(await params);
   const [{ settings }, found] = await Promise.all([getSite(), resolve(path)]);
-  if (!found) return {};
+  // Thrown before the page streams, so the status is a real 404 even where the
+  // proxy steps aside. Redirects are still answered by the page (and the proxy).
+  if (!found) {
+    if (await getRedirect(path)) return {};
+    notFound();
+  }
   if (found.kind === "page") {
     const p = found.page;
     const title = p.seo.title || (p.path ? p.title : settings.siteName);
