@@ -15,7 +15,7 @@ Run these from `apps/web`:
 
 ## Deploy
 
-Run from the repo root (uses `firebase.json` / `.firebaserc`):
+Every push to `main` that touches `apps/web/**` deploys automatically (`.github/workflows/web-deploy.yaml`, also runnable by hand from the Actions tab). To deploy by hand, from the repo root (uses `firebase.json` / `.firebaserc`):
 
 ```bash
 firebase deploy --only apphosting --project nackswinget-af7ef
