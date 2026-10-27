@@ -808,9 +808,21 @@ body:has(.logo-gold) .hero-glints {
   clip-path: inset(50%);
   white-space: nowrap;
 }
-/* Up to tablet width there's no room beside the subtitle and buttons: the puff
-   goes under the buttons at the text edge (phones also stack the buttons full width). */
-@media (max-width: 900px) {
+/* Tablets: no room beside the subtitle, so the puff sits level with the buttons,
+   just right of them (~310px wide from the text edge). */
+@media (min-width: 601px) and (max-width: 900px) {
+  .star {
+    margin: max(-62px, calc(4px - var(--puff-h) / 2)) 0 10px min(calc(10vw + 340px), calc(96vw - var(--puff-w) - 10px));
+  }
+}
+/* Too narrow for the ticket beside the buttons: it goes under them. */
+@media (min-width: 601px) and (max-width: 700px) {
+  .star.puff-ticket {
+    margin: 22px 0 0 10vw;
+  }
+}
+/* Phones stack the buttons full width: the puff goes under them at the text edge. */
+@media (max-width: 600px) {
   .star {
     margin: 22px 0 0 10vw;
   }
