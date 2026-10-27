@@ -61,6 +61,7 @@ export function SectionView({ section, slots, index, first, share = 1 }: { secti
           {section.image && <Img image={section.image} sizes="100vw" priority className="hero-bg" alt="" />}
           {section.video && <HeroVideo video={section.video} />}
           <div className="hero-inner">
+            {section.kicker && <p className="hero-kicker">{section.kicker}</p>}
             <Title className="hero-title">
               <span className="hero-title-text">
                 {section.title}
@@ -76,8 +77,8 @@ export function SectionView({ section, slots, index, first, share = 1 }: { secti
             {section.subtitle && <p className="hero-sub">{section.subtitle}</p>}
             {section.buttons.length > 0 && (
               <p className="hero-buttons">
-                {section.buttons.map((b) => (
-                  <a key={b.href + b.label} className="button button-lg" href={b.href} {...ext(b.href)}>
+                {section.buttons.map((b, i) => (
+                  <a key={b.href + b.label} className={i === 0 ? "button button-lg" : "button button-lg button-outline-light"} href={b.href} {...ext(b.href)}>
                     {b.label}
                   </a>
                 ))}
@@ -85,6 +86,13 @@ export function SectionView({ section, slots, index, first, share = 1 }: { secti
             )}
           </div>
           {slots.heroAside?.()}
+          {first && (
+            <a className="hero-scroll" href="#innehall" aria-label="Scrolla ner">
+              <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </a>
+          )}
         </section>
       );
     }

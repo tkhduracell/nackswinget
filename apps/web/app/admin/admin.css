@@ -1224,6 +1224,37 @@
   /* stacking context so the star's z-index:-1 points paint above the background */
   isolation: isolate;
   overflow: hidden;
+  /* Dark like the start page hero it sits on. */
+  align-items: center;
+  min-height: 230px;
+  box-sizing: border-box;
+  padding: 40px 16px;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.45)), var(--bg-texture) center / cover, #111;
+}
+/* The site places the puff beside the hero buttons; here it is simply centred. */
+.admin .star-preview .star {
+  margin: 0;
+}
+.admin .star-preview .puff-wrap-tape {
+  align-self: stretch;
+  flex: 1;
+  margin: 0 -24px;
+}
+.admin fieldset.puff-styles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0 16px;
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.admin .puff-style-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 /* ---------- editor ---------- */

@@ -542,7 +542,9 @@ body:has(.logo-gold) .hero-glints {
 
 /* ---------- hero & star ---------- */
 
-/* The old start page header: the tiled club photo, darkened from the top. */
+/* The start page header ("cinematic"): the photo or looping video fills it and
+   the text sits bottom left, above a scroll cue. The tiled club photo, darkened
+   from the top, shows when there is neither. */
 .hero {
   position: relative;
   background: var(--bg-texture), linear-gradient(180deg, #000 0%, #000 5%, rgba(0, 0, 0, 0) 100%);
@@ -550,8 +552,11 @@ body:has(.logo-gold) .hero-glints {
   background-size: cover;
   background-position: center;
   color: #fff;
-  min-height: 441px;
-  padding: 4vh 0;
+  min-height: 567px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 48px 0 88px;
   overflow: hidden;
 }
 .hero-bg {
@@ -578,7 +583,8 @@ body:has(.logo-gold) .hero-glints {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.85) 8%, rgba(0, 0, 0, 0.15) 100%);
+  /* Dark at the foot for the text, lighter mid-frame, a little dark under the header. */
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.25) 55%, rgba(0, 0, 0, 0.55) 100%);
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-video {
@@ -591,7 +597,23 @@ body:has(.logo-gold) .hero-glints {
   width: 80%;
   max-width: var(--max);
   margin: 0 auto;
-  padding: 22px 0 11px;
+}
+.hero-kicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.hero-kicker::before {
+  content: "";
+  width: 36px;
+  height: 3px;
+  background: var(--brand);
 }
 .hero-title-text {
   position: relative;
@@ -634,50 +656,122 @@ body:has(.logo-gold) .hero-glints {
 }
 .hero .hero-title {
   color: #fff;
-  font-size: 56px;
-  line-height: 1;
+  font-size: clamp(44px, 7vw, 92px);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+  max-width: 900px;
+  margin: 0;
 }
 .hero-sub {
-  font-size: 14px;
+  font-size: 18px;
+  line-height: 1.5;
+  max-width: 560px;
+  margin: 18px 0 0;
   padding: 0;
+  color: #f2f2f2;
 }
 .hero-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px 15px;
-  margin: 20px 0 0;
+  gap: 14px;
+  margin: 28px 0 0;
   padding: 0;
 }
 .hero .button-lg {
-  font-size: 20px;
-  line-height: 1.7;
-  padding: 6px 20px;
+  font-size: 18px;
+  line-height: 1.4;
+  padding: 14px 26px;
+}
+.hero .button-outline-light {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px #fff;
+}
+.hero .button-outline-light:hover {
+  background: #fff;
+  color: var(--heading);
+}
+/* Bobbing arrow down to the page content. */
+.hero-scroll {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: 20px;
+  width: 44px;
+  height: 44px;
+  margin-left: -22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  animation: hero-bob 1.8s ease-in-out infinite;
+}
+.hero-scroll:hover {
+  color: #fff;
+}
+@keyframes hero-bob {
+  50% {
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-scroll {
+    animation: none;
+  }
 }
 @media (max-width: 600px) {
+  .hero {
+    min-height: 560px;
+    padding-bottom: 76px;
+  }
+  .hero-kicker {
+    font-size: 11px;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .hero-kicker::before {
+    width: 28px;
+  }
   .hero .hero-title {
-    font-size: 40px;
+    /* "Nackswinget" must fit one line on the smallest phones. */
+    font-size: clamp(32px, 11.5vw, 44px);
   }
   .hero-sub {
     font-size: 16px;
+    margin-top: 14px;
   }
   .hero-buttons {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+    margin-top: 22px;
+  }
+  /* Full-width buttons, unless the star sits beside them. */
+  .hero:not(:has(.star-wrap:not([hidden]))) .hero-buttons {
+    align-items: stretch;
+    text-align: center;
+  }
+  .hero-scroll {
+    bottom: 14px;
   }
 }
 
-/* The star flows in the hero right after the buttons, pulled up beside them
-   (the old theme's .powerpuff), so it follows the title when that wraps. */
+/* ---------- the start page puff ----------
+   It flows in the hero right after the buttons, pulled up beside them (the old
+   theme's .powerpuff), so it follows the title when that wraps. Each style sets
+   its box (--puff-w/--puff-h) and the rules below place it from that. */
 .star-wrap {
   position: relative;
   z-index: 1;
 }
 .star {
+  --puff-w: 120px;
+  --puff-h: 120px;
   position: relative;
-  /* Level with the buttons, right of them, never past the edge (the rotated star bleeds ~10px). */
-  margin: -56px 0 10px min(65vw, calc(96vw - 130px));
-  width: 120px;
-  height: 120px;
+  /* Level with the buttons, right of them, never past the edge (a rotated star bleeds ~10px). */
+  margin: max(-62px, calc(4px - var(--puff-h) / 2)) 0 10px min(65vw, calc(96vw - var(--puff-w) - 10px));
+  width: var(--puff-w);
+  height: var(--puff-h);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -687,46 +781,350 @@ body:has(.logo-gold) .hero-glints {
   line-height: 1.35;
   color: #333;
   text-decoration: none;
-  transform: rotate(-10deg);
-  background: #ffeff4;
-  box-shadow: 0 10px 80px rgba(249, 6, 75, 0.25);
-  padding: 8px;
 }
-/* Phones stack the buttons: the star sits beside them. */
+.star:hover {
+  color: #333;
+}
+.star-text {
+  position: relative;
+}
+.puff-shape {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+/* Styles whose text is drawn as part of the shape keep it for screen readers only. */
+.puff-ring .star-text,
+.puff-tape .star-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* Phones stack the buttons: the puff sits beside them. */
 @media (max-width: 600px) {
   .star {
-    margin: -100px 0 0 min(60vw, calc(96vw - 130px));
+    margin: calc(-40px - var(--puff-h) / 2) 0 0 min(60vw, calc(96vw - var(--puff-w) - 10px));
   }
 }
-/* Smallest phones: a smaller star so it clears the "Bli medlem" button. */
-@media (max-width: 380px) {
-  .star {
-    margin: -64px 0 0 calc(96vw - 110px);
-    width: 100px;
-    height: 100px;
-    font-size: 12px;
-    padding: 4px;
-  }
+
+/* Classic: the old theme's pink star, three rotated squares. */
+.puff-classic {
+  padding: 8px;
+  background: #ffeff4;
+  box-shadow: 0 10px 80px rgba(249, 6, 75, 0.25);
+  transform: rotate(-10deg);
 }
-/* No room beside the buttons: tuck it under them. */
-@media (max-width: 340px) {
-  .star {
-    margin-top: -24px;
-  }
-}
-.star::before,
-.star::after {
+.puff-classic::before,
+.puff-classic::after {
   content: "";
   position: absolute;
   inset: 0;
   background: #ffeff4;
   z-index: -1;
 }
-.star::before {
+.puff-classic::before {
   transform: rotate(30deg);
 }
-.star::after {
+.puff-classic::after {
   transform: rotate(60deg);
+}
+
+/* Starburst: a red sticker that wiggles. */
+.puff-starburst {
+  --puff-w: 164px;
+  --puff-h: 164px;
+  padding: 0 28px;
+  color: #fff;
+  font-weight: 800;
+  line-height: 1.15;
+  filter: drop-shadow(0 10px 24px rgba(249, 6, 75, 0.45));
+  animation: puff-wiggle 3.2s ease-in-out infinite;
+}
+.puff-starburst:hover {
+  color: #fff;
+  animation-play-state: paused;
+}
+.puff-starburst polygon {
+  fill: var(--brand-ink);
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+@keyframes puff-wiggle {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(-4deg) scale(1.04);
+  }
+}
+
+/* Ring: the text runs round a slowly spinning disc with an arrow in the middle. */
+.puff-ring {
+  --puff-w: 164px;
+  --puff-h: 164px;
+}
+.puff-ring-bg {
+  fill: #ffeff4;
+}
+.puff-ring-text {
+  fill: var(--brand-dark);
+  font-family: inherit;
+  transform-origin: 80px 80px;
+  animation: puff-spin 14s linear infinite;
+}
+.puff-ring:hover .puff-ring-text {
+  animation-duration: 5s;
+}
+.puff-ring-core {
+  fill: var(--brand-ink);
+}
+.puff-ring-arrow {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@keyframes puff-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Ticket: a notched ticket with a red "NYTT" stub, gently floating. */
+.puff-wrap-ticket {
+  filter: drop-shadow(0 12px 28px rgba(249, 6, 75, 0.35));
+}
+.puff-ticket {
+  --puff-w: 250px;
+  --puff-h: 112px;
+  height: auto;
+  min-height: var(--puff-h);
+  justify-content: flex-start;
+  padding: 14px 16px 14px 86px;
+  border-radius: 8px;
+  background: #ffeff4;
+  color: #222;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: left;
+  -webkit-mask: radial-gradient(circle at 70px 0, #0000 10px, #000 10.5px) top / 100% 51% no-repeat, radial-gradient(circle at 70px 100%, #0000 10px, #000 10.5px) bottom / 100% 51% no-repeat;
+  mask: radial-gradient(circle at 70px 0, #0000 10px, #000 10.5px) top / 100% 51% no-repeat, radial-gradient(circle at 70px 100%, #0000 10px, #000 10.5px) bottom / 100% 51% no-repeat;
+  animation: puff-float 4s ease-in-out infinite;
+}
+.puff-ticket:hover {
+  color: #222;
+}
+.puff-stub {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand-ink);
+  border-right: 2px dashed #ffeff4;
+}
+.puff-stub span {
+  transform: rotate(-90deg);
+  color: #fff;
+  font-size: 15px;
+  letter-spacing: 0.2em;
+}
+@keyframes puff-float {
+  0%,
+  100% {
+    transform: rotate(-4deg) translateY(0);
+  }
+  50% {
+    transform: rotate(-3deg) translateY(-6px);
+  }
+}
+@media (max-width: 600px) {
+  /* Too wide to sit beside the stacked buttons: it goes under them. */
+  .star.puff-ticket {
+    margin: 22px 0 0 10vw;
+  }
+}
+
+/* Seal: a gold 40-year seal with a sheen sweeping across it. */
+.puff-seal {
+  --puff-w: 164px;
+  --puff-h: 164px;
+  padding: 0 38px;
+  color: #3a2806;
+  font-weight: 800;
+  line-height: 1.1;
+  transform: rotate(8deg);
+  filter: drop-shadow(0 10px 26px rgba(243, 210, 122, 0.35));
+}
+.puff-seal:hover {
+  color: #3a2806;
+}
+.puff-sheen {
+  fill: #fff8de;
+  opacity: 0.55;
+  transform-origin: 75px 75px;
+  animation: puff-sheen 4.5s ease-in-out infinite;
+}
+.puff-seal-ring {
+  fill: none;
+  stroke: #7a5a14;
+  stroke-width: 1.2;
+  stroke-dasharray: 2 3;
+}
+.puff-seal-arc {
+  fill: #4a3408;
+  font-family: inherit;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+}
+@keyframes puff-sheen {
+  0%,
+  55% {
+    transform: rotate(20deg) translateX(-120px);
+  }
+  100% {
+    transform: rotate(20deg) translateX(200px);
+  }
+}
+
+/* Tape: a red band across the foot of the hero with the text scrolling along it. */
+.puff-wrap-tape {
+  margin: 28px -5vw 0;
+}
+.star.puff-tape {
+  width: auto;
+  height: 48px;
+  margin: 0;
+  justify-content: flex-start;
+  overflow: hidden;
+  background: var(--brand-ink);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  transform: rotate(-3deg);
+}
+.puff-track {
+  display: flex;
+  white-space: nowrap;
+  animation: puff-marquee 18s linear infinite;
+}
+.puff-track span {
+  padding-right: 32px;
+}
+.puff-tape:hover .puff-track {
+  animation-play-state: paused;
+}
+@keyframes puff-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Phones: the round puffs shrink a little to fit beside the buttons, and puffs
+   under the buttons rather than beside them leave full-width buttons. */
+@media (max-width: 600px) {
+  .puff-starburst,
+  .puff-ring,
+  .puff-seal {
+    --puff-w: 148px;
+    --puff-h: 148px;
+  }
+  .hero:has(.puff-wrap-ticket:not([hidden]), .puff-wrap-tape:not([hidden])) .hero-buttons {
+    align-items: stretch;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .puff-starburst,
+  .puff-ring-text,
+  .puff-ticket,
+  .puff-sheen,
+  .puff-track {
+    animation: none;
+  }
+  .puff-starburst {
+    transform: rotate(-8deg);
+  }
+  .puff-ticket {
+    transform: rotate(-4deg);
+  }
+  .puff-sheen {
+    opacity: 0;
+  }
+}
+
+/* Smallest phones: no room beside the buttons, so every style collapses into a
+   solid band across the foot of the hero, just above the page content. */
+@media (max-width: 380px) {
+  .star-wrap {
+    order: 2;
+    margin: 6px 0 -76px;
+    filter: none;
+  }
+  .star-wrap .star {
+    width: auto;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 14px 20px;
+    justify-content: center;
+    border-radius: 0;
+    background: #ffeff4;
+    color: #333;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: normal;
+    line-height: 1.35;
+    text-align: center;
+    transform: none;
+    filter: none;
+    box-shadow: none;
+    -webkit-mask: none;
+    mask: none;
+    animation: none;
+  }
+  .star-wrap .star::before,
+  .star-wrap .star::after,
+  .star-wrap .puff-shape,
+  .star-wrap .puff-stub,
+  .star-wrap .puff-track {
+    display: none;
+  }
+  .star-wrap .star-text {
+    position: relative;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    font-size: inherit !important;
+  }
+  /* The arrow moves into the flow, between the buttons and the band. */
+  .hero:has(.star-wrap:not([hidden])) .hero-scroll {
+    position: static;
+    order: 1;
+    margin: 18px auto 0;
+  }
+  .hero .hero-buttons {
+    align-items: stretch;
+    text-align: center;
+  }
 }
 
 /* ---------- buttons ---------- */

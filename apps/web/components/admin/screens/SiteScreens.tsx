@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { MediaDoc } from "@/lib/admin/media";
-import { type Banner, bannerExpiresAt, type CalendarFeed, type NavItem, type Redirect, type Settings } from "@/lib/content/types";
+import { PuffBadge } from "@/components/PuffBadge";
+import { type Banner, bannerExpiresAt, type CalendarFeed, type NavItem, PUFF_STYLES, type PuffStyle, type Redirect, type Settings } from "@/lib/content/types";
 import { publicUrl } from "@/lib/media/urls";
 import { useAdmin } from "../AuthProvider";
 import { MediaThumb } from "../MediaPicker";
@@ -38,6 +39,15 @@ function toDateInput(iso: string) {
   return iso.slice(0, 10);
 }
 
+const PUFF_STYLE_LABELS: Record<PuffStyle, string> = {
+  classic: "Klassisk stjärna",
+  starburst: "Röd stjärnsmäll",
+  ring: "Snurrande textring",
+  ticket: "Biljett",
+  seal: "Guldsigill (40 år)",
+  tape: "Tejp med rullande text",
+};
+
 export function BannerScreen() {
   const { value, setValue, save, status } = useSiteDoc<Banner[]>("banners");
   const list = value ?? [];
@@ -61,11 +71,20 @@ export function BannerScreen() {
                 Ta bort
               </button>
             </div>
-            <div className="star-preview">
-              <div className="star">
-                <span className="star-text">{b.text || "…"}</span>
+            <div className={`star-preview star-preview-${b.style ?? "classic"}`} aria-label="Förhandsvisning">
+              <div className={`star-wrap puff-wrap-${b.style ?? "classic"}`}>
+                <PuffBadge banner={{ ...b, text: b.text || "…", href: undefined }} id={`puff-${i}`} />
               </div>
             </div>
+            <fieldset className="field puff-styles">
+              <legend>Utseende</legend>
+              {PUFF_STYLES.map((style) => (
+                <label key={style} className="puff-style-option">
+                  <input type="radio" name={`puff-style-${i}`} checked={(b.style ?? "classic") === style} onChange={() => set(i, { ...b, style: style === "classic" ? undefined : style })} />
+                  {PUFF_STYLE_LABELS[style]}
+                </label>
+              ))}
+            </fieldset>
             <label className="field">
               <span>Text ({b.text.length}/120)</span>
               <textarea rows={2} maxLength={120} value={b.text} onChange={(e) => set(i, { ...b, text: e.target.value })} />

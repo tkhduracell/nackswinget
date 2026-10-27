@@ -123,7 +123,7 @@ const linkSchema = z.object({ label: z.string(), href: z.string() });
 export const calendarViewSchema = z.enum(["list", "month", "week"]);
 
 export type Section =
-  | { type: "hero"; title: string; subtitle?: string; image?: ImageAttrs; video?: HeroVideo; buttons: { label: string; href: string }[] }
+  | { type: "hero"; kicker?: string; title: string; subtitle?: string; image?: ImageAttrs; video?: HeroVideo; buttons: { label: string; href: string }[] }
   | { type: "richText"; doc: RichDoc; variant?: "plain" | "boxTop" | "boxLeft"; needsReview?: boolean }
   | { type: "columns"; columns: { width: ColumnWidth; sections: Section[] }[] }
   | { type: "linkBoxes"; items: { title: string; href: string; icon?: string }[] }
@@ -154,6 +154,7 @@ export const sectionSchema: z.ZodType<Section> = z.lazy(() =>
   z.discriminatedUnion("type", [
     z.object({
       type: z.literal("hero"),
+      kicker: z.string().optional(),
       title: z.string(),
       subtitle: z.string().optional(),
       image: imageAttrsSchema.optional(),
@@ -306,8 +307,13 @@ export const settingsSchema = z.object({
 });
 export type Settings = z.infer<typeof settingsSchema>;
 
+/** How the start page puff is drawn; "classic" is the old theme's pink star. */
+export const PUFF_STYLES = ["classic", "starburst", "ring", "ticket", "seal", "tape"] as const;
+export type PuffStyle = (typeof PUFF_STYLES)[number];
+
 export const bannerSchema = z.object({
   text: z.string().max(120),
+  style: z.enum(PUFF_STYLES).optional(),
   href: z.string().optional(),
   startAt: z.string(),
   days: z.number().int().min(0).max(365),
