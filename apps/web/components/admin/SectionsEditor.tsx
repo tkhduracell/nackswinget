@@ -184,6 +184,9 @@ function SectionForm({ section, onChange, feeds, categories }: { section: Sectio
       const s = section;
       return (
         <>
+          <Field label="Överrubrik (valfri, liten text ovanför rubriken)">
+            <input value={s.kicker ?? ""} placeholder="Danskurser i Stockholm/Nacka" onChange={(e) => onChange({ ...s, kicker: e.target.value || undefined })} />
+          </Field>
           <Field label="Rubrik">
             <input value={s.title} onChange={(e) => onChange({ ...s, title: e.target.value })} />
           </Field>
