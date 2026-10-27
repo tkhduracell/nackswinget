@@ -1074,9 +1074,9 @@ body:has(.logo-gold) .hero-glints {
   }
 }
 
-/* Smallest phones: no room beside the buttons, so every style collapses into a
-   solid band across the foot of the hero, just above the page content. */
-@media (max-width: 380px) {
+/* Phones (iPhone widths and narrower): every style collapses into a solid band
+   across the foot of the hero, just above the page content. */
+@media (max-width: 430px) {
   .star-wrap {
     order: 2;
     margin: 6px 0 -76px;
