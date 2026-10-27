@@ -19,13 +19,30 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps<"/nyheter/sida/[n]">): Promise<Metadata> {
-  const { n } = await params;
+  const n = Number((await params).n);
+  if (!Number.isInteger(n) || n < 2 || n > (await archivePageCount())) notFound();
   const { settings } = await getSite();
-  return buildMetadata({ settings, title: `Nyheter – sida ${n}`, path: `/nyheter/sida/${n}/` });
+  return buildMetadata({
+    settings,
+    title: `Nyheter – sida ${n}`,
+    description: `Äldre nyheter från ${settings.siteName}, sida ${n}.`,
+    path: `/nyheter/sida/${n}/`,
+    markdown: false,
+  });
 }
 
 export default async function NewsPage({ params }: PageProps<"/nyheter/sida/[n]">) {
   const n = Number((await params).n);
   if (!Number.isInteger(n) || n < 2 || n > (await archivePageCount())) notFound();
-  return <PostArchive title="Nyheter" page={n} basePath="/nyheter/" />;
+  return (
+    <PostArchive
+      title={`Nyheter – sida ${n}`}
+      page={n}
+      basePath="/nyheter/"
+      crumbs={[
+        { name: "Nyheter", path: "/nyheter/" },
+        { name: `Sida ${n}`, path: `/nyheter/sida/${n}/` },
+      ]}
+    />
+  );
 }

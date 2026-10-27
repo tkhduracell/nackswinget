@@ -23,7 +23,7 @@ export default async function TvCalendar() {
   const section = page?.sections.find((s) => s.type === "calendar") ?? DEFAULT;
   return (
     <main className="tv">
-      <Calendar section={{ ...section, view: "week" }} feeds={settings.calendarFeeds} siteUrl={settings.siteUrl} id="tv" />
+      <Calendar section={{ ...section, view: "week" }} feeds={settings.calendarFeeds} site={{ siteUrl: settings.siteUrl, siteName: settings.siteName }} id="tv" />
     </main>
   );
 }

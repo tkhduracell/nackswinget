@@ -1282,16 +1282,6 @@
   align-items: center;
   gap: 8px;
 }
-.admin .editor-extra {
-  display: flex;
-  align-items: center;
-  margin-right: 4px;
-}
-.admin .editor-extra .check {
-  color: var(--a-text-2);
-  font-size: 13px;
-  white-space: nowrap;
-}
 .admin .editor-bar .admin-error {
   flex-basis: 100%;
   margin: 0;
@@ -1499,12 +1489,13 @@
     backdrop-filter: blur(10px);
     box-shadow: 0 -4px 16px rgba(16, 16, 24, 0.06);
   }
-  .admin .editor-extra {
-    flex: 1 1 auto;
-    margin-right: auto;
-  }
-  .admin .editor-actions .button:last-child {
+  .admin .editor-actions .publish-wrap .button {
     min-width: 120px;
+  }
+  /* The bar sits at the bottom here: show the hint above the button. */
+  .admin .publish-wrap.has-tip::after {
+    top: auto;
+    bottom: calc(100% + 8px);
   }
 }
 @media (max-width: 479px) {
@@ -1532,9 +1523,6 @@
   .admin .editor-actions .button-danger-ghost {
     width: 38px;
     padding: 0;
-  }
-  .admin .editor-extra {
-    flex-basis: 100%;
   }
   .admin .editor {
     padding-bottom: 110px;
@@ -2297,5 +2285,122 @@
   }
   .admin-auth .admin-login-body {
     padding: 24px 20px 28px;
+  }
+}
+
+/* Facebook share preview (SharePreview.tsx): Facebook's link card, 1.91:1 image. */
+.share-preview {
+  margin: 16px 0 0;
+}
+.share-preview-label {
+  color: var(--a-muted);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.fb-card {
+  max-width: 500px;
+  border: 1px solid #dadde1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f0f2f5;
+  font-family: Helvetica, Arial, sans-serif;
+}
+.fb-card-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.91 / 1;
+  object-fit: cover;
+  background: #e4e6eb;
+}
+.fb-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid #dadde1;
+}
+.fb-card-host {
+  color: #65676b;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.fb-card-title {
+  color: #050505;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.fb-card-desc {
+  color: #65676b;
+  font-size: 14px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Card heading with an action on the right (post editor's SEO card). */
+.admin .card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.admin .card-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Publish button while required fields are missing: grey, with the reason on hover/focus. */
+.admin .button.button-blocked {
+  background: var(--a-border-strong);
+  border-color: var(--a-border-strong);
+  color: var(--a-muted);
+  box-shadow: none;
+}
+.admin .button.button-blocked:hover {
+  background: var(--a-border-strong);
+  color: var(--a-text-2);
+}
+.admin .publish-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.admin .publish-wrap.has-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  width: max-content;
+  max-width: 280px;
+  padding: 8px 10px;
+  border-radius: var(--a-radius-sm);
+  background: var(--a-text);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.35;
+  box-shadow: var(--a-shadow-md);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.12s, transform 0.12s;
+}
+.admin .publish-wrap.has-tip:hover::after,
+.admin .publish-wrap.has-tip:focus-within::after {
+  opacity: 1;
+  transform: none;
+}
+
+/* Phones: no SEO card; Publicera runs Autofyll once when the fields are empty (DocEditors.tsx). */
+@media (max-width: 639px) {
+  .admin .seo-card {
+    display: none;
   }
 }

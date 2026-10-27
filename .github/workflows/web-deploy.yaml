@@ -1,0 +1,63 @@
+name: Web deploy
+
+# Deploys apps/web (nackswinget.se) to Firebase App Hosting (backend nsw-web)
+# on every push to main that touches it. The backend has no connected repo;
+# this uploads the source and App Hosting builds it (see apps/web/README.md).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - "firebase.json"
+      - ".github/workflows/web-deploy.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+# One rollout at a time; a newer push waits rather than cancelling a rollout mid-way.
+concurrency:
+  group: web-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
+          service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
+          export_environment_variables: true
+
+      - name: Deploy to App Hosting
+        run: npx -y firebase-tools@14 deploy --only apphosting --project nackswinget-af7ef --non-interactive --force
+
+      - name: Smoke check
+        run: |
+          for _ in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://nsw-web--nackswinget-af7ef.europe-west4.hosted.app/)
+            [ "$code" = "200" ] && echo "200 OK" && exit 0
+            sleep 10
+          done
+          echo "start page returned $code" && exit 1
+
+      - name: Notify Slack
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          STATUS: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$STATUS" = "success" ]; then MESSAGE="🌐 nackswinget web deployed: ${RUN_URL}"; else MESSAGE="❌ nackswinget web deploy ${STATUS}: ${RUN_URL}"; fi
+          curl -s -X POST -H 'Content-type: application/json' --data "{\"text\":\"${MESSAGE}\"}" "${SLACK_WEBHOOK}"

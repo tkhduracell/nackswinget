@@ -6,7 +6,7 @@ import { Img } from "./Img";
  * A post in a list. Full: the old blog module (big image, title, "date | categories",
  * excerpt, "läs mer"). Compact: just the linked title (sidebar lists).
  */
-export function PostCard({ post, compact, categories = [] }: { post: PostSummary; compact?: boolean; categories?: Category[] }) {
+export function PostCard({ post, compact, categories = [], priority }: { post: PostSummary; compact?: boolean; categories?: Category[]; priority?: boolean }) {
   const href = `/${post.slug}/`;
   if (compact) {
     return (
@@ -22,7 +22,7 @@ export function PostCard({ post, compact, categories = [] }: { post: PostSummary
     <article className="post-card">
       {post.image && (
         <a href={href} className="post-card-img" tabIndex={-1} aria-hidden="true">
-          <Img image={post.image} sizes="(min-width: 1440px) 795px, (min-width: 981px) 55vw, 80vw" />
+          <Img image={post.image} priority={priority} sizes="(min-width: 1440px) 795px, (min-width: 981px) 55vw, 80vw" />
         </a>
       )}
       <h2>
@@ -34,7 +34,7 @@ export function PostCard({ post, compact, categories = [] }: { post: PostSummary
       </p>
       {post.excerpt && <p className="post-excerpt">{/[.!?…]$/.test(post.excerpt.trim()) ? post.excerpt : `${post.excerpt.trim()}…`}</p>}
       <a href={href} className="more-link">
-        läs mer
+        läs mer<span className="sr-only"> om {post.title}</span>
       </a>
     </article>
   );

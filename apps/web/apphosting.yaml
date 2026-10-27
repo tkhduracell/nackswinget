@@ -16,6 +16,13 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  # Gemini (Vertex AI, this project) writes a post's SEO title on publish when
+  # it's empty (lib/ai/seo-title.ts). Needs the Vertex AI API enabled and
+  # roles/aiplatform.user on the App Hosting runtime service account.
+  - variable: AI_SEO_TITLES
+    value: "true"
+    availability:
+      - RUNTIME
   # Guards the one-time WordPress import endpoints (/api/import/*).
   - variable: IMPORT_TOKEN
     secret: IMPORT_TOKEN
