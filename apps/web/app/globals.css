@@ -757,6 +757,58 @@ body:has(.logo-gold) .hero-glints {
     bottom: 14px;
   }
 }
+/* Phones held sideways: a compact hero that fills exactly the screen below the
+   header (73px), so the buttons and the puff band are visible without scrolling. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .hero {
+    min-height: calc(100svh - var(--header-h) - 3px);
+    padding: 16px 0 52px;
+  }
+  .hero-kicker {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+  .hero-kicker::before {
+    width: 28px;
+  }
+  .hero .hero-title {
+    font-size: clamp(30px, 10svh, 40px);
+  }
+  .hero-sub {
+    font-size: 15px;
+    margin-top: 8px;
+  }
+  .hero-buttons {
+    margin-top: 14px;
+  }
+  .hero .button-lg {
+    font-size: 16px;
+    padding: 10px 20px;
+  }
+  .hero-scroll {
+    bottom: 4px;
+  }
+  .hero .star-wrap {
+    margin-bottom: -52px;
+  }
+}
+/* The shortest of those screens: drop the kicker and the arrow (the band below
+   already says there's more). */
+@media (orientation: landscape) and (max-height: 380px) {
+  .hero {
+    padding-top: 10px;
+  }
+  .hero-kicker,
+  .hero .hero-scroll {
+    display: none;
+  }
+}
+/* iPhone SE (1st gen) sideways, 320px tall: the subtitle goes too. */
+@media (orientation: landscape) and (max-height: 340px) {
+  .hero-sub {
+    display: none;
+  }
+}
 
 /* ---------- the start page puff ----------
    It flows in the hero right after the buttons, pulled up beside them (the old
@@ -1058,9 +1110,9 @@ body:has(.logo-gold) .hero-glints {
   }
 }
 
-/* Phones in portrait (600px and narrower): every style collapses into a solid
-   band across the foot of the hero, just above the page content. */
-@media (max-width: 600px) {
+/* Phones (600px and narrower in portrait, or held sideways): every style
+   collapses into a solid band across the foot of the hero, just above the page content. */
+@media (max-width: 600px), (orientation: landscape) and (max-height: 500px) {
   .star-wrap {
     order: 2;
     margin: 6px 0 -76px;
