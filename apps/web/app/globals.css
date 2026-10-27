@@ -748,13 +748,90 @@ body:has(.logo-gold) .hero-glints {
     gap: 12px;
     margin-top: 22px;
   }
-  /* Full-width buttons, unless the star sits beside them. */
-  .hero:not(:has(.star-wrap:not([hidden]))) .hero-buttons {
+  /* Full-width buttons; the puff, if any, sits under them. */
+  .hero .hero-buttons {
     align-items: stretch;
     text-align: center;
   }
   .hero-scroll {
     bottom: 14px;
+  }
+}
+/* Short phones in portrait (iPhone SE 1st gen): the hero fills the screen below
+   the header instead of its usual 560px, so the band stays on screen. */
+@media (max-width: 600px) and (max-height: 600px) {
+  .hero {
+    min-height: calc(100svh - var(--header-h) - 3px);
+    padding-top: 24px;
+  }
+  .hero-sub {
+    margin-top: 10px;
+  }
+  .hero .hero-buttons {
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .hero .button-lg {
+    padding-block: 12px;
+  }
+  .hero:has(.star-wrap:not([hidden])) a.hero-scroll {
+    margin: 6px auto 0;
+  }
+}
+/* Phones held sideways: a compact hero that fills exactly the screen below the
+   header (73px), so the buttons and the puff band are visible without scrolling. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .hero {
+    min-height: calc(100svh - var(--header-h) - 3px);
+    padding: 16px 0 52px;
+  }
+  .hero-kicker {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+  .hero-kicker::before {
+    width: 28px;
+  }
+  .hero .hero-title {
+    font-size: clamp(30px, 10svh, 40px);
+  }
+  .hero-sub {
+    font-size: 15px;
+    margin-top: 8px;
+  }
+  .hero-buttons {
+    margin-top: 14px;
+  }
+  .hero .button-lg {
+    font-size: 16px;
+    padding: 10px 20px;
+  }
+  .hero-scroll {
+    bottom: 4px;
+  }
+  .hero .star-wrap {
+    margin-bottom: -52px;
+  }
+}
+/* The shortest of those screens: drop the kicker and the arrow (the band below
+   already says there's more). */
+@media (orientation: landscape) and (max-height: 380px) {
+  .hero {
+    padding-top: 10px;
+  }
+  .hero-kicker,
+  .hero .hero-scroll {
+    display: none;
+  }
+  /* No arrow between them: keep the band clear of the buttons. */
+  .hero .star-wrap {
+    margin-top: 24px;
+  }
+}
+/* iPhone SE (1st gen) sideways, 320px tall: the subtitle goes too. */
+@media (orientation: landscape) and (max-height: 340px) {
+  .hero-sub {
+    display: none;
   }
 }
 
@@ -770,8 +847,9 @@ body:has(.logo-gold) .hero-glints {
   --puff-w: 120px;
   --puff-h: 120px;
   position: relative;
-  /* Level with the buttons, right of them, never past the edge (a rotated star bleeds ~10px). */
-  margin: max(-62px, calc(4px - var(--puff-h) / 2)) 0 10px min(65vw, calc(96vw - var(--puff-w) - 10px));
+  /* Raised beside the buttons and the end of the subtitle: at least 24px right of the
+     subtitle's column (560px from the text edge), never past the edge (a rotated star bleeds ~10px). */
+  margin: calc(-30px - var(--puff-h) / 2) 0 10px min(max(58vw, calc((100vw - min(80vw, var(--max))) / 2 + 584px)), calc(96vw - var(--puff-w) - 10px));
   width: var(--puff-w);
   height: var(--puff-h);
   display: flex;
@@ -807,10 +885,17 @@ body:has(.logo-gold) .hero-glints {
   clip-path: inset(50%);
   white-space: nowrap;
 }
-/* Phones stack the buttons: the puff sits beside them. */
-@media (max-width: 600px) {
+/* Tablets: no room beside the subtitle, so the puff sits level with the buttons,
+   just right of them (~310px wide from the text edge). */
+@media (min-width: 601px) and (max-width: 900px) {
   .star {
-    margin: calc(-40px - var(--puff-h) / 2) 0 0 min(60vw, calc(96vw - var(--puff-w) - 10px));
+    margin: max(-62px, calc(4px - var(--puff-h) / 2)) 0 10px min(calc(10vw + 340px), calc(96vw - var(--puff-w) - 10px));
+  }
+}
+/* Too narrow for the ticket beside the buttons: it goes under them. */
+@media (min-width: 601px) and (max-width: 700px) {
+  .star.puff-ticket {
+    margin: 22px 0 0 10vw;
   }
 }
 
@@ -952,12 +1037,6 @@ body:has(.logo-gold) .hero-glints {
     transform: rotate(-3deg) translateY(-6px);
   }
 }
-@media (max-width: 600px) {
-  /* Too wide to sit beside the stacked buttons: it goes under them. */
-  .star.puff-ticket {
-    margin: 22px 0 0 10vw;
-  }
-}
 
 /* Seal: a gold 40-year seal with a sheen sweeping across it. */
 .puff-seal {
@@ -1037,21 +1116,6 @@ body:has(.logo-gold) .hero-glints {
   }
 }
 
-/* Phones: the round puffs shrink a little to fit beside the buttons, and puffs
-   under the buttons rather than beside them leave full-width buttons. */
-@media (max-width: 600px) {
-  .puff-starburst,
-  .puff-ring,
-  .puff-seal {
-    --puff-w: 148px;
-    --puff-h: 148px;
-  }
-  .hero:has(.puff-wrap-ticket:not([hidden]), .puff-wrap-tape:not([hidden])) .hero-buttons {
-    align-items: stretch;
-    text-align: center;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .puff-starburst,
   .puff-ring-text,
@@ -1071,9 +1135,9 @@ body:has(.logo-gold) .hero-glints {
   }
 }
 
-/* Smallest phones: no room beside the buttons, so every style collapses into a
-   solid band across the foot of the hero, just above the page content. */
-@media (max-width: 380px) {
+/* Phones (600px and narrower in portrait, or held sideways): every style
+   collapses into a solid band across the foot of the hero, just above the page content. */
+@media (max-width: 600px), (orientation: landscape) and (max-height: 500px) {
   .star-wrap {
     order: 2;
     margin: 6px 0 -76px;
