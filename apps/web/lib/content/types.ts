@@ -307,8 +307,13 @@ export const settingsSchema = z.object({
 });
 export type Settings = z.infer<typeof settingsSchema>;
 
+/** How the start page puff is drawn; "classic" is the old theme's pink star. */
+export const PUFF_STYLES = ["classic", "starburst", "ring", "ticket", "seal", "tape"] as const;
+export type PuffStyle = (typeof PUFF_STYLES)[number];
+
 export const bannerSchema = z.object({
   text: z.string().max(120),
+  style: z.enum(PUFF_STYLES).optional(),
   href: z.string().optional(),
   startAt: z.string(),
   days: z.number().int().min(0).max(365),

@@ -1,3 +1,4 @@
+import { PuffBadge } from "@/components/PuffBadge";
 import { type Banner, bannerExpiresAt } from "@/lib/content/types";
 
 /**
@@ -8,16 +9,9 @@ import { type Banner, bannerExpiresAt } from "@/lib/content/types";
 export function StarBanner({ banner }: { banner: Banner }) {
   const expires = bannerExpiresAt(banner).getTime();
   const starts = new Date(banner.startAt).getTime();
-  const body = <span className="star-text">{banner.text}</span>;
   return (
-    <div className="star-wrap" id="star-banner" hidden>
-      {banner.href ? (
-        <a className="star" href={banner.href}>
-          {body}
-        </a>
-      ) : (
-        <div className="star">{body}</div>
-      )}
+    <div className={`star-wrap puff-wrap-${banner.style ?? "classic"}`} id="star-banner" hidden>
+      <PuffBadge banner={banner} />
       <script
         dangerouslySetInnerHTML={{
           // Shown only between start and expiry, judged by the visitor's clock.
