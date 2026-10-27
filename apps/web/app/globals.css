@@ -821,12 +821,6 @@ body:has(.logo-gold) .hero-glints {
     margin: 22px 0 0 10vw;
   }
 }
-/* Phones stack the buttons full width: the puff goes under them at the text edge. */
-@media (max-width: 600px) {
-  .star {
-    margin: 22px 0 0 10vw;
-  }
-}
 
 /* Classic: the old theme's pink star, three rotated squares. */
 .puff-classic {
@@ -1045,16 +1039,6 @@ body:has(.logo-gold) .hero-glints {
   }
 }
 
-/* Phones: the round puffs shrink a little. */
-@media (max-width: 600px) {
-  .puff-starburst,
-  .puff-ring,
-  .puff-seal {
-    --puff-w: 148px;
-    --puff-h: 148px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .puff-starburst,
   .puff-ring-text,
@@ -1074,9 +1058,9 @@ body:has(.logo-gold) .hero-glints {
   }
 }
 
-/* Phones (iPhone widths and narrower): every style collapses into a solid band
-   across the foot of the hero, just above the page content. */
-@media (max-width: 430px) {
+/* Phones in portrait (600px and narrower): every style collapses into a solid
+   band across the foot of the hero, just above the page content. */
+@media (max-width: 600px) {
   .star-wrap {
     order: 2;
     margin: 6px 0 -76px;
