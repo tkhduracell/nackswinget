@@ -748,8 +748,8 @@ body:has(.logo-gold) .hero-glints {
     gap: 12px;
     margin-top: 22px;
   }
-  /* Full-width buttons, unless the star sits beside them. */
-  .hero:not(:has(.star-wrap:not([hidden]))) .hero-buttons {
+  /* Full-width buttons; the puff, if any, sits under them. */
+  .hero .hero-buttons {
     align-items: stretch;
     text-align: center;
   }
@@ -770,8 +770,9 @@ body:has(.logo-gold) .hero-glints {
   --puff-w: 120px;
   --puff-h: 120px;
   position: relative;
-  /* Level with the buttons, right of them, never past the edge (a rotated star bleeds ~10px). */
-  margin: max(-62px, calc(4px - var(--puff-h) / 2)) 0 10px min(65vw, calc(96vw - var(--puff-w) - 10px));
+  /* Raised beside the buttons and the end of the subtitle: at least 24px right of the
+     subtitle's column (560px from the text edge), never past the edge (a rotated star bleeds ~10px). */
+  margin: calc(-30px - var(--puff-h) / 2) 0 10px min(max(58vw, calc((100vw - min(80vw, var(--max))) / 2 + 584px)), calc(96vw - var(--puff-w) - 10px));
   width: var(--puff-w);
   height: var(--puff-h);
   display: flex;
@@ -807,10 +808,11 @@ body:has(.logo-gold) .hero-glints {
   clip-path: inset(50%);
   white-space: nowrap;
 }
-/* Phones stack the buttons: the puff sits beside them. */
-@media (max-width: 600px) {
+/* Up to tablet width there's no room beside the subtitle and buttons: the puff
+   goes under the buttons at the text edge (phones also stack the buttons full width). */
+@media (max-width: 900px) {
   .star {
-    margin: calc(-40px - var(--puff-h) / 2) 0 0 min(60vw, calc(96vw - var(--puff-w) - 10px));
+    margin: 22px 0 0 10vw;
   }
 }
 
@@ -952,12 +954,6 @@ body:has(.logo-gold) .hero-glints {
     transform: rotate(-3deg) translateY(-6px);
   }
 }
-@media (max-width: 600px) {
-  /* Too wide to sit beside the stacked buttons: it goes under them. */
-  .star.puff-ticket {
-    margin: 22px 0 0 10vw;
-  }
-}
 
 /* Seal: a gold 40-year seal with a sheen sweeping across it. */
 .puff-seal {
@@ -1037,18 +1033,13 @@ body:has(.logo-gold) .hero-glints {
   }
 }
 
-/* Phones: the round puffs shrink a little to fit beside the buttons, and puffs
-   under the buttons rather than beside them leave full-width buttons. */
+/* Phones: the round puffs shrink a little. */
 @media (max-width: 600px) {
   .puff-starburst,
   .puff-ring,
   .puff-seal {
     --puff-w: 148px;
     --puff-h: 148px;
-  }
-  .hero:has(.puff-wrap-ticket:not([hidden]), .puff-wrap-tape:not([hidden])) .hero-buttons {
-    align-items: stretch;
-    text-align: center;
   }
 }
 
