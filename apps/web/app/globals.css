@@ -572,6 +572,8 @@ body:has(.logo-gold) .hero-glints {
   position: absolute;
   inset: -24px;
   width: calc(100% + 48px);
+  /* Wider than the hero on purpose (hides the blur's soft edges); the global media max-width would cut it short. */
+  max-width: none;
   height: calc(100% + 48px);
   object-fit: cover;
 }
