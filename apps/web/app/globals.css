@@ -757,6 +757,27 @@ body:has(.logo-gold) .hero-glints {
     bottom: 14px;
   }
 }
+/* Short phones in portrait (iPhone SE 1st gen): the hero fills the screen below
+   the header instead of its usual 560px, so the band stays on screen. */
+@media (max-width: 600px) and (max-height: 600px) {
+  .hero {
+    min-height: calc(100svh - var(--header-h) - 3px);
+    padding-top: 24px;
+  }
+  .hero-sub {
+    margin-top: 10px;
+  }
+  .hero .hero-buttons {
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .hero .button-lg {
+    padding-block: 12px;
+  }
+  .hero:has(.star-wrap:not([hidden])) a.hero-scroll {
+    margin: 6px auto 0;
+  }
+}
 /* Phones held sideways: a compact hero that fills exactly the screen below the
    header (73px), so the buttons and the puff band are visible without scrolling. */
 @media (orientation: landscape) and (max-height: 500px) {
@@ -801,6 +822,10 @@ body:has(.logo-gold) .hero-glints {
   .hero-kicker,
   .hero .hero-scroll {
     display: none;
+  }
+  /* No arrow between them: keep the band clear of the buttons. */
+  .hero .star-wrap {
+    margin-top: 24px;
   }
 }
 /* iPhone SE (1st gen) sideways, 320px tall: the subtitle goes too. */
