@@ -45,9 +45,6 @@ export function PreviewView() {
               )}
               <RichText doc={p.body} />
             </div>
-            <aside className="post-sidebar" aria-hidden="true">
-              <h2 className="widget-title">Senaste nyheter</h2>
-            </aside>
           </div>
         </article>
         </main>
