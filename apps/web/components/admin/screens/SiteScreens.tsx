@@ -356,12 +356,57 @@ interface UserRow {
   active?: boolean;
 }
 
+interface AuditRow {
+  at: string;
+  who: string;
+  action: string;
+  email: string;
+  role: string;
+}
+
+const ROLE_LABEL: Record<string, string> = { admin: "administratör", editor: "redaktör" };
+
+function auditText(a: AuditRow) {
+  const role = ROLE_LABEL[a.role] ?? a.role;
+  if (a.action === "create") return <>lade till <b>{a.email}</b> som {role}</>;
+  if (a.action === "delete") return <>tog bort <b>{a.email}</b></>;
+  return <>satte <b>{a.email}</b> till {role}</>;
+}
+
+function UserAudit({ rows }: { rows: AuditRow[] | null }) {
+  if (!rows || rows.length === 0) return null;
+  return (
+    <section className="card user-audit">
+      <h2>Ändringslogg</h2>
+      <ul>
+        {rows.map((a, i) => (
+          <li key={`${a.at}-${i}`}>
+            <time dateTime={a.at} className="muted">
+              {new Date(a.at).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" })}
+            </time>
+            <span>
+              {a.who} {auditText(a)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function UsersScreen() {
   const { api, me } = useAdmin();
   const [list, setList] = useState<UserRow[] | null>(null);
   const [draft, setDraft] = useState<UserRow>({ email: "", name: "", role: "editor" });
   const [status, setStatus] = useState<string | null>(null);
-  const load = useCallback(() => api<UserRow[]>("/users").then(setList).catch((e: Error) => setStatus(e.message)), [api]);
+  const [auditRows, setAuditRows] = useState<AuditRow[] | null>(null);
+  const load = useCallback(
+    () =>
+      Promise.all([api<UserRow[]>("/users").then(setList), api<AuditRow[]>("/users/audit").then(setAuditRows)]).catch((e: Error) =>
+        setStatus(e.message),
+      ),
+    [api],
+  );
   useEffect(() => {
     void load();
   }, [load]);
@@ -453,6 +498,7 @@ export function UsersScreen() {
         </button>
       </form>
       <Status text={status} />
+      <UserAudit rows={auditRows} />
     </div>
   );
 }
