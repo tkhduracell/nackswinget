@@ -37,7 +37,7 @@ export async function audit(user: AdminUser, action: string, ref: string, summar
 // ---------------------------------------------------------------------------
 
 export async function listDocs(kind: Kind) {
-  const fields = kind === "pages" ? ["path", "title", "status", "updatedAt", "template"] : ["slug", "title", "status", "publishedAt", "updatedAt", "categories"];
+  const fields = kind === "pages" ? ["path", "title", "status", "updatedAt", "template"] : ["slug", "title", "status", "publishedAt", "updatedAt", "categories", "image"];
   const snap = await getDb().collection(kind).select(...fields).get();
   const drafts = await getDb().collection("drafts").where("kind", "==", kind).select("id", "updatedAt", "updatedBy").get();
   const draftById = new Map(drafts.docs.map((d) => [d.get("id") as string, { updatedAt: d.get("updatedAt"), updatedBy: d.get("updatedBy") }]));

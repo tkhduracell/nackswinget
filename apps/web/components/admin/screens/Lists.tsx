@@ -1,27 +1,18 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { imageUrl } from "@/lib/media/urls";
 import { useAdmin } from "../AuthProvider";
+import type { DocRow } from "../docs";
 import { Icon, type IconName } from "../icons";
 import { Badge, EmptyState, LoadingRow, PageHead, SearchInput } from "../ui";
 
-interface Row {
-  id: string;
-  title: string;
-  path?: string;
-  slug?: string;
-  status?: string;
-  publishedAt?: string;
-  updatedAt?: string;
-  draft: { updatedAt: string; updatedBy: string } | null;
-}
-
 function useRows(kind: "pages" | "posts") {
   const { api } = useAdmin();
-  const [rows, setRows] = useState<Row[] | null>(null);
+  const [rows, setRows] = useState<DocRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    api<Row[]>(`/docs/${kind}`).then(setRows).catch((e: Error) => setError(e.message));
+    api<DocRow[]>(`/docs/${kind}`).then(setRows).catch((e: Error) => setError(e.message));
   }, [api, kind]);
   return { rows, error };
 }
@@ -33,9 +24,9 @@ function newId(prefix: string) {
 export function Dashboard() {
   const { me, logout } = useAdmin();
   const tiles: { href: string; title: string; text: string; icon: IconName }[] = [
-    { href: "/admin/sidor/", title: "Sidor", text: "Redigera alla sidor på webbplatsen", icon: "page" },
     { href: "/admin/nyheter/", title: "Nyheter", text: "Skriv och schemalägg nyheter", icon: "news" },
     { href: "/admin/stjarna/", title: "Stjärnan (PowerPuff)", text: "Puffen på startsidan med utgångsdatum", icon: "star" },
+    { href: "/admin/sidor/", title: "Sidor", text: "Redigera alla sidor på webbplatsen", icon: "page" },
     { href: "/admin/media/", title: "Bilder och filer", text: "Ladda upp bilder, video och PDF", icon: "image" },
     ...(me.role === "admin"
       ? ([
@@ -181,10 +172,22 @@ export function PostList() {
                 return (
                   <tr key={r.id} className="row-link">
                     <td>
-                      <Link href={`/admin/nyheter/${r.id}/`} className="cell-title">
-                        {r.title}
-                      </Link>
-                      <span className="cell-sub show-sm">{r.publishedAt?.slice(0, 10)}</span>
+                      <div className="cell-with-thumb">
+                        <span className="cell-thumb">
+                          {r.image?.src ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail
+                            <img src={imageUrl(r.image.src, r.image.variants.length ? [Math.min(...r.image.variants)] : [])} alt="" loading="lazy" />
+                          ) : (
+                            <Icon name="news" size={18} />
+                          )}
+                        </span>
+                        <div>
+                          <Link href={`/admin/nyheter/${r.id}/`} className="cell-title">
+                            {r.title}
+                          </Link>
+                          <span className="cell-sub show-sm">{r.publishedAt?.slice(0, 10)}</span>
+                        </div>
+                      </div>
                     </td>
                     <td className="muted nowrap hide-sm">{r.publishedAt?.slice(0, 10)}</td>
                     <td className="col-status">
