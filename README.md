@@ -1,197 +1,101 @@
-# Nackswinget Workspace
+# Nackswinget
 
-A monorepo containing cloud functions and mobile application for the Nackswinget platform.
+Website, mobile app and backend for Dansklubben Nackswinget, in one pnpm monorepo.
 
-## Package Manager
+| Part | Path | What it is |
+| --- | --- | --- |
+| Website | `apps/web/` (`@nackswinget/web`) | The new nackswinget.se: Next.js on Firebase App Hosting, with an admin for pages, news, menu, banners and users. Standalone pnpm workspace. See [apps/web/README.md](apps/web/README.md). |
+| Mobile app | `apps/mobile/` (`@nackswinget/mobile`) | Ionic Vue/Capacitor app for Android and iOS: calendars, friträning notifications, news. |
+| Backend | `functions/` (`@nackswinget/functions`) | GCP Cloud Functions: calendar sync and booking against IdrottOnline, push notifications, news and competitions. See [functions/CLAUDE.md](functions/CLAUDE.md). |
 
-This project uses [pnpm](https://pnpm.io/) as the package manager for better performance, disk efficiency, and stricter dependency resolution.
+GCP project `nackswinget-af7ef`. Data lives in Firestore (`eur3`) and the bucket `nackswinget-af7ef.appspot.com`.
 
-## Workspace Structure
-
-This monorepo is organized as a pnpm workspace with three packages:
+## Structure
 
 ```
 .
-├── package.json                 # @nackswinget/workspace (root coordinator)
-├── pnpm-workspace.yaml         # Workspace configuration
-├── functions/                  # Backend cloud functions
-│   ├── package.json           # @nackswinget/functions
-│   ├── src/                   # Function source code
-│   └── clean-artifacts.sh     # Build cleanup script
+├── package.json          # @nackswinget/workspace (root scripts)
+├── pnpm-workspace.yaml   # functions + apps/mobile (apps/web is excluded)
+├── firebase.json         # App Hosting deploy config for apps/web
+├── docs/                 # web-rebuild-plan.md
+├── functions/            # Cloud Functions (Express apps, one per function)
 └── apps/
-    └── mobile/                # Ionic Vue mobile app
-        ├── package.json       # @nackswinget/mobile
-        ├── src/              # Mobile app source
-        ├── android/          # Android build files
-        └── ios/              # iOS build files
+    ├── mobile/           # Ionic Vue app (android/, ios/)
+    └── web/              # Next.js site, own lockfile
 ```
 
-### Packages
+## Prerequisites
 
-- **`@nackswinget/workspace`** - Root workspace coordinator with shared scripts
-- **`@nackswinget/functions`** - Cloud Functions and backend APIs
-- **`@nackswinget/mobile`** - Ionic Vue mobile application
+- Node.js 24
+- pnpm 10.14 (only pnpm is allowed; `preinstall` enforces it)
 
-## Development
+## Commands
 
-### Prerequisites
-
-- Node.js 20+
-- pnpm 10.8.0+
-
-### Installation
+Root workspace (functions + mobile):
 
 ```bash
-# Install pnpm globally if not already installed
-npm install -g pnpm
-
-# Install dependencies for all packages
 pnpm install
-```
-
-### Building
-
-```bash
-# Build all packages
-pnpm build
-
-# Build specific packages
-pnpm --filter @nackswinget/functions run build
-pnpm --filter @nackswinget/mobile run build
-```
-
-### Testing
-
-```bash
-# Run tests for all packages
+pnpm build    # all packages
 pnpm test
+pnpm lint
 
-# Run tests for specific packages
 pnpm --filter @nackswinget/functions run test
 pnpm --filter @nackswinget/mobile run test:unit
 ```
 
-### Linting
+Run one function locally (`calendars-api`, `calendars-update-api`, `notifications-api`, `competitions-api`, `news-api`):
 
 ```bash
-# Lint all packages
-pnpm lint
-
-# Lint specific packages
-pnpm --filter @nackswinget/functions run lint
-pnpm --filter @nackswinget/mobile run lint
+pnpm --filter @nackswinget/functions run dev:calendars-api
 ```
 
-### Development Servers
+Mobile app:
 
 ```bash
-# Start functions development server
-pnpm --filter @nackswinget/functions run dev
-
-# Start mobile development server
 pnpm --filter @nackswinget/mobile run dev
+pnpm --filter @nackswinget/mobile run android:build   # or android:open, ios:open
 ```
 
-## Deployment
-
-### Cloud Functions
-
-Functions are automatically deployed via GitHub Actions on push to main:
+Website (its own workspace, run from `apps/web`):
 
 ```bash
-# Manual deployment (from functions/ directory)
-cd functions
-gcloud functions deploy your-function-name
+cd apps/web
+pnpm install
+pnpm dev        # or dev:emulators against the Firebase emulators
+pnpm typecheck && pnpm lint && pnpm test
 ```
 
-### Mobile App
+## CI/CD
 
-#### Android
+| Workflow | Trigger | Does |
+| --- | --- | --- |
+| `reviews.yaml` | PR to `main` | Build, test and lint functions; build the mobile app |
+| `web.yaml` | PR to `main` touching `apps/web` | Lint, typecheck, unit tests, fixture build, Playwright smoke tests, Lighthouse budget |
+| `deploy.yaml` | Push to `main` | Deploy all functions, update Cloud Scheduler, clean artifacts, notify Slack, build the Android release |
+| `web-deploy.yaml` | Push to `main` touching `apps/web` | Deploy the website to Firebase App Hosting |
+| `weekly.yaml` | Weekly | Clean old Artifact Registry images |
+
+GCP auth uses Workload Identity Federation (`functions/setup-github-auth.sh`, `functions/setup-deployer.sh`).
+
+Always branch off `main` and open a PR; never commit directly to `main`.
+
+### Running CI locally
+
+With [`act`](https://github.com/nektos/act):
 
 ```bash
-# Build for Android
-pnpm --filter @nackswinget/mobile run android:build
-
-# Open in Android Studio
-pnpm --filter @nackswinget/mobile run android:open
+act pull_request -j build-functions --container-architecture linux/amd64   # or test-functions, lint-functions, build-apps
 ```
 
-#### iOS
-
-```bash
-# Build for iOS
-pnpm --filter @nackswinget/mobile run ios:build
-
-# Open in Xcode
-pnpm --filter @nackswinget/mobile run ios:open
-```
-
-## API Documentation
-
-### SSL Certificates
-
-Generate development certificates:
-
-```bash
-openssl genrsa -out server.key 2048
-openssl req -new -key server.key -out server.csr
-openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
-```
-
-### Booking API
-
-Example API call:
+## Booking API
 
 ```bash
 curl 'https://europe-north1-nackswinget-af7ef.cloudfunctions.net/calendars-api/book' \
   --data-raw '{"title":"Test","location":"Ceylon","password":"XXX","date":"2024-01-23T23:00:00.000Z","time":"15:00","duration":60,"description":"Bob - 07026XXXXX"}'
 ```
 
-## Local GitHub Actions Testing
+## More documentation
 
-This project uses [`act`](https://github.com/nektos/act) to run GitHub Actions workflows locally for testing before pushing to GitHub.
-
-### Prerequisites
-
-Install `act`:
-```bash
-# macOS
-brew install act
-
-# Or using GitHub CLI
-gh extension install https://github.com/nektos/gh-act
-```
-
-### Running Workflows Locally
-
-Test specific jobs from the pull request workflow:
-
-```bash
-# Test the functions build job
-act pull_request -j build-functions --container-architecture linux/amd64
-
-# Test the functions test job  
-act pull_request -j test-functions --container-architecture linux/amd64
-
-# Test the lint job
-act pull_request -j lint-functions --container-architecture linux/amd64
-
-# Test the mobile app build job
-act pull_request -j build-apps --container-architecture linux/amd64
-```
-
-Test all pull request jobs:
-```bash
-act pull_request --container-architecture linux/amd64
-```
-
-### Notes
-
-- The `--container-architecture linux/amd64` flag ensures compatibility across different host architectures
-- Local testing helps catch issues before they appear in CI/CD
-- Some steps that require GitHub secrets or cloud credentials will be skipped locally
-
-## Additional Documentation
-
-- [Android Development Guide](apps/mobile/android/README.md)
-- [Functions API Reference](functions/src/README.md)
+- [Website](apps/web/README.md) and [rebuild plan](docs/web-rebuild-plan.md)
+- [Functions](functions/CLAUDE.md)
+- [Mobile app](apps/mobile/CLAUDE.md) and [Android](apps/mobile/android/README.md)
