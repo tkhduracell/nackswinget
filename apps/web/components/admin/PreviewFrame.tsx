@@ -62,9 +62,6 @@ export function PreviewView() {
                 <h1 className="post-title">{page.title}</h1>
                 <SectionList sections={page.sections} slots={slots} />
               </div>
-              <aside className="post-sidebar" aria-hidden="true">
-                <h2 className="widget-title">Senaste nyheter</h2>
-              </aside>
             </div>
           </article>
         </main>
