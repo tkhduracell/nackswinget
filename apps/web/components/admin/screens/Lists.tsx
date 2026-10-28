@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { imageUrl } from "@/lib/media/urls";
 import { useAdmin } from "../AuthProvider";
 import type { DocRow } from "../docs";
 import { Icon, type IconName } from "../icons";
 import { Badge, EmptyState, LoadingRow, PageHead, SearchInput } from "../ui";
-
 
 function useRows(kind: "pages" | "posts") {
   const { api } = useAdmin();
@@ -172,10 +172,22 @@ export function PostList() {
                 return (
                   <tr key={r.id} className="row-link">
                     <td>
-                      <Link href={`/admin/nyheter/${r.id}/`} className="cell-title">
-                        {r.title}
-                      </Link>
-                      <span className="cell-sub show-sm">{r.publishedAt?.slice(0, 10)}</span>
+                      <div className="cell-with-thumb">
+                        <span className="cell-thumb">
+                          {r.image?.src ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail
+                            <img src={imageUrl(r.image.src, r.image.variants.length ? [Math.min(...r.image.variants)] : [])} alt="" loading="lazy" />
+                          ) : (
+                            <Icon name="news" size={18} />
+                          )}
+                        </span>
+                        <div>
+                          <Link href={`/admin/nyheter/${r.id}/`} className="cell-title">
+                            {r.title}
+                          </Link>
+                          <span className="cell-sub show-sm">{r.publishedAt?.slice(0, 10)}</span>
+                        </div>
+                      </div>
                     </td>
                     <td className="muted nowrap hide-sm">{r.publishedAt?.slice(0, 10)}</td>
                     <td className="col-status">
