@@ -2,26 +2,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAdmin } from "../AuthProvider";
+import type { DocRow } from "../docs";
 import { Icon, type IconName } from "../icons";
 import { Badge, EmptyState, LoadingRow, PageHead, SearchInput } from "../ui";
 
-interface Row {
-  id: string;
-  title: string;
-  path?: string;
-  slug?: string;
-  status?: string;
-  publishedAt?: string;
-  updatedAt?: string;
-  draft: { updatedAt: string; updatedBy: string } | null;
-}
 
 function useRows(kind: "pages" | "posts") {
   const { api } = useAdmin();
-  const [rows, setRows] = useState<Row[] | null>(null);
+  const [rows, setRows] = useState<DocRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    api<Row[]>(`/docs/${kind}`).then(setRows).catch((e: Error) => setError(e.message));
+    api<DocRow[]>(`/docs/${kind}`).then(setRows).catch((e: Error) => setError(e.message));
   }, [api, kind]);
   return { rows, error };
 }

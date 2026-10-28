@@ -1201,6 +1201,9 @@
   text-transform: uppercase;
   pointer-events: none;
 }
+.admin .link-picker-kind.draft {
+  color: #8a5a00;
+}
 .admin .link-picker.clearable input {
   padding-right: 92px;
 }

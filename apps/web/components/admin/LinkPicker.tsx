@@ -4,6 +4,7 @@
 import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Category } from "@/lib/content/types";
 import { useAdmin } from "./AuthProvider";
+import type { DocRow } from "./docs";
 import { Icon } from "./icons";
 import { Badge } from "./ui";
 
@@ -15,43 +16,68 @@ export interface LinkTarget {
   draft?: boolean;
 }
 
+export interface LinkTargets {
+  list: LinkTarget[] | null;
+  error: string | null;
+}
+
 const KIND_LABEL: Record<LinkTarget["kind"], string> = { page: "Sida", post: "Nyhet", category: "Kategori" };
 // Ranks equally good title matches: pages, then categories, then news.
 const KIND_RANK: Record<LinkTarget["kind"], number> = { page: 0, category: 0.25, post: 0.5 };
-
-interface DocRow {
-  id: string;
-  title: string;
-  path?: string;
-  slug?: string;
-  status?: string;
-  publishedAt?: string;
-}
 
 const BUILTIN: LinkTarget[] = [
   { href: "/", title: "Startsidan", kind: "page" },
   { href: "/nyheter/", title: "Nyheter (alla)", kind: "page" },
 ];
 
-export function useLinkTargets() {
-  const { api } = useAdmin();
-  const [targets, setTargets] = useState<LinkTarget[] | null>(null);
-  useEffect(() => {
-    Promise.all([api<DocRow[]>("/docs/pages"), api<DocRow[]>("/docs/posts"), api<Category[] | null>("/site/categories")])
-      .then(([pages, posts, categories]) => {
-        // A page at the same address replaces the built-in name.
-        const byHref = new Map(BUILTIN.map((t) => [t.href, t]));
-        for (const p of pages) byHref.set(p.path ? `/${p.path}/` : "/", { href: p.path ? `/${p.path}/` : "/", title: p.title, kind: "page", draft: p.status === "draft" });
-        for (const c of categories ?? []) byHref.set(`/category/${c.slug}/`, { href: `/category/${c.slug}/`, title: c.name, kind: "category" });
-        for (const p of posts.sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""))) {
-          const href = `/${p.slug}/`;
-          if (p.slug && !byHref.has(href)) byHref.set(href, { href, title: p.title, kind: "post", date: p.publishedAt?.slice(0, 10), draft: p.status === "draft" });
-        }
-        setTargets([...byHref.values()]);
-      })
-      .catch(() => setTargets([]));
-  }, [api]);
+type Api = ReturnType<typeof useAdmin>["api"];
+
+async function loadTargets(api: Api): Promise<LinkTarget[]> {
+  const [pages, posts, categories] = await Promise.all([api<DocRow[]>("/docs/pages"), api<DocRow[]>("/docs/posts"), api<Category[] | null>("/site/categories")]);
+  // A page at the same address replaces the built-in name.
+  const byHref = new Map(BUILTIN.map((t) => [t.href, t]));
+  for (const p of pages) {
+    const href = p.path ? `/${p.path}/` : "/";
+    byHref.set(href, { href, title: p.title, kind: "page", draft: p.status === "draft" });
+  }
+  for (const c of categories ?? []) {
+    const href = `/category/${c.slug}/`;
+    byHref.set(href, { href, title: c.name, kind: "category" });
+  }
+  for (const p of posts.sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""))) {
+    const href = `/${p.slug}/`;
+    if (p.slug && !byHref.has(href)) byHref.set(href, { href, title: p.title, kind: "post", date: p.publishedAt?.slice(0, 10), draft: p.status === "draft" });
+  }
+  return [...byHref.values()];
+}
+
+// Shared between screens for a minute, so moving around the admin doesn't refetch every list.
+const CACHE_MS = 60_000;
+const cache = new WeakMap<Api, { at: number; targets: Promise<LinkTarget[]> }>();
+
+function cachedTargets(api: Api) {
+  const hit = cache.get(api);
+  if (hit && Date.now() - hit.at < CACHE_MS) return hit.targets;
+  const targets = loadTargets(api);
+  cache.set(api, { at: Date.now(), targets });
+  targets.catch(() => cache.delete(api));
   return targets;
+}
+
+export function useLinkTargets(): LinkTargets {
+  const { api } = useAdmin();
+  const [state, setState] = useState<LinkTargets>({ list: null, error: null });
+  useEffect(() => {
+    let live = true;
+    cachedTargets(api).then(
+      (list) => live && setState({ list, error: null }),
+      (e: Error) => live && setState({ list: [], error: e.message }),
+    );
+    return () => {
+      live = false;
+    };
+  }, [api]);
+  return state;
 }
 
 const fold = (s: string) =>
@@ -62,7 +88,14 @@ const fold = (s: string) =>
 
 const normalizeHref = (href: string) => (href.startsWith("/") && !href.endsWith("/") && !/[?#.]/.test(href) ? `${href}/` : href);
 
-const isAddress = (s: string) => /^(\/|https?:\/\/|mailto:|tel:|#)/.test(s.trim());
+/** The typed text as a link address, or null when it reads as a search. Adds https:// to a bare domain and / to a bare path. */
+function toAddress(s: string): string | null {
+  const t = s.trim();
+  if (/^(\/|https?:\/\/|mailto:|tel:|#)/.test(t)) return t;
+  if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(t)) return `https://${t}`;
+  if (/^[\w-]+\/\S*$/.test(t)) return `/${t}`;
+  return null;
+}
 
 function search(targets: LinkTarget[], query: string) {
   const q = fold(query.trim());
@@ -90,30 +123,44 @@ export function LinkPicker({
 }: {
   value: string;
   onChange: (href: string, target?: LinkTarget) => void;
-  targets: LinkTarget[] | null;
+  targets: LinkTargets;
   label?: string;
   /** Show a button that empties the link (for optional links). */
   clearable?: boolean;
 }) {
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState<string | null>(null);
+  // The text being typed, or null when not editing. Mirrored in a ref so blur sees a pick made in the same event.
+  const [query, setQueryState] = useState<string | null>(null);
+  const queryRef = useRef<string | null>(null);
+  const setQuery = (q: string | null) => {
+    queryRef.current = q;
+    setQueryState(q);
+  };
   const [active, setActive] = useState(0);
-  const selected = useMemo(() => targets?.find((t) => t.href === normalizeHref(value)), [targets, value]);
+  const selected = useMemo(() => targets.list?.find((t) => t.href === normalizeHref(value)), [targets.list, value]);
   const editing = query !== null;
 
   const options: Option[] = useMemo(() => {
-    if (!editing) return [];
-    const found: Option[] = search(targets ?? [], query).map((target) => ({ target }));
-    return isAddress(query) && !found.some((o) => "target" in o && o.target.href === normalizeHref(query.trim())) ? [{ address: query.trim() }, ...found] : found;
-  }, [editing, targets, query]);
+    if (query === null) return [];
+    const found: Option[] = search(targets.list ?? [], query).map((target) => ({ target }));
+    const address = toAddress(query);
+    return address && address !== value && !found.some((o) => "target" in o && o.target.href === normalizeHref(address)) ? [{ address }, ...found] : found;
+  }, [targets.list, query, value]);
 
-  const pick = (o: Option | undefined) => {
-    if (o) {
-      if ("target" in o) onChange(o.target.href, o.target);
-      else onChange(o.address);
-    }
+  const pick = (o: Option) => {
     setQuery(null);
+    if ("target" in o) onChange(o.target.href, o.target);
+    else onChange(o.address);
+  };
+
+  // Leaving the field keeps a typed address; a search term that wasn't picked is dropped.
+  const commit = () => {
+    const q = queryRef.current;
+    if (q === null) return;
+    const address = toAddress(q);
+    setQuery(null);
+    if (address && address !== value) onChange(address);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -123,7 +170,8 @@ export function LinkPicker({
       else if (options.length) setActive((a) => (a + (e.key === "ArrowDown" ? 1 : options.length - 1)) % options.length);
     } else if (e.key === "Enter" && editing) {
       e.preventDefault();
-      pick(options[active]);
+      if (options[active]) pick(options[active]);
+      else commit();
     } else if (e.key === "Escape" && editing) {
       e.preventDefault();
       setQuery(null);
@@ -145,21 +193,23 @@ export function LinkPicker({
         title={value}
         placeholder="Sök sida, nyhet eller kategori, eller skriv en adress"
         value={editing ? query : display}
-        onFocus={(e) => {
-          setQuery("");
+        onFocus={() => {
+          // A page is searched for anew; a typed address stays editable, selected so typing replaces it.
+          const initial = selected ? "" : value;
+          setQuery(initial);
           setActive(0);
-          e.target.select();
+          if (initial) requestAnimationFrame(() => inputRef.current?.select());
         }}
         onChange={(e) => {
           setQuery(e.target.value);
           setActive(0);
         }}
-        onBlur={() => pick(editing && isAddress(query) ? { address: query.trim() } : undefined)}
+        onBlur={commit}
         onKeyDown={onKeyDown}
       />
       {!editing && (
-        <span className="link-picker-kind" aria-hidden="true">
-          {selected ? KIND_LABEL[selected.kind] : value ? (/^https?:/.test(value) ? "Extern" : "Adress") : null}
+        <span className={selected?.draft ? "link-picker-kind draft" : "link-picker-kind"} aria-hidden="true">
+          {selected ? `${KIND_LABEL[selected.kind]}${selected.draft ? " · utkast" : ""}` : value ? (/^https?:/.test(value) ? "Extern" : "Adress") : null}
         </span>
       )}
       {canClear && (
@@ -204,7 +254,11 @@ export function LinkPicker({
           ))}
         </ul>
       )}
-      {editing && options.length === 0 && targets && query && <p className="link-picker-list link-picker-empty">Inget matchar. Skriv en adress som börjar med / eller https://</p>}
+      {editing && options.length === 0 && (targets.error || (targets.list && query)) && (
+        <p className="link-picker-list link-picker-empty">
+          {targets.error ? `Kunde inte hämta sidor och nyheter (${targets.error}). Du kan fortfarande skriva en adress.` : "Inget matchar. Skriv en adress som börjar med / eller https://"}
+        </p>
+      )}
     </div>
   );
 }
