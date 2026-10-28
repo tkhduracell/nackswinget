@@ -13,9 +13,9 @@ import { BannerScreen, MediaScreen, MenuScreen, RedirectsScreen, SettingsScreen,
 
 const NAV: { href: string; label: string; icon: IconName; admin?: boolean }[] = [
   { href: "/admin/", label: "Översikt", icon: "dashboard" },
-  { href: "/admin/sidor/", label: "Sidor", icon: "page" },
   { href: "/admin/nyheter/", label: "Nyheter", icon: "news" },
   { href: "/admin/stjarna/", label: "Stjärnan", icon: "star" },
+  { href: "/admin/sidor/", label: "Sidor", icon: "page" },
   { href: "/admin/media/", label: "Bilder & filer", icon: "image" },
   { href: "/admin/meny/", label: "Meny", icon: "menu", admin: true },
   { href: "/admin/installningar/", label: "Inställningar", icon: "settings", admin: true },

@@ -33,9 +33,9 @@ function newId(prefix: string) {
 export function Dashboard() {
   const { me, logout } = useAdmin();
   const tiles: { href: string; title: string; text: string; icon: IconName }[] = [
-    { href: "/admin/sidor/", title: "Sidor", text: "Redigera alla sidor på webbplatsen", icon: "page" },
     { href: "/admin/nyheter/", title: "Nyheter", text: "Skriv och schemalägg nyheter", icon: "news" },
     { href: "/admin/stjarna/", title: "Stjärnan (PowerPuff)", text: "Puffen på startsidan med utgångsdatum", icon: "star" },
+    { href: "/admin/sidor/", title: "Sidor", text: "Redigera alla sidor på webbplatsen", icon: "page" },
     { href: "/admin/media/", title: "Bilder och filer", text: "Ladda upp bilder, video och PDF", icon: "image" },
     ...(me.role === "admin"
       ? ([
