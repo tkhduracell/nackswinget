@@ -4,6 +4,7 @@ import { PuffBadge } from "@/components/PuffBadge";
 import { type Banner, bannerExpiresAt, type CalendarFeed, type NavItem, PUFF_STYLES, type PuffStyle, type Redirect, type Settings } from "@/lib/content/types";
 import { publicUrl } from "@/lib/media/urls";
 import { useAdmin } from "../AuthProvider";
+import { type LinkTarget, LinkPicker, useLinkTargets } from "../LinkPicker";
 import { MediaThumb } from "../MediaPicker";
 import { Icon } from "../icons";
 import { uploadFile } from "../upload";
@@ -52,6 +53,7 @@ export function BannerScreen() {
   const { value, setValue, save, status } = useSiteDoc<Banner[]>("banners");
   const list = value ?? [];
   const [now] = useState(() => Date.now());
+  const targets = useLinkTargets();
   const set = (i: number, b: Banner) => setValue(list.map((x, j) => (j === i ? b : x)));
   return (
     <div className="admin-page narrow">
@@ -89,10 +91,10 @@ export function BannerScreen() {
               <span>Text ({b.text.length}/120)</span>
               <textarea rows={2} maxLength={120} value={b.text} onChange={(e) => set(i, { ...b, text: e.target.value })} />
             </label>
-            <label className="field">
+            <div className="field">
               <span>Länk (valfri)</span>
-              <input value={b.href ?? ""} placeholder="/nackswingets-40-ars-jubileum/" onChange={(e) => set(i, { ...b, href: e.target.value || undefined })} />
-            </label>
+              <LinkPicker value={b.href ?? ""} targets={targets} label="Länk (valfri)" clearable onChange={(href) => set(i, { ...b, href: href || undefined })} />
+            </div>
             <div className="field-row">
               <label className="field">
                 <span>Startdatum</span>
@@ -124,6 +126,13 @@ export function BannerScreen() {
 // ---------------------------------------------------------------------------
 // Menu
 
+const PLACEHOLDER_LABELS = ["Ny länk", "Ny punkt"];
+
+/** Sets a link's href; picking a page or post also fills in a placeholder label with its title. */
+function linkTo<L extends { label: string; href: string }>(link: L, href: string, target?: LinkTarget): L {
+  return { ...link, href, label: target && (!link.label.trim() || PLACEHOLDER_LABELS.includes(link.label)) ? target.title : link.label };
+}
+
 export function MenuScreen() {
   const { value, setValue, save, status } = useSiteDoc<NavItem[]>("nav");
   const items = value ?? [];
@@ -134,6 +143,7 @@ export function MenuScreen() {
     return next;
   };
   const set = (i: number, item: NavItem) => setValue(items.map((x, j) => (j === i ? item : x)));
+  const targets = useLinkTargets();
   return (
     <div className="admin-page narrow">
       <PageHead title="Meny">Två nivåer: huvudmenyn och en undermeny under varje punkt.</PageHead>
@@ -141,7 +151,7 @@ export function MenuScreen() {
         <div key={i} className="card menu-card">
           <div className="row menu-row">
             <input value={item.label} onChange={(e) => set(i, { ...item, label: e.target.value })} aria-label="Text" />
-            <input value={item.href} onChange={(e) => set(i, { ...item, href: e.target.value })} aria-label="Länk" />
+            <LinkPicker value={item.href} targets={targets} onChange={(href, t) => set(i, linkTo(item, href, t))} />
             <div className="list-actions">
               <button type="button" disabled={i === 0} onClick={() => setValue(move(items, i, -1))} aria-label="Flytta upp">
                 <Icon name="up" size={16} />
@@ -159,7 +169,7 @@ export function MenuScreen() {
               <div key={k} className="row menu-row">
                 <span className="submenu-mark" aria-hidden="true" />
                 <input value={c.label} onChange={(e) => set(i, { ...item, children: item.children.map((x, m) => (m === k ? { ...x, label: e.target.value } : x)) })} aria-label="Text" />
-                <input value={c.href} onChange={(e) => set(i, { ...item, children: item.children.map((x, m) => (m === k ? { ...x, href: e.target.value } : x)) })} aria-label="Länk" />
+                <LinkPicker value={c.href} targets={targets} onChange={(href, t) => set(i, { ...item, children: item.children.map((x, m) => (m === k ? linkTo(x, href, t) : x)) })} />
                 <div className="list-actions">
                   <button type="button" disabled={k === 0} onClick={() => set(i, { ...item, children: move(item.children, k, -1) })} aria-label="Flytta upp">
                 <Icon name="up" size={16} />
@@ -199,6 +209,7 @@ export function MenuScreen() {
 
 export function SettingsScreen() {
   const { value, setValue, save, status } = useSiteDoc<Settings>("settings");
+  const targets = useLinkTargets();
   if (!value) return status ? <p className="admin-error">{status}</p> : <LoadingRow />;
   const s = value;
   const setFeed = (i: number, f: CalendarFeed) => setValue({ ...s, calendarFeeds: s.calendarFeeds.map((x, j) => (j === i ? f : x)) });
@@ -239,7 +250,7 @@ export function SettingsScreen() {
           {s.footer.links.map((l, i) => (
             <div key={i} className="row menu-row">
               <input value={l.label} onChange={(e) => setValue({ ...s, footer: { ...s.footer, links: s.footer.links.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)) } })} aria-label="Text" />
-              <input value={l.href} onChange={(e) => setValue({ ...s, footer: { ...s.footer, links: s.footer.links.map((x, j) => (j === i ? { ...x, href: e.target.value } : x)) } })} aria-label="Länk" />
+              <LinkPicker value={l.href} targets={targets} onChange={(href, t) => setValue({ ...s, footer: { ...s.footer, links: s.footer.links.map((x, j) => (j === i ? linkTo(x, href, t) : x)) } })} />
               <button type="button" className="button button-danger-ghost button-sm" onClick={() => setValue({ ...s, footer: { ...s.footer, links: s.footer.links.filter((_, j) => j !== i) } })}>
                 <Icon name="trash" size={16} />
                 <span className="hide-xs">Ta bort</span>
@@ -280,6 +291,7 @@ export function RedirectsScreen() {
   const { api } = useAdmin();
   const [list, setList] = useState<Redirect[] | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const targets = useLinkTargets();
   useEffect(() => {
     api<Redirect[]>("/redirects").then(setList).catch((e: Error) => setStatus(e.message));
   }, [api]);
@@ -307,7 +319,7 @@ export function RedirectsScreen() {
                 <input value={r.from} onChange={(e) => set(i, { ...r, from: e.target.value })} aria-label="Från" />
               </td>
               <td>
-                <input value={r.to} onChange={(e) => set(i, { ...r, to: e.target.value })} aria-label="Till" />
+                <LinkPicker value={r.to} targets={targets} label="Till" onChange={(to) => set(i, { ...r, to })} />
               </td>
               <td className="col-actions">
                 <button type="button" className="icon-btn danger" onClick={() => setList(list.filter((_, j) => j !== i))} aria-label="Ta bort" title="Ta bort">
