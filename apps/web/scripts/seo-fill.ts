@@ -223,13 +223,18 @@ async function apply() {
     .map((e) => ({ kind: e.kind, id: e.id, field: e.field, current: e.current, value: e.suggestion.trim(), ...(e.field === "alt" ? { path: e.path, src: e.src } : {}) }));
   console.log(`${items.length} approved of ${entries.length} suggestions.`);
   if (dryRun || items.length === 0) return;
-  const res = await fetch(`${base}/api/import/seo/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-import-token": await token() },
-    body: JSON.stringify({ items }),
-  });
-  if (!res.ok) throw new Error(`POST /api/import/seo/ ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const { results } = (await res.json()) as { results: { kind: string; id: string; field: string; result: string }[] };
+  // Each document is a full publish (versions, route index): keep requests well under fetch's 5 min timeout.
+  const results: { kind: string; id: string; field: string; result: string }[] = [];
+  for (let i = 0; i < items.length; i += 20) {
+    const res = await fetch(`${base}/api/import/seo/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-import-token": await token() },
+      body: JSON.stringify({ items: items.slice(i, i + 20) }),
+    });
+    if (!res.ok) throw new Error(`POST /api/import/seo/ ${res.status}: ${(await res.text()).slice(0, 300)}`);
+    results.push(...((await res.json()) as { results: typeof results }).results);
+    console.log(`${Math.min(i + 20, items.length)}/${items.length}`);
+  }
   const counts = results.reduce<Record<string, number>>((acc, r) => ({ ...acc, [r.result]: (acc[r.result] ?? 0) + 1 }), {});
   console.log(counts);
   for (const r of results.filter((r) => r.result !== "applied")) console.log(`  ${r.result.padEnd(9)} ${r.kind}/${r.id} ${r.field}`);
