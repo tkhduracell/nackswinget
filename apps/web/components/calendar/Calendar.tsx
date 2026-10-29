@@ -47,7 +47,8 @@ function timeRange(e: CalendarEvent): string {
 }
 
 function EventItem({ e, color, startOnly }: { e: CalendarEvent; color: string; startOnly?: boolean }) {
-  const hasDetails = !!(e.location || e.description || e.url);
+  // Location is left out: every event is at the same venue.
+  const hasDetails = !!(e.description || e.url);
   const head = (
     <>
       {startOnly && !e.allDay && timeRange(e).includes("–") ? (
@@ -68,7 +69,6 @@ function EventItem({ e, color, startOnly }: { e: CalendarEvent; color: string; s
         <details>
           <summary>{head}</summary>
           <div className="ev-details">
-            {e.location && <p>📍 {e.location}</p>}
             {e.description && <p className="ev-desc">{e.description}</p>}
             {e.url && (
               <p>
