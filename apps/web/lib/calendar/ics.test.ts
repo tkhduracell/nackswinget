@@ -39,6 +39,11 @@ describe("parseIcs", () => {
     expect(events[0].description).toBe("Rad ett\nRad två");
   });
 
+  it("decodes HTML entities in text", () => {
+    const ics = ["BEGIN:VEVENT", "UID:x", "DTSTART:20261001T164500", "SUMMARY:Sluten tr&auml;ningsgrupp&nbsp;&amp; &#229;r&nbsp;", "END:VEVENT"].join("\r\n");
+    expect(parseIcs(ics, "f")[0].title).toBe("Sluten träningsgrupp & år");
+  });
+
   it("makes all-day DTEND inclusive", () => {
     expect(events[1]).toMatchObject({ allDay: true, start: "2026-10-31", end: "2026-11-01" });
   });

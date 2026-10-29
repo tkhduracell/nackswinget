@@ -21,8 +21,22 @@ function unfold(text: string): string[] {
   return text.replace(/\r\n/g, "\n").replace(/\n[ \t]/g, "").split("\n");
 }
 
+const HTML_ENTITIES: Record<string, string> = {
+  nbsp: " ", amp: "&", lt: "<", gt: ">", quot: '"', apos: "'",
+  aring: "å", Aring: "Å", auml: "ä", Auml: "Ä", ouml: "ö", Ouml: "Ö",
+  eacute: "é", Eacute: "É", egrave: "è", uuml: "ü", Uuml: "Ü", ndash: "–", mdash: "—",
+};
+
+/** Feeds sometimes carry HTML entities (e.g. "tr&auml;ning&nbsp;"). */
+function decodeEntities(v: string): string {
+  return v.replace(/&(?:#(\d+)|#x([0-9a-f]+)|([a-z]+));/gi, (m, dec, hex, name) => {
+    if (dec || hex) return String.fromCodePoint(dec ? Number(dec) : parseInt(hex, 16));
+    return HTML_ENTITIES[name] ?? m;
+  });
+}
+
 function unescape(v: string): string {
-  return v.replace(/\\n/gi, "\n").replace(/\\([,;\\])/g, "$1").trim();
+  return decodeEntities(v.replace(/\\n/gi, "\n").replace(/\\([,;\\])/g, "$1")).trim();
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
