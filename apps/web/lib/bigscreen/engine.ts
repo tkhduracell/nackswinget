@@ -332,13 +332,32 @@ export class Engine {
     const next = () => void this.advance();
     if (media instanceof HTMLVideoElement) {
       media.addEventListener("ended", () => this.current === layer && next(), { once: true });
+      const length = Number.isFinite(media.duration) ? media.duration : null;
       // A stalled video must not hold the screen forever.
-      const cap = block.durationSec ?? (Number.isFinite(media.duration) ? media.duration + 5 : 600);
+      const cap = block.durationSec ?? (length ? length + 5 : 600);
       this.timer = setTimeout(next, cap * 1000);
+      const shown = Math.min(block.durationSec ?? Infinity, length ?? Infinity);
+      if (Number.isFinite(shown)) this.progress(layer, shown);
     } else {
       // A playlist of one image crossfades into itself, which looks like nothing happened.
-      this.timer = setTimeout(next, (block.durationSec ?? 10) * 1000);
+      const shown = block.durationSec ?? 10;
+      this.timer = setTimeout(next, shown * 1000);
+      this.progress(layer, shown);
     }
+  }
+
+  /** The red line along the bottom that fills over the time the block is on screen. */
+  private progress(layer: Layer, seconds: number, from = 0) {
+    let bar = layer.el.querySelector<HTMLElement>(".bs-progress");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.className = "bs-progress";
+      layer.el.appendChild(bar);
+    }
+    // A negative delay starts the fill part-way (resume after reload).
+    bar.style.animation = "none";
+    void bar.offsetWidth;
+    bar.style.animation = `bs-progress ${seconds}s linear ${-from}s forwards`;
   }
 
   /** Seeks the video on screen (resume after reload). */
@@ -349,6 +368,7 @@ export class Engine {
     const end = Math.min(m.duration, layer.block.durationSec ?? Infinity);
     if (t >= end - 2) return;
     m.currentTime = t;
+    this.progress(layer, end, t);
     if (layer.block.durationSec) {
       // The duration counts from the start of the clip, not from the resume point.
       clearTimeout(this.timer);
