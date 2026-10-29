@@ -6,7 +6,8 @@ export const metadata: Metadata = {
   title: "Kalender för TV",
   robots: { index: false, follow: false },
   // The TV in the club room reloads every 5 minutes to pick up changes.
-  other: { refresh: "300" },
+  // No "Swedish / English" translate bar on the TV's English Chromium.
+  other: { refresh: "300", google: "notranslate" },
 };
 
 const DEFAULT = {

@@ -1,5 +1,5 @@
 import "server-only";
-import type { MediaDoc } from "@/lib/admin/media";
+import { type MediaDoc, refreshMedia } from "@/lib/admin/media";
 import { listAllPosts } from "@/lib/content/cached";
 import { getDb } from "@/lib/firebase/admin";
 import { resolveBlocks } from "./resolve";
@@ -38,7 +38,12 @@ export async function getMedia(ids: string[]): Promise<Map<string, MediaDoc>> {
   if (!unique.length) return new Map();
   const db = getDb();
   const snaps = await db.getAll(...unique.map((id) => db.collection("media").doc(id)));
-  return new Map(snaps.filter((s) => s.exists).map((s) => [s.id, s.data() as MediaDoc]));
+  const docs = snaps.filter((s) => s.exists).map((s) => s.data() as MediaDoc);
+  // A video only turns "ready" when someone asks the transcoder (otherwise just
+  // Bilder & filer does). Ask here too, or a clip uploaded from the Storbild
+  // editor stays "processing" and the screens skip it forever.
+  const fresh = await Promise.all(docs.map((m) => (m.kind === "video" && m.status === "processing" && m.jobName ? refreshMedia(m.id).catch(() => m) : m)));
+  return new Map(fresh.map((m) => [m.id, m]));
 }
 
 /** Blocks → what the player plays (the TV, and the admin preview of a draft). */
