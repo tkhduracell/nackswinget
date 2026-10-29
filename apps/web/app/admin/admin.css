@@ -2918,3 +2918,68 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.tl-dropping {
+  border-color: var(--a-red);
+  background: var(--a-red-soft);
+}
+.tl-clip,
+.tl-strip-item {
+  touch-action: none;
+}
+.tl-clip.dragging {
+  opacity: 0.35;
+}
+.tl-strip-item img {
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+.tl-ghost {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 240px;
+  padding: 6px 10px 6px 6px;
+  border-radius: var(--a-radius-sm);
+  background: var(--a-text);
+  color: #fff;
+  box-shadow: var(--a-shadow-lg);
+  font-size: 13px;
+  pointer-events: none;
+  transform: translate(-50%, -120%);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tl-ghost-thumb {
+  flex: 0 0 48px;
+  height: 27px;
+  border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+}
+.tl-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.tl-bg {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--a-border-strong);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.tl-bg.selected {
+  box-shadow: 0 0 0 2px var(--a-surface), 0 0 0 4px var(--a-red);
+}
+.tl-bg-custom input {
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}

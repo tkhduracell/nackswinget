@@ -17,7 +17,8 @@ const blockBase = {
 };
 
 export const blockSchema = z.discriminatedUnion("type", [
-  z.object({ ...blockBase, type: z.literal("image"), mediaId: z.string().min(1), fit: z.enum(["cover", "contain"]).default("cover") }),
+  // `background` shows behind transparent images and around "contain" (default black).
+  z.object({ ...blockBase, type: z.literal("image"), mediaId: z.string().min(1), fit: z.enum(["cover", "contain"]).default("cover"), background: z.string().regex(/^#[0-9a-f]{6}$/i).optional() }),
   // Always muted: the TVs never play sound.
   z.object({ ...blockBase, type: z.literal("video"), mediaId: z.string().min(1) }),
   z.object({ ...blockBase, type: z.literal("calendar"), view: z.enum(["week"]).default("week"), feeds: z.array(z.string()).default([]) }),
@@ -78,6 +79,7 @@ export interface PlayerBlock {
   /** kind "text": drawn by the player itself, no page load. */
   title?: string;
   body?: string;
+  /** kind "text" and "image": the colour behind it. */
   background?: string;
 }
 

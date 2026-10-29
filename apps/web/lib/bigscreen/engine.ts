@@ -121,6 +121,7 @@ export class Engine {
       img.decoding = "async";
       img.src = block.src;
       img.style.objectFit = block.fit ?? "cover";
+      if (block.background) el.style.background = block.background;
       media = img;
       ready = waitFor(img, "load", () => img.complete && img.naturalWidth > 0).then((err) => err ?? img.decode().then(() => null, () => null));
     } else if (block.kind === "text") {
@@ -167,7 +168,10 @@ export class Engine {
   private patch(layer: Layer, block: PlayerBlock) {
     layer.block = block;
     this.setCaption(layer, block.caption);
-    if (layer.media instanceof HTMLImageElement) layer.media.style.objectFit = block.fit ?? "cover";
+    if (layer.media instanceof HTMLImageElement) {
+      layer.media.style.objectFit = block.fit ?? "cover";
+      layer.el.style.background = block.background ?? "";
+    }
     const text = layer.el.querySelector<HTMLElement>(".bs-text");
     if (text) {
       text.style.background = block.background ?? "";

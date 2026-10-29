@@ -47,7 +47,7 @@ export function resolveBlocks(blocks: Block[], ctx: ResolveContext): PlayerBlock
         if (!m || m.deletedAt || m.status !== "ready" || m.kind !== "image") break;
         // The original is full resolution; the largest WebP variant is only 1600 px wide.
         const src = (m.width ?? 0) > 1600 || !m.variants.length ? publicUrl(m.path) : imageUrl(m.path, m.variants);
-        out.push({ ...base, kind: "image", src, fit: block.fit, durationSec: duration });
+        out.push({ ...base, kind: "image", src, fit: block.fit, ...(block.background ? { background: block.background } : {}), durationSec: duration });
         break;
       }
       case "video": {

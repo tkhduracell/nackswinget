@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { type DragEvent, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Player } from "@/components/bigscreen/Player";
 import type { MediaDoc } from "@/lib/admin/media";
 import { blockSeconds, isActive } from "@/lib/bigscreen/resolve";
@@ -18,8 +18,17 @@ import { Badge, LoadingRow } from "../ui";
 // draft; "Publicera" sends them to the screens.
 
 type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
-const MEDIA_DRAG = "application/x-storbild-media";
-const BLOCK_DRAG = "application/x-storbild-block";
+/** Pixels the pointer must move before a press becomes a drag (less is a click). */
+const DRAG_THRESHOLD = 5;
+
+/** What is being dragged, and where the ghost under the pointer is. */
+interface Drag {
+  source: { media: string } | { block: string };
+  label: string;
+  thumb: string | null;
+  x: number;
+  y: number;
+}
 
 const TYPE_LABEL: Record<Block["type"], string> = {
   image: "Bild",
@@ -31,6 +40,15 @@ const TYPE_LABEL: Record<Block["type"], string> = {
   text: "Text",
 };
 const TYPE_ICON: Record<Block["type"], IconName> = { image: "image", video: "film", calendar: "history", latestPosts: "news", page: "page", post: "news", text: "file" };
+
+/** Quick picks for an image's background; the colour input allows any other. */
+const BACKGROUNDS = [
+  { value: "#000000", label: "Svart" },
+  { value: "#ffffff", label: "Vit" },
+  { value: "#e0053d", label: "Nackswinget-röd" },
+  { value: "#18181b", label: "Mörkgrå" },
+  { value: "#f5f5f5", label: "Ljusgrå" },
+];
 
 const newId = () => `b-${crypto.randomUUID().slice(0, 8)}`;
 
@@ -62,7 +80,10 @@ function blockName(b: Block, lib: Library): string {
 function thumbOf(b: Block, lib: Library): string | null {
   if (b.type !== "image" && b.type !== "video") return null;
   const m = lib.media.get(b.mediaId);
-  if (!m) return null;
+  return m ? thumbOfMedia(m) : null;
+}
+
+function thumbOfMedia(m: MediaDoc): string | null {
   if (m.kind === "image") return imageUrl(m.path, m.variants.length ? [Math.min(...m.variants)] : []);
   return m.renditions?.poster ? publicUrl(m.renditions.poster) : null;
 }
@@ -87,7 +108,7 @@ function liveBlocks(blocks: Block[], resolved: PlayerBlock[]): PlayerBlock[] {
     if (b.type === "text") return [{ id: b.id, kind: "text", src: "", title: b.title, body: b.body, background: b.background, caption: b.caption, durationSec: duration }];
     return resolved
       .filter((p) => p.id === b.id || p.id.startsWith(`${b.id}:`))
-      .map((p) => ({ ...p, caption: b.caption, durationSec: p.kind === "video" ? b.durationSec : duration, ...(b.type === "image" ? { fit: b.fit } : {}) }));
+      .map((p) => ({ ...p, caption: b.caption, durationSec: p.kind === "video" ? b.durationSec : duration, ...(b.type === "image" ? { fit: b.fit, background: b.background } : {}) }));
   });
 }
 
@@ -112,6 +133,7 @@ export function TimelineEditor({ id }: { id: string }) {
   const [preview, setPreview] = useState<PlayerBlock[]>([]);
   const [replay, setReplay] = useState(0);
   const [dropAt, setDropAt] = useState<number | null>(null);
+  const [drag, setDrag] = useState<Drag | null>(null);
   const editsRef = useRef(0);
   const screenRef = useRef<HTMLDivElement>(null);
 
@@ -300,6 +322,7 @@ export function TimelineEditor({ id }: { id: string }) {
 
   // --- drag and drop on the track ---
   const track = useRef<HTMLDivElement>(null);
+  const trackBox = useRef<HTMLDivElement>(null);
   const indexAt = (clientX: number): number => {
     const clips = [...(track.current?.querySelectorAll<HTMLElement>(".tl-clip") ?? [])];
     const i = clips.findIndex((c) => {
@@ -308,31 +331,56 @@ export function TimelineEditor({ id }: { id: string }) {
     });
     return i === -1 ? clips.length : i;
   };
-  const onTrackOver = (e: DragEvent) => {
-    if (![...e.dataTransfer.types].some((t) => t === MEDIA_DRAG || t === BLOCK_DRAG)) return;
-    e.preventDefault();
-    setDropAt(indexAt(e.clientX));
+  const overTrack = (x: number, y: number) => {
+    const r = trackBox.current?.getBoundingClientRect();
+    return !!r && x >= r.left && x <= r.right && y >= r.top - 24 && y <= r.bottom + 24;
   };
-  const onTrackDrop = (e: DragEvent) => {
-    e.preventDefault();
-    const at = indexAt(e.clientX);
-    setDropAt(null);
-    const mid = e.dataTransfer.getData(MEDIA_DRAG);
-    const bid = e.dataTransfer.getData(BLOCK_DRAG);
-    if (mid) {
-      const m = lib.media.get(mid);
+  const drop = (source: Drag["source"], at: number) => {
+    if ("media" in source) {
+      const m = lib.media.get(source.media);
       const block = m && fromMedia(m);
       if (block) insertAt(at, block);
-    } else if (bid) {
-      edit((prev) => {
-        const from = prev.findIndex((b) => b.id === bid);
-        if (from === -1) return prev;
-        const next = [...prev];
-        const [b] = next.splice(from, 1);
-        next.splice(at > from ? at - 1 : at, 0, b);
-        return next;
-      });
+      return;
     }
+    edit((prev) => {
+      const from = prev.findIndex((b) => b.id === source.block);
+      if (from === -1) return prev;
+      const next = [...prev];
+      const [b] = next.splice(from, 1);
+      next.splice(at > from ? at - 1 : at, 0, b);
+      return next;
+    });
+  };
+
+  /**
+   * Pointer-based drag (mouse, pen and touch): a press that moves more than a
+   * few pixels drags a ghost; dropping over the timeline inserts or moves.
+   * A press that doesn't move is a click (`onClick`).
+   */
+  const startDrag = (e: ReactPointerEvent, source: Drag["source"], label: string, thumb: string | null, onClick: () => void) => {
+    if (e.button !== 0) return;
+    e.preventDefault(); // no native image drag or text selection
+    const x0 = e.clientX;
+    const y0 = e.clientY;
+    let dragging = false;
+    const onMove = (ev: PointerEvent) => {
+      if (!dragging && Math.hypot(ev.clientX - x0, ev.clientY - y0) < DRAG_THRESHOLD) return;
+      dragging = true;
+      setDrag({ source, label, thumb, x: ev.clientX, y: ev.clientY });
+      setDropAt(overTrack(ev.clientX, ev.clientY) ? indexAt(ev.clientX) : null);
+    };
+    const onUp = (ev: PointerEvent) => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      setDrag(null);
+      setDropAt(null);
+      if (!dragging) return onClick();
+      if (ev.type === "pointerup" && overTrack(ev.clientX, ev.clientY)) drop(source, indexAt(ev.clientX));
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
   };
 
   // Drag a clip's right edge to change its length (1 s steps).
@@ -441,7 +489,7 @@ export function TimelineEditor({ id }: { id: string }) {
               <ul>
                 <li>Blocken visas i tur och ordning, från vänster, och börjar om när de är slut.</li>
                 <li>Dra ett block för att flytta det. Dra i högra kanten för att ändra hur länge det visas.</li>
-                <li>Dra in bilder och videor från raden under tidslinjen, eller lägg till med knapparna.</li>
+                <li>Dra in bilder och videor från raden under tidslinjen (eller klicka på dem), eller lägg till med knapparna.</li>
                 <li>Klicka på ett block för att ändra det och se bara det i förhandsvisningen. Esc eller Visa hela slingan visar allt igen.</li>
                 <li>Ändringar sparas av sig själva. Skärmarna visar dem först när du trycker på Publicera.</li>
               </ul>
@@ -479,7 +527,7 @@ export function TimelineEditor({ id }: { id: string }) {
         </label>
       </div>
 
-      <div className="tl" onDragOver={onTrackOver} onDragLeave={() => setDropAt(null)} onDrop={onTrackDrop}>
+      <div className={drag ? "tl tl-dropping" : "tl"} ref={trackBox}>
         <Ruler total={total} zoom={zoom} />
         <div className="tl-track" ref={track} role="list" aria-label="Tidslinje">
           {blocks.length === 0 && <p className="tl-empty">Tom spellista. Dra in en bild eller video, eller använd knapparna ovan.</p>}
@@ -491,16 +539,18 @@ export function TimelineEditor({ id }: { id: string }) {
               <div key={b.id} className="tl-slot" role="listitem">
                 {dropAt === i && <span className="tl-drop" aria-hidden="true" />}
                 <div
-                  className={["tl-clip", `tl-${b.type}`, b.id === selected ? "selected" : "", inactive ? "inactive" : "", b.validFrom || b.validTo ? "dated" : ""].join(" ")}
+                  className={[
+                    "tl-clip",
+                    `tl-${b.type}`,
+                    b.id === selected ? "selected" : "",
+                    inactive ? "inactive" : "",
+                    b.validFrom || b.validTo ? "dated" : "",
+                    drag && "block" in drag.source && drag.source.block === b.id ? "dragging" : "",
+                  ].join(" ")}
                   style={{ width: Math.max(56, seconds[i] * zoom) }}
-                  draggable
                   tabIndex={0}
                   title={warn ?? blockName(b, lib)}
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData(BLOCK_DRAG, b.id);
-                    e.dataTransfer.effectAllowed = "move";
-                  }}
-                  onClick={() => focus(b.id)}
+                  onPointerDown={(e) => startDrag(e, { block: b.id }, blockName(b, lib), thumb, () => focus(b.id))}
                   onKeyDown={(e) => e.key === "Enter" && focus(b.id)}
                   aria-pressed={b.id === selected}
                 >
@@ -538,16 +588,19 @@ export function TimelineEditor({ id }: { id: string }) {
               key={m.id}
               type="button"
               className="tl-strip-item"
-              draggable={m.status === "ready"}
               disabled={m.status !== "ready"}
               title={m.status === "ready" ? `${m.name} – dra till tidslinjen eller klicka för att lägga till` : `${m.name} (konverteras…)`}
-              onDragStart={(e) => {
-                e.dataTransfer.setData(MEDIA_DRAG, m.id);
-                e.dataTransfer.effectAllowed = "copy";
-              }}
-              onClick={() => {
+              onPointerDown={(e) =>
+                startDrag(e, { media: m.id }, m.name, thumbOfMedia(m), () => {
+                  const block = fromMedia(m);
+                  // eslint-disable-next-line react-hooks/refs -- runs on click, not during render
+                  if (block) insertAt(null, block);
+                })
+              }
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" && e.key !== " ") return;
+                e.preventDefault();
                 const block = fromMedia(m);
-                // eslint-disable-next-line react-hooks/refs -- runs on click, not during render
                 if (block) insertAt(null, block);
               }}
             >
@@ -557,6 +610,13 @@ export function TimelineEditor({ id }: { id: string }) {
           ))
         )}
       </div>
+
+      {drag && (
+        <div className="tl-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden="true">
+          {drag.thumb && <span className="tl-ghost-thumb" style={{ backgroundImage: `url("${drag.thumb}")` }} />}
+          <span>{drag.label}</span>
+        </div>
+      )}
 
       {picker && (
         <MediaPicker
@@ -671,8 +731,29 @@ function Inspector({
             <input type="radio" checked={b.fit === "cover"} onChange={() => onPatch({ fit: "cover" })} /> Fyll hela skärmen (kanterna kan beskäras)
           </label>
           <label className="bs-check">
-            <input type="radio" checked={b.fit === "contain"} onChange={() => onPatch({ fit: "contain" })} /> Visa hela bilden (svarta kanter)
+            <input type="radio" checked={b.fit === "contain"} onChange={() => onPatch({ fit: "contain" })} /> Visa hela bilden (med bakgrund runt)
           </label>
+        </fieldset>
+      )}
+      {b.type === "image" && (
+        <fieldset className="field">
+          <legend>Bakgrund (syns runt och genom genomskinliga bilder)</legend>
+          <div className="tl-swatches">
+            {BACKGROUNDS.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                className={(b.background ?? "#000000").toLowerCase() === c.value ? "tl-bg selected" : "tl-bg"}
+                style={{ background: c.value }}
+                onClick={() => onPatch({ background: c.value === "#000000" ? undefined : c.value })}
+                aria-label={c.label}
+                title={c.label}
+              />
+            ))}
+            <label className="tl-bg-custom" title="Egen färg">
+              <input type="color" value={b.background ?? "#000000"} onChange={(e) => onPatch({ background: e.target.value })} aria-label="Egen färg" />
+            </label>
+          </div>
         </fieldset>
       )}
       {b.type === "calendar" && (
