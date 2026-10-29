@@ -53,9 +53,18 @@ export async function createPlaylist(name: string, user: AdminUser): Promise<Pla
   return p;
 }
 
-export async function saveDraft(id: string, input: { blocks: unknown; name?: string }, user: AdminUser): Promise<Playlist> {
+const draftInput = z.object({ blocks: z.unknown(), name: z.string().max(80).optional() });
+
+function parseInput(input: unknown): { blocks: Block[]; name?: string } {
+  const parsed = draftInput.safeParse(input);
+  if (!parsed.success) throw new HttpError(400, "Ogiltig spellista");
+  return { blocks: parseBlocks(parsed.data.blocks), name: parsed.data.name };
+}
+
+export async function saveDraft(id: string, body: unknown, user: AdminUser): Promise<Playlist> {
   await requirePlaylist(id);
-  const blocks = parseBlocks(input.blocks);
+  const input = parseInput(body);
+  const blocks = input.blocks;
   await playlists()
     .doc(id)
     .update({ draft: blocks, draftUpdatedAt: new Date().toISOString(), draftUpdatedBy: user.email, ...(input.name?.trim() ? { name: input.name.trim().slice(0, 80) } : {}) });
@@ -63,9 +72,10 @@ export async function saveDraft(id: string, input: { blocks: unknown; name?: str
 }
 
 /** The TVs pick a new version up within 30 s, after the block they are showing. */
-export async function publishPlaylist(id: string, input: { blocks: unknown; name?: string }, user: AdminUser): Promise<Playlist> {
+export async function publishPlaylist(id: string, body: unknown, user: AdminUser): Promise<Playlist> {
   const current = await requirePlaylist(id);
-  const blocks = parseBlocks(input.blocks);
+  const input = parseInput(body);
+  const blocks = input.blocks;
   await playlists()
     .doc(id)
     .update({
@@ -128,6 +138,8 @@ export async function createScreen(input: unknown, user: AdminUser): Promise<Scr
 export async function updateScreen(id: string, input: unknown, user: AdminUser): Promise<Screen> {
   const data = screenInput.partial().safeParse(input);
   if (!data.success) throw new HttpError(400, "Ogiltig skärm");
+  // Firestore rejects an update without fields.
+  if (!Object.values(data.data).some((v) => v !== undefined)) throw new HttpError(400, "Inget att ändra");
   if (data.data.playlistId) await requirePlaylist(data.data.playlistId);
   const ref = screens().doc(id);
   if (!(await ref.get()).exists) throw new HttpError(404, "Skärmen finns inte");

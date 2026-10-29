@@ -135,6 +135,8 @@ export function TimelineEditor({ id }: { id: string }) {
   const [dropAt, setDropAt] = useState<number | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const editsRef = useRef(0);
+  // The autosave PUT in flight, so publish/discard can wait for it instead of racing it.
+  const savingRef = useRef<Promise<unknown> | null>(null);
   const screenRef = useRef<HTMLDivElement>(null);
 
   // TV pages render at 1920×1080 in the preview and are scaled to its width.
@@ -192,13 +194,17 @@ export function TimelineEditor({ id }: { id: string }) {
     const t = setTimeout(async () => {
       setState("saving");
       try {
-        await api(`/bigscreen/playlists/${id}`, { method: "PUT", json: { blocks, name } });
+        const put = api(`/bigscreen/playlists/${id}`, { method: "PUT", json: { blocks, name } });
+        savingRef.current = put;
+        await put;
         setHasDraft(true);
         setError(null);
         setState(editsRef.current === edits ? "saved" : "dirty");
       } catch (e) {
         setError((e as Error).message);
         setState("error");
+      } finally {
+        savingRef.current = null;
       }
     }, 2000);
     return () => clearTimeout(t);
@@ -235,8 +241,14 @@ export function TimelineEditor({ id }: { id: string }) {
     }
   }, [blocks, lib.media, api]);
 
-  const publish = async () => {
+  // Setting "saving" first cancels a pending autosave timer; an autosave already
+  // sent is awaited, so it can't recreate the draft after publish or discard.
+  const settle = async () => {
     setState("saving");
+    await savingRef.current?.catch(() => {});
+  };
+  const publish = async () => {
+    await settle();
     try {
       const p = await api<Playlist>(`/bigscreen/playlists/${id}`, { method: "POST", json: { blocks, name } });
       setPlaylist(p);
@@ -250,11 +262,19 @@ export function TimelineEditor({ id }: { id: string }) {
   };
   const discard = async () => {
     if (!window.confirm("Släng ändringarna och gå tillbaka till det som visas på skärmarna nu?")) return;
-    const p = await api<Playlist>(`/bigscreen/playlists/${id}?draft`, { method: "DELETE" });
-    setPlaylist(p);
-    setBlocks(p.blocks);
-    setHasDraft(false);
-    setState("idle");
+    await settle();
+    try {
+      const p = await api<Playlist>(`/bigscreen/playlists/${id}?draft`, { method: "DELETE" });
+      setPlaylist(p);
+      setName(p.name);
+      setBlocks(p.blocks);
+      setHasDraft(false);
+      setError(null);
+      setState("idle");
+    } catch (e) {
+      setError((e as Error).message);
+      setState("error");
+    }
   };
 
   /** Selects a block; the preview then loops just that block. */
@@ -300,7 +320,14 @@ export function TimelineEditor({ id }: { id: string }) {
   // Delete / arrow keys on the selected block (not while typing in a field).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!selected || (e.target as HTMLElement).closest("input, textarea, select, [contenteditable]")) return;
+      if (!selected) return;
+      const target = e.target as HTMLElement;
+      if (e.key === "Escape") {
+        if (!target.closest("input, textarea, select, [contenteditable]")) setSelected(null);
+        return;
+      }
+      // Delete and arrows act only with a block (or nothing) focused, never from a button or field.
+      if (target !== document.body && !target.classList.contains("tl-clip")) return;
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
         remove(selected);
@@ -312,8 +339,6 @@ export function TimelineEditor({ id }: { id: string }) {
           const next = blocks[i + (e.key === "ArrowLeft" ? -1 : 1)];
           if (next) focus(next.id);
         }
-      } else if (e.key === "Escape") {
-        setSelected(null);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -431,6 +456,7 @@ export function TimelineEditor({ id }: { id: string }) {
               aria-label="Spellistans namn"
               onChange={(e) => {
                 setName(e.target.value);
+                editsRef.current++;
                 setState("dirty");
               }}
             />
@@ -521,7 +547,11 @@ export function TimelineEditor({ id }: { id: string }) {
                   style={{ width: Math.max(56, seconds[i] * zoom) }}
                   tabIndex={0}
                   title={warn ?? blockName(b, lib)}
-                  onPointerDown={(e) => startDrag(e, { block: b.id }, blockName(b, lib), thumb, () => focus(b.id))}
+                  onPointerDown={(e) => {
+                    // startDrag prevents the default, which would otherwise have focused the block.
+                    e.currentTarget.focus({ preventScroll: true });
+                    startDrag(e, { block: b.id }, blockName(b, lib), thumb, () => focus(b.id));
+                  }}
                   onKeyDown={(e) => e.key === "Enter" && focus(b.id)}
                   aria-pressed={b.id === selected}
                 >

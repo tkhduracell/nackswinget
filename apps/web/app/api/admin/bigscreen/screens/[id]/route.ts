@@ -6,7 +6,9 @@ type Ctx = { params: Promise<{ id: string }> };
 
 /** Name, playlist, quality, light mode. Editors may only switch the playlist. */
 export const PATCH = adminRoute<Ctx>("editor", async (req, user, { params }) => {
-  const body = (await req.json()) as Record<string, unknown>;
+  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!body || typeof body !== "object") return Response.json({ error: "Ogiltig skärm" }, { status: 400 });
+  if (user.role !== "admin" && Object.keys(body).some((k) => k !== "playlistId")) return Response.json({ error: "Kräver administratörsbehörighet" }, { status: 403 });
   const input = user.role === "admin" ? body : { playlistId: body.playlistId };
   return Response.json(await updateScreen((await params).id, input, user));
 });

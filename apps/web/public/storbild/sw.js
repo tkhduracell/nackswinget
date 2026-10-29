@@ -26,17 +26,20 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// One warm-up at a time: a new "keep" queues behind the running one, and each
+// file is checked against the cache right before it's fetched, so nothing is
+// downloaded twice (the Pi Zero's Wi-Fi is the bottleneck).
+let warming = Promise.resolve();
+
 self.addEventListener("message", (event) => {
   if (event.data?.type !== "keep" || !Array.isArray(event.data.urls)) return;
   const wanted = new Set(event.data.urls);
-  event.waitUntil(
-    (async () => {
-      const cache = await caches.open(MEDIA);
-      for (const req of await cache.keys()) if (!wanted.has(req.url)) await cache.delete(req);
-      // Warm the cache so the whole loop survives a network outage, one file at a time.
-      for (const url of wanted) if (!(await cache.match(url))) await fetchWhole(cache, url);
-    })(),
-  );
+  warming = warming.then(async () => {
+    const cache = await caches.open(MEDIA);
+    for (const req of await cache.keys()) if (!wanted.has(req.url)) await cache.delete(req);
+    for (const url of wanted) if (!(await cache.match(url))) await fetchWhole(cache, url);
+  });
+  event.waitUntil(warming);
 });
 
 self.addEventListener("fetch", (event) => {
@@ -84,11 +87,8 @@ async function fetchWhole(cache, url) {
 async function media(req) {
   const cache = await caches.open(MEDIA);
   const hit = await cache.match(req.url);
-  if (!hit) {
-    // First play: straight from the network, and fetch it whole for next time.
-    fetchWhole(cache, req.url);
-    return fetch(req);
-  }
+  // Not cached yet: straight from the network. The warm-up ("keep") fetches it whole.
+  if (!hit) return fetch(req);
   const range = req.headers.get("range");
   if (!range) return hit;
   // Blob slices are backed by the cache on disk, so this doesn't load the whole video into memory.
