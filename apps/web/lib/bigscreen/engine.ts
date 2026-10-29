@@ -16,6 +16,7 @@ export const SHOW_MESSAGE = "storbild:show";
  */
 export const SHOW_SIGNAL_SCRIPT = `(function(){var h=document.documentElement;if(window.parent===window){h.classList.add("bs-shown");return}addEventListener("message",function(e){if(e.origin===location.origin&&e.data&&e.data.type===${JSON.stringify(SHOW_MESSAGE)})h.classList.add("bs-shown")})})()`;
 const READY_TIMEOUT_MS = 10_000;
+const FRAME_SHOW_AFTER_MS = 8_000;
 
 /**
  * Whether `next` may be built while `current` is on screen. Light mode
@@ -152,7 +153,13 @@ export class Engine {
       f.setAttribute("scrolling", "no");
       f.setAttribute("tabindex", "-1");
       media = f;
-      ready = waitFor(f, "load", () => false);
+      // A page is never skipped for being slow: on a Pi Zero a full page can take
+      // well over READY_TIMEOUT_MS to fire "load". Show it when it loads, or after
+      // FRAME_SHOW_AFTER_MS with whatever has rendered by then.
+      ready = new Promise((resolve) => {
+        const t = setTimeout(() => resolve(null), FRAME_SHOW_AFTER_MS);
+        f.addEventListener("load", () => (clearTimeout(t), resolve(null)), { once: true });
+      });
     }
     if (media) el.appendChild(media);
     this.root.appendChild(el);
