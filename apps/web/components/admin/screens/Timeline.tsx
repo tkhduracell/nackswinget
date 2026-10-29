@@ -98,7 +98,7 @@ export function TimelineEditor({ id }: { id: string }) {
   const [picker, setPicker] = useState<"image" | "video" | null>(null);
   const [zoom, setZoom] = useState(8); // px per second
   const [preview, setPreview] = useState<PlayerBlock[]>([]);
-  const [previewFrom, setPreviewFrom] = useState<{ id?: string; n: number }>({ n: 0 });
+  const [replay, setReplay] = useState(0);
   const [dropAt, setDropAt] = useState<number | null>(null);
   const editsRef = useRef(0);
   const screenRef = useRef<HTMLDivElement>(null);
@@ -223,13 +223,16 @@ export function TimelineEditor({ id }: { id: string }) {
     setState("idle");
   };
 
+  /** Selects a block; the preview then loops just that block. */
+  const focus = (bid: string) => setSelected(bid);
+
   // Insert after the selected block, or last.
   const insertAt = (index: number | null, block: Block) => {
     edit((prev) => {
       const at = index ?? (selected ? prev.findIndex((b) => b.id === selected) + 1 : prev.length);
       return [...prev.slice(0, at), block, ...prev.slice(at)];
     });
-    setSelected(block.id);
+    focus(block.id);
   };
   const fromMedia = (m: MediaDoc): Block | null =>
     m.status === "ready" && m.kind === "image" ? { id: newId(), type: "image", mediaId: m.id, fit: "cover", durationSec: DEFAULT_DURATION_SEC } : m.kind === "video" ? { id: newId(), type: "video", mediaId: m.id } : null;
@@ -273,8 +276,10 @@ export function TimelineEditor({ id }: { id: string }) {
         else {
           const i = blocks.findIndex((b) => b.id === selected);
           const next = blocks[i + (e.key === "ArrowLeft" ? -1 : 1)];
-          if (next) setSelected(next.id);
+          if (next) focus(next.id);
         }
+      } else if (e.key === "Escape") {
+        setSelected(null);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -342,6 +347,7 @@ export function TimelineEditor({ id }: { id: string }) {
   const seconds = useMemo(() => blocks.map((b) => blockSeconds(b, b.type === "video" ? lib.media.get(b.mediaId)?.durationSec : undefined)), [blocks, lib.media]);
   const total = seconds.reduce((a, b) => a + b, 0);
   const sel = blocks.find((b) => b.id === selected) ?? null;
+  const shown = useMemo(() => (selected ? preview.filter((p) => p.id === selected || p.id.startsWith(`${selected}:`)) : preview), [preview, selected]);
   const strip = useMemo(() => [...lib.media.values()].filter((m) => !m.deletedAt && (m.kind === "image" || m.kind === "video")), [lib.media]);
 
   if (error && !playlist) return <p className="admin-error">{error}</p>;
@@ -386,14 +392,29 @@ export function TimelineEditor({ id }: { id: string }) {
       <div className="tl-top">
         <div className="tl-preview">
           <div className="tl-screen" ref={screenRef}>
-            <Player key={previewFrom.n} blocks={preview} resumeId={previewFrom.id} />
+            {/* Remounted on selection so the chosen block starts from the beginning right away. */}
+            <Player key={`${selected ?? "all"}-${replay}`} blocks={shown} />
           </div>
           <div className="tl-preview-bar">
-            <span className="muted">Förhandsvisning · hela slingan {fmtTime(total)}</span>
-            <button type="button" className="button button-ghost button-sm" onClick={() => setPreviewFrom((p) => ({ id: selected ?? undefined, n: p.n + 1 }))}>
-              <Icon name="eye" size={16} />
-              {selected ? "Spela från valt block" : "Spela från början"}
-            </button>
+            <span className="muted">
+              {sel
+                ? shown.length
+                  ? `Förhandsvisning av block ${blocks.indexOf(sel) + 1}: ${blockName(sel, lib)}`
+                  : "Blocket visas inte just nu (pausat, utanför datumen eller filen saknas)"
+                : `Förhandsvisning · hela slingan ${fmtTime(total)}`}
+            </span>
+            <span className="tl-preview-actions">
+              <button type="button" className="button button-ghost button-sm" onClick={() => setReplay((n) => n + 1)}>
+                <Icon name="history" size={16} />
+                Spela om
+              </button>
+              {sel && (
+                <button type="button" className="button button-ghost button-sm" onClick={() => setSelected(null)}>
+                  <Icon name="eye" size={16} />
+                  Visa hela slingan
+                </button>
+              )}
+            </span>
           </div>
         </div>
         <aside className="tl-inspector card" aria-label="Valt block">
@@ -406,7 +427,7 @@ export function TimelineEditor({ id }: { id: string }) {
                 <li>Blocken visas i tur och ordning, från vänster, och börjar om när de är slut.</li>
                 <li>Dra ett block för att flytta det. Dra i högra kanten för att ändra hur länge det visas.</li>
                 <li>Dra in bilder och videor från raden under tidslinjen, eller lägg till med knapparna.</li>
-                <li>Klicka på ett block för att ändra det.</li>
+                <li>Klicka på ett block för att ändra det och se bara det i förhandsvisningen. Esc eller Visa hela slingan visar allt igen.</li>
                 <li>Ändringar sparas av sig själva. Skärmarna visar dem först när du trycker på Publicera.</li>
               </ul>
             </div>
@@ -464,8 +485,8 @@ export function TimelineEditor({ id }: { id: string }) {
                     e.dataTransfer.setData(BLOCK_DRAG, b.id);
                     e.dataTransfer.effectAllowed = "move";
                   }}
-                  onClick={() => setSelected(b.id === selected ? null : b.id)}
-                  onKeyDown={(e) => e.key === "Enter" && setSelected(b.id)}
+                  onClick={() => focus(b.id)}
+                  onKeyDown={(e) => e.key === "Enter" && focus(b.id)}
                   aria-pressed={b.id === selected}
                 >
                   {thumb && <span className="tl-thumb" style={{ backgroundImage: `url("${thumb}")` }} aria-hidden="true" />}

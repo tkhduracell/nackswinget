@@ -2678,6 +2678,10 @@
   font-size: 13px;
 }
 /* As tall as the preview, scrolling inside, so the timeline stays in view. */
+.tl-preview-actions {
+  display: inline-flex;
+  gap: 6px;
+}
 .tl-inspector {
   align-self: stretch;
   height: 0;
