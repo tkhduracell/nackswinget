@@ -22,6 +22,8 @@ export const blockSchema = z.discriminatedUnion("type", [
   // Always muted: the TVs never play sound.
   z.object({ ...blockBase, type: z.literal("video"), mediaId: z.string().min(1) }),
   z.object({ ...blockBase, type: z.literal("calendar"), view: z.enum(["week"]).default("week"), feeds: z.array(z.string()).default([]) }),
+  // "Dagens schema": what's left of today as a TV-guide list, then the first events of tomorrow.
+  z.object({ ...blockBase, type: z.literal("agenda"), feeds: z.array(z.string()).default([]), tomorrowCount: z.number().int().min(0).max(6).default(2) }),
   // "Senaste N nyheterna": the N newest published posts, durationSec each (plan B11).
   z.object({ ...blockBase, type: z.literal("latestPosts"), count: z.number().int().min(1).max(10).default(3) }),
   // A site page in TV layout. The path is stored (not the id) so the player needs no lookup.

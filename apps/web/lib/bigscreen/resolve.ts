@@ -19,6 +19,12 @@ export function calendarFrameUrl(block: Extract<Block, { type: "calendar" }>): s
   return `/storbild/kalender/?${q}`;
 }
 
+export function agendaFrameUrl(block: Extract<Block, { type: "agenda" }>): string {
+  const q = new URLSearchParams({ imorgon: String(block.tomorrowCount) });
+  if (block.feeds.length) q.set("feeds", block.feeds.join(","));
+  return `/storbild/dagens/?${q}`;
+}
+
 export const postFrameUrl = (slug: string) => `/storbild/nyhet/${encodeURIComponent(slug)}/`;
 export const pageFrameUrl = (path: string) => `/storbild/sida/?path=${encodeURIComponent(path)}`;
 
@@ -66,6 +72,9 @@ export function resolveBlocks(blocks: Block[], ctx: ResolveContext): PlayerBlock
       }
       case "calendar":
         out.push({ ...base, kind: "frame", src: calendarFrameUrl(block), durationSec: duration });
+        break;
+      case "agenda":
+        out.push({ ...base, kind: "frame", src: agendaFrameUrl(block), durationSec: duration });
         break;
       case "latestPosts":
         for (const p of ctx.posts.slice(0, block.count)) {

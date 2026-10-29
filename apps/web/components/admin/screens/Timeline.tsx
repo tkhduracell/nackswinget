@@ -34,12 +34,13 @@ const TYPE_LABEL: Record<Block["type"], string> = {
   image: "Bild",
   video: "Video",
   calendar: "Kalender",
+  agenda: "Dagens schema",
   latestPosts: "Senaste nyheterna",
   page: "Sida",
   post: "Nyhet",
   text: "Text",
 };
-const TYPE_ICON: Record<Block["type"], IconName> = { image: "image", video: "film", calendar: "history", latestPosts: "news", page: "page", post: "news", text: "file" };
+const TYPE_ICON: Record<Block["type"], IconName> = { image: "image", video: "film", calendar: "history", agenda: "menu", latestPosts: "news", page: "page", post: "news", text: "file" };
 
 /** Quick picks for an image's background; the colour input allows any other. */
 const BACKGROUNDS = [
@@ -74,8 +75,17 @@ function blockName(b: Block, lib: Library): string {
       return b.title || "Text";
     case "calendar":
       return b.feeds.length ? `Kalender (${b.feeds.length})` : "Kalender, veckan";
+    case "agenda":
+      return "Dagens schema";
   }
 }
+
+/** The posts a "Senaste nyheterna" block shows right now: published, newest first. */
+function latestPosts(lib: Library, count: number, now: number): DocRow[] {
+  return lib.posts.filter((p) => !p.publishedAt || new Date(p.publishedAt).getTime() <= now).slice(0, count);
+}
+
+const postThumb = (p: DocRow) => (p.image ? imageUrl(p.image.src, p.image.variants.length ? [Math.min(...p.image.variants)] : []) : null);
 
 function thumbOf(b: Block, lib: Library): string | null {
   if (b.type !== "image" && b.type !== "video") return null;
@@ -134,6 +144,7 @@ export function TimelineEditor({ id }: { id: string }) {
   const [replay, setReplay] = useState(0);
   const [dropAt, setDropAt] = useState<number | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
+  const [now] = useState(() => Date.now());
   const editsRef = useRef(0);
   // The autosave PUT in flight, so publish/discard can wait for it instead of racing it.
   const savingRef = useRef<Promise<unknown> | null>(null);
@@ -290,12 +301,14 @@ export function TimelineEditor({ id }: { id: string }) {
   };
   const fromMedia = (m: MediaDoc): Block | null =>
     m.status === "ready" && m.kind === "image" ? { id: newId(), type: "image", mediaId: m.id, fit: "cover", durationSec: DEFAULT_DURATION_SEC } : m.kind === "video" ? { id: newId(), type: "video", mediaId: m.id } : null;
-  const addContent = (type: "latestPosts" | "calendar" | "page" | "post" | "text") => {
+  const addContent = (type: "latestPosts" | "calendar" | "agenda" | "page" | "post" | "text") => {
     const block: Block | null =
       type === "latestPosts"
         ? { id: newId(), type, count: 3, durationSec: 8 }
         : type === "calendar"
           ? { id: newId(), type, view: "week", feeds: [], durationSec: 15 }
+          : type === "agenda"
+            ? { id: newId(), type, feeds: [], tomorrowCount: 2, durationSec: 15 }
           : type === "page"
             ? lib.pages[0] && { id: newId(), type, path: lib.pages[0].path ?? "", durationSec: 15 }
             : type === "post"
@@ -508,7 +521,7 @@ export function TimelineEditor({ id }: { id: string }) {
         </div>
         <aside className="tl-inspector card" aria-label="Valt block">
           {sel ? (
-            <Inspector key={sel.id} block={sel} lib={lib} index={blocks.indexOf(sel)} count={blocks.length} onPatch={(p) => patchBlock(sel.id, p)} onMove={(d) => move(sel.id, d)} />
+            <Inspector key={sel.id} block={sel} lib={lib} now={now} index={blocks.indexOf(sel)} count={blocks.length} onPatch={(p) => patchBlock(sel.id, p)} onMove={(d) => move(sel.id, d)} />
           ) : (
             <div className="tl-help">
               <h2>Så fungerar det</h2>
@@ -565,10 +578,16 @@ export function TimelineEditor({ id }: { id: string }) {
                     {warn && " ⚠"}
                   </span>
                   {b.type === "latestPosts" && (
+                    // One segment per post it will show, with that post's picture and title.
                     <span className="tl-segments" aria-hidden="true">
-                      {Array.from({ length: b.count - 1 }, (_, k) => (
-                        <span key={k} style={{ left: `${((k + 1) / b.count) * 100}%` }} />
-                      ))}
+                      {latestPosts(lib, b.count, now).map((p, k) => {
+                        const img = postThumb(p);
+                        return (
+                          <span key={p.id} className="tl-seg" style={{ left: `${(k / b.count) * 100}%`, width: `${100 / b.count}%`, ...(img ? { backgroundImage: `url("${img}")` } : {}) }}>
+                            <span className="tl-seg-title">{p.title}</span>
+                          </span>
+                        );
+                      })}
                     </span>
                   )}
                   {/* Shown on hover (and keyboard focus); pointerdown stops here so a click isn't a drag. */}
@@ -608,6 +627,9 @@ export function TimelineEditor({ id }: { id: string }) {
         </button>
         <button type="button" className="button button-ghost button-sm" onClick={() => addContent("calendar")}>
           <Icon name="history" size={16} /> Kalender
+        </button>
+        <button type="button" className="button button-ghost button-sm" onClick={() => addContent("agenda")}>
+          <Icon name="menu" size={16} /> Dagens schema
         </button>
         <button type="button" className="button button-ghost button-sm" onClick={() => addContent("post")} disabled={!lib.posts.length}>
           <Icon name="news" size={16} /> En nyhet
@@ -703,6 +725,7 @@ function Ruler({ total, zoom }: { total: number; zoom: number }) {
 function Inspector({
   block: b,
   lib,
+  now,
   index,
   count,
   onPatch,
@@ -710,6 +733,7 @@ function Inspector({
 }: {
   block: Block;
   lib: Library;
+  now: number;
   index: number;
   count: number;
   onPatch: (p: Partial<Block>) => void;
@@ -799,7 +823,34 @@ function Inspector({
           </div>
         </fieldset>
       )}
-      {b.type === "calendar" && (
+      {b.type === "latestPosts" && (
+        <div className="field">
+          <span>Visar just nu</span>
+          {latestPosts(lib, b.count, now).length ? (
+            <ol className="tl-postlist">
+              {latestPosts(lib, b.count, now).map((p) => {
+                const img = postThumb(p);
+                return (
+                  <li key={p.id}>
+                    {img ? <span className="tl-postlist-img" style={{ backgroundImage: `url("${img}")` }} /> : <span className="tl-postlist-img" />}
+                    <span>{p.title}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : (
+            <p className="muted">Inga publicerade nyheter.</p>
+          )}
+          <p className="muted">Nya nyheter kommer med av sig själva.</p>
+        </div>
+      )}
+      {b.type === "agenda" && (
+        <label className="field">
+          <span>Antal från i morgon</span>
+          <input type="number" min={0} max={6} value={b.tomorrowCount} onChange={(e) => onPatch({ tomorrowCount: Math.max(0, Math.min(6, Number(e.target.value) || 0)) })} />
+        </label>
+      )}
+      {(b.type === "calendar" || b.type === "agenda") && (
         <fieldset className="field">
           <legend>Kalendrar (inga valda = alla)</legend>
           {lib.feeds.map((f) => (

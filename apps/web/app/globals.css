@@ -2853,3 +2853,239 @@ html:has(.bs-screen) body {
     padding: 4px 0;
   }
 }
+
+/* ---------- storbild: Dagens schema (TV-guide list) ---------- */
+/* Light theme in the club colours: white, dark text, Nackswinget red as the one accent. */
+
+.bs-agenda {
+  background: #f5f5f5;
+}
+.bs-ag {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 5vh 6vw;
+  background:
+    radial-gradient(120vh 60vh at 100% 0%, rgba(224, 5, 61, 0.08), transparent 60%),
+    linear-gradient(180deg, #fff 0%, #f3f3f4 100%);
+  color: #1a1a1a;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+}
+.bs-ag-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-bottom: 2.4vh;
+  margin-bottom: 2.4vh;
+  border-bottom: 0.4vh solid var(--brand-ink);
+}
+.bs-ag-kicker {
+  margin: 0;
+  padding: 0;
+  color: var(--brand-ink);
+  font-size: 2.4vh;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.bs-ag-head h1 {
+  margin: 0;
+  padding: 0;
+  color: #1a1a1a;
+  font-size: 7vh;
+  font-weight: 800;
+  line-height: 1.05;
+}
+.bs-ag-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.bs-ag-hhmm {
+  color: #1a1a1a;
+  font-size: 8vh;
+  font-weight: 800;
+  line-height: 1;
+}
+.bs-ag-date {
+  margin-top: 0.8vh;
+  font-size: 2.6vh;
+  opacity: 0.7;
+}
+.bs-ag-date::first-letter,
+.bs-ag-tomorrow h2::first-letter {
+  text-transform: uppercase;
+}
+.bs-ag-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bs-ag-today {
+  /* Long days are cut at the bottom rather than shrinking everything. */
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+.bs-ag-row {
+  display: grid;
+  grid-template-columns: 22vh 1fr auto;
+  align-items: center;
+  gap: 3vh;
+  margin-bottom: 0.8vh;
+  padding: 1.5vh 2.4vh;
+  border-left: 0.6vh solid #d4d4d8;
+  border-radius: 0.6vh;
+  background: #fff;
+  box-shadow: 0 0.2vh 0.6vh rgba(0, 0, 0, 0.06);
+  font-size: 3.4vh;
+}
+.bs-ag-time {
+  color: #555;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.bs-ag-title {
+  min-width: 0;
+  overflow: hidden;
+  /* Room for descenders (g, p, y): overflow is cut for the ellipsis. */
+  line-height: 1.3;
+  padding-bottom: 0.08em;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bs-ag-where {
+  font-weight: 400;
+  opacity: 0.6;
+}
+.bs-ag-badge {
+  padding: 0.6vh 1.6vh;
+  border: 0.25vh solid currentColor;
+  border-radius: 99vh;
+  color: #1a1a1a;
+  font-size: 2vh;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+/* What just ended: there for context, barely. */
+.bs-ag-row.is-done {
+  font-size: 2.8vh;
+  opacity: 0.35;
+  background: transparent;
+  box-shadow: none;
+}
+/* On now: the big one. */
+.bs-ag-row.is-now {
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "time badge"
+    "title title";
+  gap: 1vh 3vh;
+  margin: 1.4vh 0 2vh;
+  padding: 3vh 3.6vh;
+  border-left: 1.2vh solid var(--brand-ink);
+  background: linear-gradient(90deg, #fde6ed, #fff);
+  box-shadow: 0 1.5vh 4vh rgba(224, 5, 61, 0.15);
+}
+.bs-ag-row.is-now .bs-ag-time {
+  grid-area: time;
+  color: var(--brand-ink);
+  font-size: 4vh;
+}
+.bs-ag-row.is-now .bs-ag-title {
+  grid-area: title;
+  font-size: 7vh;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: normal;
+}
+.bs-ag-row.is-now .bs-ag-badge {
+  grid-area: badge;
+  justify-self: end;
+  border-color: var(--brand-ink);
+  background: var(--brand-ink);
+  color: #fff;
+  font-size: 2.4vh;
+  animation: bs-ag-pulse 2s ease-in-out infinite;
+}
+@keyframes bs-ag-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+.bs-ag-row.is-next {
+  border-left-color: #1a1a1a;
+  font-size: 4vh;
+}
+.bs-ag-row.is-next .bs-ag-time {
+  color: #1a1a1a;
+}
+.bs-ag-row.is-tomorrow {
+  font-size: 2.8vh;
+  opacity: 0.6;
+}
+.bs-ag-empty {
+  margin: 4vh 0;
+  font-size: 4vh;
+  opacity: 0.7;
+}
+.bs-ag-tomorrow {
+  margin-top: auto;
+  padding-top: 3vh;
+}
+.bs-ag-tomorrow h2 {
+  margin: 0 0 1.2vh;
+  padding: 0;
+  color: var(--brand-ink);
+  font-size: 2.6vh;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bs-ag-row.is-now .bs-ag-badge {
+    animation: none;
+  }
+}
+
+/* Entrance, once the player shows the frame (html.bs-shown): the page is
+   there first, then the header, then the rows one by one, then tomorrow.
+   Before that everything waits hidden; the rows' own opacity (dimmed
+   "done"/"tomorrow") applies once shown. */
+.bs-ag-head,
+.bs-ag-row,
+.bs-ag-tomorrow h2,
+.bs-ag-empty {
+  transition:
+    opacity 0.45s ease-out,
+    transform 0.45s ease-out;
+}
+html:not(.bs-shown) :is(.bs-ag-head, .bs-ag-row, .bs-ag-tomorrow h2, .bs-ag-empty) {
+  opacity: 0;
+  transform: translateY(2vh);
+}
+.bs-shown .bs-ag-head {
+  transition-delay: 0.5s;
+}
+.bs-shown .bs-ag-row,
+.bs-shown .bs-ag-empty {
+  transition-delay: calc(0.9s + var(--i, 0) * 0.15s);
+}
+.bs-shown .bs-ag-tomorrow h2 {
+  transition-delay: calc(1s + var(--i, 0) * 0.15s);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bs-ag-head,
+  .bs-ag-row,
+  .bs-ag-tomorrow h2,
+  .bs-ag-empty {
+    transition: none;
+  }
+  html:not(.bs-shown) :is(.bs-ag-head, .bs-ag-row, .bs-ag-tomorrow h2, .bs-ag-empty) {
+    transform: none;
+  }
+}
