@@ -57,15 +57,23 @@ export class Engine {
    */
   setBlocks(blocks: PlayerBlock[], resumeId?: string) {
     this.blocks = blocks;
-    this.discardPending();
+    // The same block with new text or settings (typing in the editor) changes in place, without reloading.
+    const now = this.current && blocks.find((b) => sameContent(b, this.current!.block));
+    if (now) this.patch(this.current!, now);
     const anchor = this.current?.block.id ?? resumeId;
     // "Senaste nyheterna" expands into ids like "block:post"; the block id alone matches its first screen.
     const at = anchor ? blocks.findIndex((b) => b.id === anchor || b.id.startsWith(`${anchor}:`)) : -1;
     if (this.current) {
       this.index = at;
-      if (!blocks.length) return this.clear();
-      this.prepareNext();
+      if (!blocks.length) {
+        this.discardPending();
+        return this.clear();
+      }
+      const next = blocks[this.nextIndex()];
+      if (this.pending && sameContent(this.pending.block, next)) this.patch(this.pending, next);
+      else this.prepareNext();
     } else if (blocks.length) {
+      this.discardPending();
       // A resumed block plays again from its start rather than being skipped.
       this.index = at >= 0 ? at - 1 : -1;
       void this.advance();
@@ -138,14 +146,39 @@ export class Engine {
       ready = waitFor(f, "load", () => false);
     }
     if (media) el.appendChild(media);
-    if (block.caption) {
-      const cap = document.createElement("div");
-      cap.className = "bs-caption";
-      cap.textContent = block.caption;
-      el.appendChild(cap);
-    }
     this.root.appendChild(el);
-    return { block, el, media, ready };
+    const layer = { block, el, media, ready };
+    this.setCaption(layer, block.caption);
+    return layer;
+  }
+
+  private setCaption(layer: Layer, caption: string | undefined) {
+    let cap = layer.el.querySelector<HTMLElement>(".bs-caption");
+    if (!caption) return cap?.remove();
+    if (!cap) {
+      cap = document.createElement("div");
+      cap.className = "bs-caption";
+      layer.el.appendChild(cap);
+    }
+    cap.textContent = caption;
+  }
+
+  /** Applies a block's new text and settings to a layer that shows the same content. */
+  private patch(layer: Layer, block: PlayerBlock) {
+    layer.block = block;
+    this.setCaption(layer, block.caption);
+    if (layer.media instanceof HTMLImageElement) layer.media.style.objectFit = block.fit ?? "cover";
+    const text = layer.el.querySelector<HTMLElement>(".bs-text");
+    if (text) {
+      text.style.background = block.background ?? "";
+      text.querySelector("h2")!.textContent = block.title ?? "";
+      let p = text.querySelector("p");
+      if (!block.body) p?.remove();
+      else {
+        if (!p) p = text.appendChild(document.createElement("p"));
+        p.textContent = block.body;
+      }
+    }
   }
 
   private prepare(i: number) {
@@ -317,4 +350,9 @@ function waitFor(el: HTMLElement, event: string, already: () => boolean): Promis
     el.addEventListener(event, () => (clearTimeout(timer), resolve(null)), { once: true });
     el.addEventListener("error", () => (clearTimeout(timer), resolve("load error")), { once: true });
   });
+}
+
+/** Same block showing the same file or page, so a layer can be updated instead of rebuilt. */
+function sameContent(a: PlayerBlock, b: PlayerBlock): boolean {
+  return a.id === b.id && a.kind === b.kind && a.src === b.src;
 }

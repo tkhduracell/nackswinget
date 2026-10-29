@@ -2,7 +2,7 @@ import Link from "next/link";
 import { type DragEvent, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Player } from "@/components/bigscreen/Player";
 import type { MediaDoc } from "@/lib/admin/media";
-import { blockSeconds } from "@/lib/bigscreen/resolve";
+import { blockSeconds, isActive } from "@/lib/bigscreen/resolve";
 import { type Block, DEFAULT_DURATION_SEC, type PlayerBlock, type Playlist } from "@/lib/bigscreen/types";
 import type { CalendarFeed, Settings } from "@/lib/content/types";
 import { imageUrl, publicUrl } from "@/lib/media/urls";
@@ -77,6 +77,18 @@ function warningOf(b: Block, lib: Library): string | null {
   }
   if (b.type === "post" && !lib.posts.some((p) => p.id === b.postId)) return "Nyheten finns inte längre";
   return null;
+}
+
+/** The draft as the player plays it: the server's resolved blocks in draft order, with the draft's text and settings. */
+function liveBlocks(blocks: Block[], resolved: PlayerBlock[]): PlayerBlock[] {
+  return blocks.flatMap((b): PlayerBlock[] => {
+    if (!isActive(b)) return [];
+    const duration = b.durationSec ?? DEFAULT_DURATION_SEC;
+    if (b.type === "text") return [{ id: b.id, kind: "text", src: "", title: b.title, body: b.body, background: b.background, caption: b.caption, durationSec: duration }];
+    return resolved
+      .filter((p) => p.id === b.id || p.id.startsWith(`${b.id}:`))
+      .map((p) => ({ ...p, caption: b.caption, durationSec: p.kind === "video" ? b.durationSec : duration, ...(b.type === "image" ? { fit: b.fit } : {}) }));
+  });
 }
 
 function fmtTime(sec: number): string {
@@ -347,7 +359,10 @@ export function TimelineEditor({ id }: { id: string }) {
   const seconds = useMemo(() => blocks.map((b) => blockSeconds(b, b.type === "video" ? lib.media.get(b.mediaId)?.durationSec : undefined)), [blocks, lib.media]);
   const total = seconds.reduce((a, b) => a + b, 0);
   const sel = blocks.find((b) => b.id === selected) ?? null;
-  const shown = useMemo(() => (selected ? preview.filter((p) => p.id === selected || p.id.startsWith(`${selected}:`)) : preview), [preview, selected]);
+  // The server resolves media and posts (debounced); text and settings come from the draft
+  // right away, so the preview follows typing without waiting for it.
+  const live = useMemo(() => liveBlocks(blocks, preview), [blocks, preview]);
+  const shown = useMemo(() => (selected ? live.filter((p) => p.id === selected || p.id.startsWith(`${selected}:`)) : live), [live, selected]);
   const strip = useMemo(() => [...lib.media.values()].filter((m) => !m.deletedAt && (m.kind === "image" || m.kind === "video")), [lib.media]);
 
   if (error && !playlist) return <p className="admin-error">{error}</p>;
