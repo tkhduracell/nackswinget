@@ -7,14 +7,6 @@ import type { PlayerBlock } from "./types";
 // at their duration, if set), everything else at its duration.
 
 export const FADE_MS = 600;
-export const SHOW_MESSAGE = "storbild:show";
-
-/**
- * Inline script for pages shown in a frame: adds `bs-shown` to <html> when the
- * player puts the frame on screen, or right away when the page is opened on
- * its own. Inline (not React) so it listens before the frame's load event.
- */
-export const SHOW_SIGNAL_SCRIPT = `(function(){var h=document.documentElement;if(window.parent===window){h.classList.add("bs-shown");return}addEventListener("message",function(e){if(e.origin===location.origin&&e.data&&e.data.type===${JSON.stringify(SHOW_MESSAGE)})h.classList.add("bs-shown")})})()`;
 const READY_TIMEOUT_MS = 10_000;
 const FRAME_SHOW_AFTER_MS = 8_000;
 
@@ -147,6 +139,14 @@ export class Engine {
       }
       el.appendChild(t);
       ready = Promise.resolve(null);
+    } else if (block.kind === "html") {
+      const h = document.createElement("div");
+      h.className = "bs-html";
+      h.innerHTML = block.html ?? "";
+      setClocks(h);
+      el.appendChild(h);
+      // Shown once its pictures are in; a missing picture doesn't skip the block.
+      ready = Promise.all([...h.querySelectorAll("img")].map((img) => waitFor(img, "load", () => img.complete))).then(() => null);
     } else {
       const f = document.createElement("iframe");
       f.src = block.src;
@@ -324,10 +324,9 @@ export class Engine {
   private swapTo(layer: Layer) {
     const old = this.current;
     this.current = layer;
+    // The layer was built ahead of time; its clock is set again as it comes on screen.
+    setClocks(layer.el);
     requestAnimationFrame(() => layer.el.classList.add("on"));
-    // Frames are loaded hidden ahead of time; tell the page it's on screen now so
-    // its entrance animation starts here (see SHOW_SIGNAL_SCRIPT).
-    if (layer.media instanceof HTMLIFrameElement) layer.media.contentWindow?.postMessage({ type: SHOW_MESSAGE }, location.origin);
     if (old) {
       old.el.classList.remove("on");
       setTimeout(() => this.dispose(old), FADE_MS + 50);
@@ -394,7 +393,14 @@ function waitFor(el: HTMLElement, event: string, already: () => boolean): Promis
   });
 }
 
-/** Same block showing the same file or page, so a layer can be updated instead of rebuilt. */
+const clock = new Intl.DateTimeFormat("sv-SE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm" });
+
+/** Fills in the time (HH:MM, Stockholm) wherever server markup asks for it. */
+function setClocks(root: HTMLElement) {
+  for (const el of root.querySelectorAll<HTMLElement>("[data-bs-clock]")) el.textContent = clock.format(new Date());
+}
+
+/** Same block showing the same file, page or markup, so a layer can be updated instead of rebuilt. */
 function sameContent(a: PlayerBlock, b: PlayerBlock): boolean {
-  return a.id === b.id && a.kind === b.kind && a.src === b.src;
+  return a.id === b.id && a.kind === b.kind && a.src === b.src && a.html === b.html;
 }

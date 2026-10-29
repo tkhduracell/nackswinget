@@ -71,7 +71,8 @@ export const DEFAULT_DURATION_SEC = 10;
 /** What the player gets: URLs resolved, skipped blocks removed. */
 export interface PlayerBlock {
   id: string;
-  kind: "image" | "video" | "frame" | "text";
+  /** "html": markup rendered by the server and drawn by the player (posts, calendar, agenda); "frame": a site page in an iframe. */
+  kind: "image" | "video" | "frame" | "text" | "html";
   src: string;
   /** Undefined for a video that plays to its end. */
   durationSec?: number;
@@ -81,6 +82,8 @@ export interface PlayerBlock {
   /** kind "text": drawn by the player itself, no page load. */
   title?: string;
   body?: string;
+  /** kind "html": the markup (escaped by lib/bigscreen/render.ts). */
+  html?: string;
   /** kind "text" and "image": the colour behind it. */
   background?: string;
 }

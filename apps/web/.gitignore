@@ -49,3 +49,6 @@ next-env.d.ts
 # Playwright
 /test-results/
 /playwright-report/
+
+# Built by scripts/build-storbild.mjs
+/public/storbild/player.js

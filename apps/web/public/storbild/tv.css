@@ -1,0 +1,570 @@
+/* Storbild: the TV player (app/(bare)/storbild/[key]/route.ts) and the
+   editor's preview (components/bigscreen/Player.tsx) share this file.
+   Everything is scoped to .bs-stage, which is a size container: lengths in
+   cqh/cqw are relative to the screen, so the preview matches the TV at any size. */
+
+.bs-stage *,
+.bs-stage *::before,
+.bs-stage *::after {
+  box-sizing: border-box;
+}
+
+.bs-screen {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  overflow: hidden;
+  cursor: none;
+}
+.bs-stage {
+  --brand-ink: #e0053d;
+  --heading: #333333;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+  /* Text sizes below use cqh (stage height), so the admin preview matches the TV. */
+  container-type: size;
+  font-family: var(--font-sans, "Open Sans"), "Open Sans", Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+.bs-idle {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.bs-stage:has(> .bs-layer) > .bs-idle {
+  display: none;
+}
+.bs-logo {
+  width: 30cqw;
+  height: auto;
+}
+.bs-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 600ms ease; /* FADE_MS in lib/bigscreen/engine.ts */
+  background: #000;
+}
+.bs-layer.on {
+  opacity: 1;
+}
+.bs-layer > video,
+.bs-layer > img,
+.bs-layer > iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
+}
+.bs-layer > iframe {
+  background: #fff;
+}
+.bs-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 2.2cqh 4cqw;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+  color: #fff;
+  font-size: 3.6cqh;
+  font-weight: 700;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+/* Fills over the block's time on screen (lib/bigscreen/engine.ts, progress()). */
+.bs-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  height: 0.6cqh;
+  min-height: 3px;
+  background: var(--brand-ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  will-change: transform;
+}
+@keyframes bs-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+.bs-html {
+  height: 100%;
+  background: #fff;
+  overflow: hidden;
+}
+.bs-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding: 8cqh 8cqw;
+  background: var(--brand-ink);
+  color: #fff;
+}
+.bs-text h2 {
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  font-size: 9cqh;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.bs-text p {
+  margin: 4cqh 0 0;
+  padding: 0;
+  font-size: 4.4cqh;
+  line-height: 1.4;
+  white-space: pre-line;
+}
+/* Staged entrance: the background arrives with the crossfade, then the
+   heading, then the text. Fading out (".on" removed) happens all at once. */
+.bs-text h2,
+.bs-text p {
+  opacity: 0;
+  transform: translateY(2cqh);
+  transition:
+    opacity 0.45s ease-out,
+    transform 0.45s ease-out;
+}
+.bs-layer.on .bs-text h2,
+.bs-layer.on .bs-text p {
+  opacity: 1;
+  transform: none;
+}
+.bs-layer.on .bs-text h2 {
+  transition-delay: 0.7s;
+}
+.bs-layer.on .bs-text p {
+  transition-delay: 1.2s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bs-text h2,
+  .bs-text p {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ---------- news post (kind "html", lib/bigscreen/render.ts postHtml) ---------- */
+.bs-post {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100%;
+}
+.bs-post.no-image {
+  grid-template-columns: 1fr;
+}
+.bs-post-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.bs-post-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8cqh 5cqw;
+  overflow: hidden;
+}
+.bs-post .bs-kicker {
+  margin: 0 0 2cqh;
+  color: var(--brand-ink);
+  font-size: 2.6cqh;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.bs-post h1 {
+  margin: 0;
+  padding: 0;
+  color: var(--heading);
+  font-size: 6cqh;
+  line-height: 1.15;
+}
+.bs-post .bs-excerpt {
+  margin: 3cqh 0 0;
+  white-space: pre-line;
+  color: var(--heading);
+  font-size: 3.2cqh;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 9;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Entrance like the text block: picture with the crossfade, then kicker, title, text. */
+.bs-post-text > * {
+  transition:
+    opacity 0.45s ease-out,
+    transform 0.45s ease-out;
+}
+.bs-layer:not(.on) .bs-post-text > * {
+  opacity: 0;
+  transform: translateY(2cqh);
+}
+.bs-layer.on .bs-post .bs-kicker {
+  transition-delay: 0.5s;
+}
+.bs-layer.on .bs-post h1 {
+  transition-delay: 0.7s;
+}
+.bs-layer.on .bs-post .bs-excerpt {
+  transition-delay: 1.2s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bs-post-text > * {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ---------- storbild: Dagens schema (TV-guide list) ---------- */
+/* Light theme in the club colours: white, dark text, Nackswinget red as the one accent. */
+
+.bs-ag {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 5cqh 6cqw;
+  background:
+    radial-gradient(120cqh 60cqh at 100% 0%, rgba(224, 5, 61, 0.08), transparent 60%),
+    linear-gradient(180deg, #fff 0%, #f3f3f4 100%);
+  color: #1a1a1a;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+}
+.bs-ag-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-bottom: 2.4cqh;
+  margin-bottom: 2.4cqh;
+  border-bottom: 0.4cqh solid var(--brand-ink);
+}
+.bs-ag-kicker {
+  margin: 0;
+  padding: 0;
+  color: var(--brand-ink);
+  font-size: 2.4cqh;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.bs-ag-head h1 {
+  margin: 0;
+  padding: 0;
+  color: #1a1a1a;
+  font-size: 7cqh;
+  font-weight: 800;
+  line-height: 1.05;
+}
+.bs-ag-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.bs-ag-hhmm {
+  color: #1a1a1a;
+  font-size: 8cqh;
+  font-weight: 800;
+  line-height: 1;
+}
+.bs-ag-date {
+  margin-top: 0.8cqh;
+  font-size: 2.6cqh;
+  opacity: 0.7;
+}
+.bs-ag-date::first-letter,
+.bs-ag-tomorrow h2::first-letter {
+  text-transform: uppercase;
+}
+.bs-ag-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bs-ag-today {
+  /* Long days are cut at the bottom rather than shrinking everything. */
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+.bs-ag-row {
+  display: grid;
+  grid-template-columns: 22cqh 1fr auto;
+  align-items: center;
+  gap: 3cqh;
+  margin-bottom: 0.8cqh;
+  padding: 1.5cqh 2.4cqh;
+  border-left: 0.6cqh solid #d4d4d8;
+  border-radius: 0.6cqh;
+  background: #fff;
+  box-shadow: 0 0.2cqh 0.6cqh rgba(0, 0, 0, 0.06);
+  font-size: 3.4cqh;
+}
+.bs-ag-time {
+  color: #555;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.bs-ag-title {
+  min-width: 0;
+  overflow: hidden;
+  /* Room for descenders (g, p, y): overflow is cut for the ellipsis. */
+  line-height: 1.3;
+  padding-bottom: 0.08em;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bs-ag-where {
+  font-weight: 400;
+  opacity: 0.6;
+}
+.bs-ag-badge {
+  padding: 0.6cqh 1.6cqh;
+  border: 0.25cqh solid currentColor;
+  border-radius: 99cqh;
+  color: #1a1a1a;
+  font-size: 2cqh;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+/* What just ended: there for context, barely. */
+.bs-ag-row.is-done {
+  font-size: 2.8cqh;
+  opacity: 0.35;
+  background: transparent;
+  box-shadow: none;
+}
+/* On now: the big one. */
+.bs-ag-row.is-now {
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "time badge"
+    "title title";
+  gap: 1cqh 3cqh;
+  margin: 1.4cqh 0 2cqh;
+  padding: 3cqh 3.6cqh;
+  border-left: 1.2cqh solid var(--brand-ink);
+  background: linear-gradient(90deg, #fde6ed, #fff);
+  box-shadow: 0 1.5cqh 4cqh rgba(224, 5, 61, 0.15);
+}
+.bs-ag-row.is-now .bs-ag-time {
+  grid-area: time;
+  color: var(--brand-ink);
+  font-size: 4cqh;
+}
+.bs-ag-row.is-now .bs-ag-title {
+  grid-area: title;
+  font-size: 7cqh;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: normal;
+}
+.bs-ag-row.is-now .bs-ag-badge {
+  grid-area: badge;
+  justify-self: end;
+  border-color: var(--brand-ink);
+  background: var(--brand-ink);
+  color: #fff;
+  font-size: 2.4cqh;
+  animation: bs-ag-pulse 2s ease-in-out infinite;
+}
+@keyframes bs-ag-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+.bs-ag-row.is-next {
+  border-left-color: #1a1a1a;
+  font-size: 4cqh;
+}
+.bs-ag-row.is-next .bs-ag-time {
+  color: #1a1a1a;
+}
+.bs-ag-row.is-tomorrow {
+  font-size: 2.8cqh;
+  opacity: 0.6;
+}
+.bs-ag-empty {
+  margin: 4cqh 0;
+  font-size: 4cqh;
+  opacity: 0.7;
+}
+.bs-ag-tomorrow {
+  margin-top: auto;
+  padding-top: 3cqh;
+}
+.bs-ag-tomorrow h2 {
+  margin: 0 0 1.2cqh;
+  padding: 0;
+  color: var(--brand-ink);
+  font-size: 2.6cqh;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bs-ag-row.is-now .bs-ag-badge {
+    animation: none;
+  }
+}
+
+/* Entrance, once the layer comes on screen (.bs-layer.on): the page is
+   there first, then the header, then the rows one by one, then tomorrow.
+   Before that everything waits hidden; the rows' own opacity (dimmed
+   "done"/"tomorrow") applies once shown. */
+.bs-ag-head,
+.bs-ag-row,
+.bs-ag-tomorrow h2,
+.bs-ag-empty {
+  transition:
+    opacity 0.45s ease-out,
+    transform 0.45s ease-out;
+}
+.bs-layer:not(.on) :is(.bs-ag-head, .bs-ag-row, .bs-ag-tomorrow h2, .bs-ag-empty) {
+  opacity: 0;
+  transform: translateY(2cqh);
+}
+.bs-layer.on .bs-ag-head {
+  transition-delay: 0.5s;
+}
+.bs-layer.on .bs-ag-row,
+.bs-layer.on .bs-ag-empty {
+  transition-delay: calc(0.9s + var(--i, 0) * 0.15s);
+}
+.bs-layer.on .bs-ag-tomorrow h2 {
+  transition-delay: calc(1s + var(--i, 0) * 0.15s);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bs-ag-head,
+  .bs-ag-row,
+  .bs-ag-tomorrow h2,
+  .bs-ag-empty {
+    transition: none;
+  }
+  .bs-layer:not(.on) :is(.bs-ag-head, .bs-ag-row, .bs-ag-tomorrow h2, .bs-ag-empty) {
+    transform: none;
+  }
+}
+
+/* ---------- week calendar (kind "html", lib/bigscreen/render.ts weekHtml) ---------- */
+.bs-cal {
+  display: flex;
+  flex-direction: column;
+  gap: 2cqh;
+  height: 100%;
+  padding: 4cqh 3cqw;
+  background: linear-gradient(180deg, #fff 0%, #f3f3f4 100%);
+  color: #1a1a1a;
+  overflow: hidden;
+}
+.bs-cal-head {
+  padding-bottom: 1.6cqh;
+  border-bottom: 0.4cqh solid var(--brand-ink);
+}
+.bs-cal-head h1 {
+  margin: 0;
+  color: #1a1a1a;
+  font-size: 5.5cqh;
+  font-weight: 800;
+  line-height: 1.05;
+}
+.bs-cal-week {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+}
+.bs-cal-week h2 {
+  margin: 0 0 1cqh;
+  color: var(--brand-ink);
+  font-size: 2.4cqh;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.bs-cal-days {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.8cqw;
+  min-height: 0;
+}
+.bs-cal-day {
+  min-height: 0;
+  padding: 1cqh 0.7cqw;
+  border-radius: 0.6cqh;
+  background: #fff;
+  box-shadow: 0 0.2cqh 0.6cqh rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+.bs-cal-day.today {
+  box-shadow: inset 0 0 0 0.35cqh var(--brand-ink);
+}
+.bs-cal-day.past {
+  opacity: 0.45;
+}
+.bs-cal-date {
+  margin: 0 0 0.8cqh;
+  font-size: 2cqh;
+  font-weight: 700;
+}
+.bs-cal-date::first-letter {
+  text-transform: uppercase;
+}
+.bs-cal-day.today .bs-cal-date {
+  color: var(--brand-ink);
+}
+.bs-cal-day ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bs-cal-ev {
+  margin-bottom: 0.6cqh;
+  padding: 0.3cqh 0 0.3cqh 0.5cqw;
+  border-left: 0.5cqh solid var(--ev-color);
+  font-size: 1.7cqh;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.bs-cal-time {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bs-cal-head,
+.bs-cal-week {
+  transition:
+    opacity 0.45s ease-out,
+    transform 0.45s ease-out;
+}
+.bs-layer:not(.on) :is(.bs-cal-head, .bs-cal-week) {
+  opacity: 0;
+  transform: translateY(2cqh);
+}
+.bs-layer.on .bs-cal-head {
+  transition-delay: 0.4s;
+}
+.bs-layer.on .bs-cal-week {
+  transition-delay: 0.7s;
+}
+.bs-layer.on .bs-cal-week + .bs-cal-week {
+  transition-delay: 0.9s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bs-cal-head,
+  .bs-cal-week {
+    transition: none;
+  }
+}

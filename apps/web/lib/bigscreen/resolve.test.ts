@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { MediaDoc } from "@/lib/admin/media";
 import { PUBLIC_BASE } from "@/lib/media/urls";
 import type { PostSummary } from "@/lib/content/types";
-import { blockSeconds, calendarFrameUrl, isActive, resolveBlocks } from "./resolve";
+import type { CalendarEvent } from "@/lib/calendar/ics";
+import { blockSeconds, isActive, resolveBlocks } from "./resolve";
 import { type Block, blockSchema } from "./types";
 
 const media = (doc: Partial<MediaDoc> & Pick<MediaDoc, "id" | "kind" | "path">): MediaDoc => ({
@@ -60,7 +61,7 @@ describe("resolveBlocks", () => {
       { id: "1", kind: "video", src: `${PUBLIC_BASE}/web/media/vid/out/1080.mp4`, poster: `${PUBLIC_BASE}/web/media/vid/out/poster.jpeg` },
       { id: "2", kind: "image", src: `${PUBLIC_BASE}/web/media/img/a.png`, fit: "cover", durationSec: 5, caption: "Hej" },
       { id: "3", kind: "image", src: `${PUBLIC_BASE}/web/variants/media/small/b/1200.webp`, fit: "cover", durationSec: 10 },
-      { id: "4", kind: "frame", src: "/storbild/kalender/?view=week&feeds=huvud%2Ckurs", durationSec: 10 },
+      { id: "4", kind: "html", src: "calendar", html: expect.stringContaining("Vecka 44"), durationSec: 10 },
     ]);
   });
 
@@ -74,9 +75,23 @@ describe("resolveBlocks", () => {
   });
 });
 
-describe("calendarFrameUrl", () => {
-  it("leaves out feeds when none are picked (all feeds)", () => {
-    expect(calendarFrameUrl(parse({ id: "c", type: "calendar" }) as Extract<Block, { type: "calendar" }>)).toBe("/storbild/kalender/?view=week");
+describe("calendar and agenda", () => {
+  const feeds = [
+    { key: "huvud", name: "Huvud", color: "#800080", url: "https://example.test/h.ics" },
+    { key: "kurs", name: "Kurs", color: "#a35f00", url: "https://example.test/k.ics" },
+  ];
+  const ev = (title: string, feed: string, start: string, end: string): CalendarEvent => ({ uid: title, feed, title, start, end, allDay: false });
+  const events = [ev("Bugg", "huvud", "2026-10-29T18:00", "2026-10-29T19:00"), ev("Fox", "kurs", "2026-10-29T19:00", "2026-10-29T20:00")];
+  const ctx = { media: library, posts: [], quality: "720" as const, now: NOW, feeds, events };
+
+  it("shows only the picked feeds, or all when none are picked", () => {
+    const [only] = resolveBlocks([parse({ id: "c", type: "calendar", feeds: ["kurs"] })], ctx);
+    expect(only.html).toContain("Fox");
+    expect(only.html).not.toContain("Bugg");
+    const [all] = resolveBlocks([parse({ id: "a", type: "agenda" })], ctx);
+    expect(all).toMatchObject({ kind: "html", src: "agenda" });
+    expect(all.html).toContain("Bugg");
+    expect(all.html).toContain("Fox");
   });
 });
 
@@ -84,21 +99,24 @@ describe("content blocks", () => {
   const ctx = { media: library, posts: POSTS, quality: "720" as const, now: NOW };
   it("expands latest posts into one screen per post, newest first", () => {
     const out = resolveBlocks([parse({ id: "n", type: "latestPosts", count: 2, durationSec: 8 })], ctx);
-    expect(out).toEqual([
-      { id: "n:p3", kind: "frame", src: "/storbild/nyhet/tredje/", durationSec: 8 },
-      { id: "n:p2", kind: "frame", src: "/storbild/nyhet/andra/", durationSec: 8 },
+    expect(out.map(({ id, kind, src, durationSec }) => ({ id, kind, src, durationSec }))).toEqual([
+      { id: "n:p3", kind: "html", src: "post:p3", durationSec: 8 },
+      { id: "n:p2", kind: "html", src: "post:p2", durationSec: 8 },
     ]);
+    expect(out[0].html).toContain("<h1>p3</h1>");
   });
   it("shows fewer screens when there are fewer posts, none without posts", () => {
     expect(resolveBlocks([parse({ id: "n", type: "latestPosts", count: 5 })], ctx)).toHaveLength(3);
     expect(resolveBlocks([parse({ id: "n", type: "latestPosts", count: 5 })], { ...ctx, posts: [] })).toEqual([]);
   });
   it("resolves a pinned post by id and drops one that is gone", () => {
-    expect(resolveBlocks([parse({ id: "a", type: "post", postId: "p1" }), parse({ id: "b", type: "post", postId: "nope" })], ctx)).toEqual([
-      { id: "a", kind: "frame", src: "/storbild/nyhet/forsta/", durationSec: 10 },
-    ]);
+    expect(resolveBlocks([parse({ id: "a", type: "post", postId: "p1" }), parse({ id: "b", type: "post", postId: "nope" })], ctx)).toMatchObject([{ id: "a", kind: "html", src: "post:p1", durationSec: 10 }]);
   });
-  it("links pages by path and draws text natively", () => {
+  it("uses the post's body text when it has no excerpt", () => {
+    const [p] = resolveBlocks([parse({ id: "a", type: "post", postId: "p1" })], { ...ctx, postText: new Map([["p1", "Välkomna <alla>"]]) });
+    expect(p.html).toContain("Välkomna &lt;alla&gt;");
+  });
+  it("links pages by path and draws text itself", () => {
     expect(resolveBlocks([parse({ id: "s", type: "page", path: "om-oss/styrelse" }), parse({ id: "t", type: "text", title: "Hej", background: "#e0053d" })], ctx)).toEqual([
       { id: "s", kind: "frame", src: "/storbild/sida/?path=om-oss%2Fstyrelse", durationSec: 10 },
       { id: "t", kind: "text", src: "", title: "Hej", background: "#e0053d", durationSec: 10 },
