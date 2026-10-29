@@ -498,35 +498,6 @@ export function TimelineEditor({ id }: { id: string }) {
         </aside>
       </div>
 
-      <div className="tl-add">
-        <span className="tl-add-label">Lägg till:</span>
-        <button type="button" className="button button-ghost button-sm" onClick={() => setPicker("image")}>
-          <Icon name="image" size={16} /> Bild
-        </button>
-        <button type="button" className="button button-ghost button-sm" onClick={() => setPicker("video")}>
-          <Icon name="film" size={16} /> Video
-        </button>
-        <button type="button" className="button button-ghost button-sm" onClick={() => addContent("latestPosts")}>
-          <Icon name="news" size={16} /> Senaste nyheterna
-        </button>
-        <button type="button" className="button button-ghost button-sm" onClick={() => addContent("calendar")}>
-          <Icon name="history" size={16} /> Kalender
-        </button>
-        <button type="button" className="button button-ghost button-sm" onClick={() => addContent("post")} disabled={!lib.posts.length}>
-          <Icon name="news" size={16} /> En nyhet
-        </button>
-        <button type="button" className="button button-ghost button-sm" onClick={() => addContent("page")} disabled={!lib.pages.length}>
-          <Icon name="page" size={16} /> Sida
-        </button>
-        <button type="button" className="button button-ghost button-sm" onClick={() => addContent("text")}>
-          <Icon name="file" size={16} /> Text
-        </button>
-        <label className="tl-zoom">
-          <span>Zoom</span>
-          <input type="range" min={3} max={30} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} />
-        </label>
-      </div>
-
       <div className={drag ? "tl tl-dropping" : "tl"} ref={trackBox}>
         <Ruler total={total} zoom={zoom} />
         <div className="tl-track" ref={track} role="list" aria-label="Tidslinje">
@@ -577,6 +548,35 @@ export function TimelineEditor({ id }: { id: string }) {
           })}
           {dropAt === blocks.length && blocks.length > 0 && <span className="tl-drop" aria-hidden="true" />}
         </div>
+      </div>
+
+      <div className="tl-add">
+        <span className="tl-add-label">Lägg till:</span>
+        <button type="button" className="button button-ghost button-sm" onClick={() => setPicker("image")}>
+          <Icon name="image" size={16} /> Bild
+        </button>
+        <button type="button" className="button button-ghost button-sm" onClick={() => setPicker("video")}>
+          <Icon name="film" size={16} /> Video
+        </button>
+        <button type="button" className="button button-ghost button-sm" onClick={() => addContent("latestPosts")}>
+          <Icon name="news" size={16} /> Senaste nyheterna
+        </button>
+        <button type="button" className="button button-ghost button-sm" onClick={() => addContent("calendar")}>
+          <Icon name="history" size={16} /> Kalender
+        </button>
+        <button type="button" className="button button-ghost button-sm" onClick={() => addContent("post")} disabled={!lib.posts.length}>
+          <Icon name="news" size={16} /> En nyhet
+        </button>
+        <button type="button" className="button button-ghost button-sm" onClick={() => addContent("page")} disabled={!lib.pages.length}>
+          <Icon name="page" size={16} /> Sida
+        </button>
+        <button type="button" className="button button-ghost button-sm" onClick={() => addContent("text")}>
+          <Icon name="file" size={16} /> Text
+        </button>
+        <label className="tl-zoom">
+          <span>Zoom</span>
+          <input type="range" min={3} max={30} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} />
+        </label>
       </div>
 
       <div className="tl-strip" aria-label="Bilder och videor att dra in">

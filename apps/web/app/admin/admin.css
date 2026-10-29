@@ -2723,7 +2723,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  margin-bottom: 8px;
+  margin-top: 12px;
 }
 .tl-add-label {
   font-weight: 600;
