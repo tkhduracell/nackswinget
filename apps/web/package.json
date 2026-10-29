@@ -13,6 +13,7 @@
     "export:wp": "tsx scripts/wp-export.ts",
     "import": "tsx scripts/import-snapshot.ts",
     "seo:fill": "tsx scripts/seo-fill.ts",
+    "bigscreen:seed": "tsx scripts/bigscreen-seed.ts",
     "emulators": "cd ../.. && firebase emulators:start --only auth,firestore --project demo-nsw",
     "dev:emulators": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIREBASE_PROJECT_ID=demo-nsw NEXT_PUBLIC_EMULATORS=1 IMPORT_TOKEN=local-dev-token CRON_TOKEN=local-cron-token SMTP_URL=log ADMIN_EMAILS=admin@example.test next dev",
     "build:fixture": "CONTENT_SOURCE=snapshot CONTENT_SNAPSHOT=test/fixtures/snapshot.json next build",
