@@ -2639,10 +2639,10 @@ html:has(.bs-screen) body {
   transform: none;
 }
 .bs-layer.on .bs-text h2 {
-  transition-delay: 0.35s;
+  transition-delay: 0.7s;
 }
 .bs-layer.on .bs-text p {
-  transition-delay: 0.65s;
+  transition-delay: 1.2s;
 }
 @media (prefers-reduced-motion: reduce) {
   .bs-text h2,
