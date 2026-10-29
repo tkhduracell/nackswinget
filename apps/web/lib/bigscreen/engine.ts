@@ -7,6 +7,14 @@ import type { PlayerBlock } from "./types";
 // at their duration, if set), everything else at its duration.
 
 export const FADE_MS = 600;
+export const SHOW_MESSAGE = "storbild:show";
+
+/**
+ * Inline script for pages shown in a frame: adds `bs-shown` to <html> when the
+ * player puts the frame on screen, or right away when the page is opened on
+ * its own. Inline (not React) so it listens before the frame's load event.
+ */
+export const SHOW_SIGNAL_SCRIPT = `(function(){var h=document.documentElement;if(window.parent===window){h.classList.add("bs-shown");return}addEventListener("message",function(e){if(e.origin===location.origin&&e.data&&e.data.type===${JSON.stringify(SHOW_MESSAGE)})h.classList.add("bs-shown")})})()`;
 const READY_TIMEOUT_MS = 10_000;
 
 /**
@@ -310,6 +318,9 @@ export class Engine {
     const old = this.current;
     this.current = layer;
     requestAnimationFrame(() => layer.el.classList.add("on"));
+    // Frames are loaded hidden ahead of time; tell the page it's on screen now so
+    // its entrance animation starts here (see SHOW_SIGNAL_SCRIPT).
+    if (layer.media instanceof HTMLIFrameElement) layer.media.contentWindow?.postMessage({ type: SHOW_MESSAGE }, location.origin);
     if (old) {
       old.el.classList.remove("on");
       setTimeout(() => this.dispose(old), FADE_MS + 50);
