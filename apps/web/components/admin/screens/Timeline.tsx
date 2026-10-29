@@ -482,7 +482,7 @@ export function TimelineEditor({ id }: { id: string }) {
         </div>
         <aside className="tl-inspector card" aria-label="Valt block">
           {sel ? (
-            <Inspector key={sel.id} block={sel} lib={lib} index={blocks.indexOf(sel)} count={blocks.length} onPatch={(p) => patchBlock(sel.id, p)} onMove={(d) => move(sel.id, d)} onRemove={() => remove(sel.id)} />
+            <Inspector key={sel.id} block={sel} lib={lib} index={blocks.indexOf(sel)} count={blocks.length} onPatch={(p) => patchBlock(sel.id, p)} onMove={(d) => move(sel.id, d)} />
           ) : (
             <div className="tl-help">
               <h2>Så fungerar det</h2>
@@ -541,6 +541,21 @@ export function TimelineEditor({ id }: { id: string }) {
                       ))}
                     </span>
                   )}
+                  {/* Shown on hover (and keyboard focus); pointerdown stops here so a click isn't a drag. */}
+                  <span className="tl-clip-actions" onPointerDown={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      className="tl-clip-btn"
+                      onClick={() => patchBlock(b.id, { disabled: b.disabled ? undefined : true })}
+                      title={b.disabled ? "Slå på (visas på skärmen)" : "Stäng av tillfälligt (visas inte)"}
+                      aria-label={b.disabled ? "Slå på blocket" : "Stäng av blocket"}
+                    >
+                      <Icon name={b.disabled ? "eyeOff" : "eye"} size={14} />
+                    </button>
+                    <button type="button" className="tl-clip-btn danger" onClick={() => remove(b.id)} title="Ta bort från tidslinjen" aria-label="Ta bort blocket">
+                      <Icon name="trash" size={14} />
+                    </button>
+                  </span>
                   <span className="tl-handle" onPointerDown={(e) => startResize(e, b)} aria-hidden="true" title="Dra för att ändra längden" />
                 </div>
               </div>
@@ -662,7 +677,6 @@ function Inspector({
   count,
   onPatch,
   onMove,
-  onRemove,
 }: {
   block: Block;
   lib: Library;
@@ -670,7 +684,6 @@ function Inspector({
   count: number;
   onPatch: (p: Partial<Block>) => void;
   onMove: (delta: number) => void;
-  onRemove: () => void;
 }) {
   const clip = b.type === "video" ? lib.media.get(b.mediaId)?.durationSec : undefined;
   const warn = warningOf(b, lib);
@@ -828,16 +841,7 @@ function Inspector({
           <input type="date" value={b.validTo ?? ""} onChange={(e) => onPatch({ validTo: e.target.value || undefined })} />
         </label>
       </div>
-      <label className="bs-check">
-        <input type="checkbox" checked={!!b.disabled} onChange={(e) => onPatch({ disabled: e.target.checked || undefined })} />
-        Pausa blocket (visas inte)
-      </label>
-      <div className="form-actions">
-        <button type="button" className="button button-danger-ghost button-sm" onClick={onRemove}>
-          <Icon name="trash" size={16} />
-          Ta bort blocket
-        </button>
-      </div>
+      {b.disabled && <p className="muted">Blocket är avstängt och visas inte. Slå på det med ögat på blocket i tidslinjen.</p>}
     </div>
   );
 }

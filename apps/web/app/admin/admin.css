@@ -2983,3 +2983,40 @@
   background: none;
   cursor: pointer;
 }
+.tl-clip-actions {
+  position: absolute;
+  right: 14px;
+  bottom: 5px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+/* Hover only; keyboard users see them when tabbing onto a button. */
+.tl-clip:hover .tl-clip-actions,
+.tl-clip-actions:has(:focus-visible) {
+  opacity: 1;
+}
+.tl-clip-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  cursor: pointer;
+}
+.tl-clip-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+.tl-clip-btn.danger:hover {
+  background: var(--a-red);
+}
+/* An off block stays readable enough to find and turn back on. */
+.tl-clip.inactive:hover {
+  opacity: 0.8;
+}
