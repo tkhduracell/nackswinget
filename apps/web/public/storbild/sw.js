@@ -1,7 +1,7 @@
 // Storbild offline cache (docs/bigscreen-plan.md, phase 4). Scope: /storbild/.
-// Registered by components/bigscreen/ScreenPlayer.tsx in production builds.
+// Registered by the TV player (lib/bigscreen/tv.ts), except on localhost.
 //
-// - Player and TV pages (/storbild/...): network first, the last good copy when offline.
+// - Player page, player.js and tv.css (/storbild/...): network first, the last good copy when offline.
 // - Next's static assets: cache first (their names change with every build).
 // - Media in Cloud Storage: cache first, answering byte-range requests from the
 //   cached file, so videos keep playing without a network. A file is fetched

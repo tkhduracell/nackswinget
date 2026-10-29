@@ -1,7 +1,9 @@
 import "server-only";
 import { type MediaDoc, refreshMedia } from "@/lib/admin/media";
-import { listAllPosts } from "@/lib/content/cached";
+import { loadEvents } from "@/lib/calendar/fetch";
+import { getPost, getSite, listAllPosts } from "@/lib/content/cached";
 import { getDb } from "@/lib/firebase/admin";
+import { plainText } from "./render";
 import { resolveBlocks } from "./resolve";
 import { type Block, blockSchema, type PlayerBlock, type PlayerPayload, type Playlist, playlistSchema, type Screen, screenSchema } from "./types";
 
@@ -49,8 +51,21 @@ export async function getMedia(ids: string[]): Promise<Map<string, MediaDoc>> {
 /** Blocks → what the player plays (the TV, and the admin preview of a draft). */
 export async function resolveForPlayer(blocks: Block[], quality: Screen["quality"], now = new Date()): Promise<PlayerBlock[]> {
   const needsPosts = blocks.some((b) => b.type === "latestPosts" || b.type === "post");
-  const [media, posts] = await Promise.all([getMedia(blocks.flatMap((b) => ("mediaId" in b ? [b.mediaId] : []))), needsPosts ? listAllPosts() : []]);
-  return resolveBlocks(blocks, { media, posts, quality, now });
+  const needsEvents = blocks.some((b) => b.type === "calendar" || b.type === "agenda");
+  const [media, posts, feeds] = await Promise.all([
+    getMedia(blocks.flatMap((b) => ("mediaId" in b ? [b.mediaId] : []))),
+    needsPosts ? listAllPosts() : [],
+    needsEvents ? getSite().then((s) => s.settings.calendarFeeds) : [],
+  ]);
+  const shown = new Set(blocks.flatMap((b) => (b.type === "post" ? [b.postId] : b.type === "latestPosts" ? posts.slice(0, b.count).map((p) => p.id) : [])));
+  const [events, postText] = await Promise.all([needsEvents ? loadEvents(feeds) : [], textOf(posts.filter((p) => shown.has(p.id) && !p.excerpt))]);
+  return resolveBlocks(blocks, { media, posts, quality, now, feeds, events, postText });
+}
+
+/** The body text of posts that have no excerpt. */
+async function textOf(posts: { id: string; slug: string }[]): Promise<Map<string, string>> {
+  const full = await Promise.all(posts.map((p) => getPost(p.slug)));
+  return new Map(posts.map((p, i) => [p.id, plainText(full[i]?.body)]));
 }
 
 /** Everything the player needs for one screen, or null for an unknown key. */

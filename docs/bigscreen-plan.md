@@ -46,6 +46,7 @@ Features in use: ordering, a duration per item, mute per video, a text overlay p
 | B10 | The "Reklam på TV" category hack goes away. TV ads are uploaded as native `image`/`video` blocks, and the MRSS asset is not carried over. The 2 current ad posts' images are moved to the media library and added as `image` blocks during rollout. |
 | B11 | `latestPosts` has two settings: **N** (how many of the newest published posts) and **duration** (seconds per post). Its length on the timeline is N × duration. |
 | B12 | The players are **Raspberry Pi Zero 2 W** (512 MB RAM) on 720p/1080p screens. Screens get a **light mode** (on by default for these): the next video isn't preloaded while one plays (images and the calendar still are), two videos in a row fade through black instead of crossfading, and the 720p rendition is used. |
+| B14 | The TV runs no React and no frames. `/storbild/{key}/` is a plain HTML page (a route handler) with one stylesheet (`public/storbild/tv.css`) and one ~9 KB script (`public/storbild/player.js`, bundled from `lib/bigscreen/tv.ts` by `scripts/build-storbild.mjs`). Posts, the week calendar and "Dagens schema" come as server-rendered markup in the playlist payload (`lib/bigscreen/render.ts`, `kind: "html"`) and are drawn in the same document. Only `page` blocks still load a site page in an iframe. Reason: the Next.js player plus one Next.js page per block (~600 KB JS each, two or three at once) left the Pi Zero stuck on the logo. |
 | B13 | Nackswinget only. No multi-club support; Gåsasteget gets a separate off-the-shelf solution. The admin must be usable by non-technical editors: Swedish labels, drag and drop, no settings beyond duration, caption and dates. |
 
 ## Data model (Firestore)
@@ -96,9 +97,9 @@ interface Screen {
 
 ## Content blocks
 
-`latestPosts`, `calendar`, `page` and `post` render site content full screen at 1920×1080 in a TV layout: large type, no header or footer, no links. The player loads them in a same-origin `<iframe>` at `/storbild/render/{type}/{id}`, preloaded the same way as a video:
+`latestPosts`, `calendar`, `agenda`, `page` and `post` render site content full screen in a TV layout: large type, no header or footer, no links. All but `page` are rendered to markup on the server and drawn by the player itself (B14); `page` loads `/storbild/sida/` in an iframe. Each is preloaded the same way as a video:
 - `latestPosts` ("Senaste N nyheterna"): the N newest published posts, one per screen, each shown for `durationSec`, with an automatic crossfade between them. Each screen shows the featured image on the left and the title and excerpt on the right; a post without an image gets a title-only layout. The list is resolved when the player fetches the playlist, so a new post shows up without anyone editing the playlist.
-- `calendar`: the existing `Calendar` component in week view, as on `/kalender-for-tv/` today. That route stays until piSignage points at `/storbild/{key}/`, then becomes a redirect.
+- `calendar`: this week and next, as on `/kalender-for-tv/`. That route stays until piSignage points at `/storbild/{key}/`, then becomes a redirect.
 - `page` / `post`: `PageView` / `PostView` with a `tv` class: hero image on the left, title and text on the right, text clipped to fit.
 
 ## Admin: timeline editor (`/admin/storbild/{playlistId}`)
