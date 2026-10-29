@@ -3,7 +3,7 @@ import type { MediaDoc } from "@/lib/admin/media";
 import { listAllPosts } from "@/lib/content/cached";
 import { getDb } from "@/lib/firebase/admin";
 import { resolveBlocks } from "./resolve";
-import { type Block, type PlayerBlock, type PlayerPayload, type Playlist, playlistSchema, type Screen, screenSchema } from "./types";
+import { type Block, blockSchema, type PlayerBlock, type PlayerPayload, type Playlist, playlistSchema, type Screen, screenSchema } from "./types";
 
 export const BIGSCREEN_COLLECTIONS = { screens: "bigscreens", playlists: "bigscreenPlaylists" } as const;
 
@@ -13,9 +13,24 @@ export async function getScreenByKey(key: string): Promise<Screen | null> {
   return doc ? screenSchema.parse({ ...doc.data(), id: doc.id }) : null;
 }
 
+/**
+ * Reads a playlist, skipping blocks that don't parse (a block type this
+ * version doesn't know, e.g. after a rollback) instead of failing the whole
+ * playlist and leaving every screen without content.
+ */
 export async function getPlaylist(id: string): Promise<Playlist | null> {
   const snap = await getDb().collection(BIGSCREEN_COLLECTIONS.playlists).doc(id).get();
-  return snap.exists ? playlistSchema.parse({ ...snap.data(), id: snap.id }) : null;
+  if (!snap.exists) return null;
+  const data = snap.data()!;
+  const valid = (list: unknown) => (Array.isArray(list) ? list.flatMap((b) => validBlock(b, id)) : undefined);
+  return playlistSchema.parse({ ...data, id: snap.id, blocks: valid(data.blocks) ?? [], draft: valid(data.draft) });
+}
+
+function validBlock(input: unknown, playlistId: string): Block[] {
+  const parsed = blockSchema.safeParse(input);
+  if (parsed.success) return [parsed.data];
+  console.warn(`bigscreen playlist ${playlistId}: skipping block ${JSON.stringify((input as { id?: unknown })?.id)}: ${parsed.error.issues[0]?.message}`);
+  return [];
 }
 
 export async function getMedia(ids: string[]): Promise<Map<string, MediaDoc>> {

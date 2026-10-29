@@ -2594,6 +2594,25 @@ html:has(.bs-screen) body {
   font-weight: 700;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
 }
+/* Fills over the block's time on screen (lib/bigscreen/engine.ts, progress()). */
+.bs-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  height: 0.6cqh;
+  min-height: 3px;
+  background: var(--brand-ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  will-change: transform;
+}
+@keyframes bs-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
 .bs-calendar {
   min-height: 100vh;
   background: #fff;
