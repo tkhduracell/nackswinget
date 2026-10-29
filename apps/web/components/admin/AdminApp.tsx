@@ -9,6 +9,8 @@ import { Icon, type IconName } from "./icons";
 import { PreviewView } from "./PreviewFrame";
 import { PageEditor, PostEditor } from "./screens/DocEditors";
 import { Dashboard, PageList, PostList } from "./screens/Lists";
+import { BigscreenScreen } from "./screens/Bigscreen";
+import { TimelineEditor } from "./screens/Timeline";
 import { BannerScreen, MediaScreen, MenuScreen, RedirectsScreen, SettingsScreen, UsersScreen } from "./screens/SiteScreens";
 
 const NAV: { href: string; label: string; icon: IconName; admin?: boolean }[] = [
@@ -17,6 +19,7 @@ const NAV: { href: string; label: string; icon: IconName; admin?: boolean }[] = 
   { href: "/admin/stjarna/", label: "Stjärnan", icon: "star" },
   { href: "/admin/sidor/", label: "Sidor", icon: "page" },
   { href: "/admin/media/", label: "Bilder & filer", icon: "image" },
+  { href: "/admin/storbild/", label: "Storbild", icon: "monitor" },
   { href: "/admin/meny/", label: "Meny", icon: "menu", admin: true },
   { href: "/admin/installningar/", label: "Inställningar", icon: "settings", admin: true },
   { href: "/admin/omdirigeringar/", label: "Omdirigeringar", icon: "redirect", admin: true },
@@ -34,6 +37,7 @@ function Shell({ segs }: { segs: string[] }) {
   else if (section === "nyheter") screen = id ? <PostEditor key={id} id={id} /> : <PostList />;
   else if (section === "stjarna") screen = <BannerScreen />;
   else if (section === "media") screen = <MediaScreen />;
+  else if (section === "storbild") screen = id ? <TimelineEditor key={id} id={id} /> : <BigscreenScreen />;
   else if (section === "meny") screen = <MenuScreen />;
   else if (section === "installningar") screen = <SettingsScreen />;
   else if (section === "omdirigeringar") screen = <RedirectsScreen />;

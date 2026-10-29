@@ -2523,6 +2523,200 @@ body:has(.logo-gold) .hero-glints {
   font-size: 1rem;
 }
 
+/* ---------- storbild (TV player) ---------- */
+
+/* Black from the first paint, also behind the player before it mounts. */
+html:has(.bs-screen),
+html:has(.bs-screen) body {
+  background: #000;
+  color-scheme: dark;
+}
+
+.bs-screen {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  overflow: hidden;
+  cursor: none;
+}
+.bs-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+  /* Text sizes below use cqh (stage height), so the admin preview matches the TV. */
+  container-type: size;
+}
+.bs-idle {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.bs-stage:has(> .bs-layer) > .bs-idle {
+  display: none;
+}
+.bs-logo {
+  width: 30vw;
+  height: auto;
+}
+.bs-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 600ms ease; /* FADE_MS in lib/bigscreen/engine.ts */
+  background: #000;
+}
+.bs-layer.on {
+  opacity: 1;
+}
+.bs-layer > video,
+.bs-layer > img,
+.bs-layer > iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
+}
+.bs-layer > iframe {
+  background: #fff;
+}
+.bs-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 2.2cqh 4cqw;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+  color: #fff;
+  font-size: 3.6cqh;
+  font-weight: 700;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.bs-calendar {
+  min-height: 100vh;
+  background: #fff;
+  overflow: hidden;
+}
+.bs-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding: 8cqh 8cqw;
+  background: var(--brand-ink);
+  color: #fff;
+}
+.bs-text h2 {
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  font-size: 9cqh;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.bs-text p {
+  margin: 4cqh 0 0;
+  padding: 0;
+  font-size: 4.4cqh;
+  line-height: 1.4;
+  white-space: pre-line;
+}
+/* Staged entrance: the background arrives with the crossfade, then the
+   heading, then the text. Fading out (".on" removed) happens all at once. */
+.bs-text h2,
+.bs-text p {
+  opacity: 0;
+  transform: translateY(2cqh);
+  transition:
+    opacity 0.45s ease-out,
+    transform 0.45s ease-out;
+}
+.bs-layer.on .bs-text h2,
+.bs-layer.on .bs-text p {
+  opacity: 1;
+  transform: none;
+}
+.bs-layer.on .bs-text h2 {
+  transition-delay: 0.7s;
+}
+.bs-layer.on .bs-text p {
+  transition-delay: 1.2s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bs-text h2,
+  .bs-text p {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Post and page screens (loaded in an iframe by the player): sized in vh so
+   they look the same on 720p and 1080p, and never scroll. */
+.bs-content {
+  height: 100vh;
+  overflow: hidden;
+  background: #fff;
+}
+.bs-post {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100%;
+}
+.bs-post.no-image {
+  grid-template-columns: 1fr;
+}
+.bs-post-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.bs-post-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8vh 5vw;
+  overflow: hidden;
+}
+.bs-post .bs-kicker {
+  margin: 0 0 2vh;
+  color: var(--brand-ink);
+  font-size: 2.6vh;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.bs-post h1 {
+  margin: 0;
+  padding: 0;
+  color: var(--heading);
+  font-size: 6vh;
+  line-height: 1.15;
+}
+.bs-post .bs-excerpt,
+.bs-post .bs-body {
+  margin-top: 3vh;
+  color: var(--heading);
+  font-size: 3.2vh;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 9;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.bs-page {
+  padding: 5vh 5vw;
+  font-size: 2.6vh;
+}
+.bs-page > h1 {
+  margin: 0 0 3vh;
+  font-size: 6vh;
+}
+.bs-content a {
+  pointer-events: none;
+}
+
 /* ---------- search ---------- */
 
 .search-dialog {

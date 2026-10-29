@@ -34,6 +34,6 @@ export const config = {
   // Only the catch-all page namespace; every other route is handled by its own file.
   matcher: [
     // Prefixes end at a segment boundary so e.g. /feedback/ or /ogonblick/ still get 404/redirect handling.
-    "/((?!_next/|api/|admin(?:/|$)|wp-content/|md/|og(?:/|$)|feed(?:/|$)|category/|nyheter/sida/|kalender-for-tv(?:/|$)|sidan-finns-inte(?:/|$)|.*\\.[a-z0-9]{2,5}$).*)",
+    "/((?!_next/|api/|admin(?:/|$)|wp-content/|md/|og(?:/|$)|feed(?:/|$)|category/|nyheter/sida/|kalender-for-tv(?:/|$)|storbild(?:/|$)|sidan-finns-inte(?:/|$)|.*\\.[a-z0-9]{2,5}$).*)",
   ],
 };

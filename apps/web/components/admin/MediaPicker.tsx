@@ -38,7 +38,7 @@ export function MediaThumb({ m }: { m: MediaDoc }) {
 }
 
 /** Library modal with upload. `accept` filters what can be picked. */
-export function MediaPicker({ accept, onPick, onClose }: { accept: "image" | "video" | "file" | "any"; onPick: (m: PickedMedia) => void; onClose: () => void }) {
+export function MediaPicker({ accept, onPick, onClose }: { accept: "image" | "video" | "file" | "any"; onPick: (m: PickedMedia, doc: MediaDoc) => void; onClose: () => void }) {
   const { api } = useAdmin();
   const [items, setItems] = useState<MediaDoc[] | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
@@ -56,7 +56,7 @@ export function MediaPicker({ accept, onPick, onClose }: { accept: "image" | "vi
       const doc = await uploadFile(api, file, setProgress);
       await load();
       const picked = toPicked(doc);
-      if (picked && (accept === "any" || picked.kind === accept)) onPick(picked);
+      if (picked && (accept === "any" || picked.kind === accept)) onPick(picked, doc);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -99,7 +99,7 @@ export function MediaPicker({ accept, onPick, onClose }: { accept: "image" | "vi
               const picked = toPicked(m);
               return (
                 <li key={m.id}>
-                  <button type="button" disabled={!picked} onClick={() => picked && onPick(picked)} title={m.name}>
+                  <button type="button" disabled={!picked} onClick={() => picked && onPick(picked, m)} title={m.name}>
                     <MediaThumb m={m} />
                     <span className="media-name">{m.status === "ready" ? m.name : `${m.name} (${m.status === "processing" ? "konverteras…" : m.status})`}</span>
                   </button>

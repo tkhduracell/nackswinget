@@ -12,6 +12,18 @@
         "3100"
       ],
       "port": 3100
+    },
+    {
+      "name": "web-emulators",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "apps/web",
+        "dev:emulators",
+        "--port",
+        "3100"
+      ],
+      "port": 3100
     }
   ]
 }

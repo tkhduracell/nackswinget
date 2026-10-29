@@ -2581,3 +2581,442 @@
     gap: 2px;
   }
 }
+
+/* ---------- storbild: screens ---------- */
+
+.admin-notice {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: var(--a-radius-sm);
+  background: #ecfdf3;
+  color: #05603a;
+  font-size: 14px;
+}
+.bs-screens {
+  display: grid;
+  gap: 16px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+.bs-screen-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin .bs-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  font-size: 14px;
+  color: var(--a-text-2);
+}
+.admin .bs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ---------- storbild: timeline editor ---------- */
+
+.tl-editor {
+  max-width: none;
+}
+.tl-name {
+  min-width: 0;
+  width: min(360px, 50vw);
+  border: 1px solid transparent;
+  border-radius: var(--a-radius-sm);
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--a-text);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 700;
+}
+.tl-name:hover,
+.tl-name:focus {
+  border-color: var(--a-border-strong);
+  background: var(--a-surface);
+  outline: none;
+}
+.tl-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+  margin: 16px 0;
+}
+@media (max-width: 960px) {
+  .tl-top {
+    grid-template-columns: 1fr;
+  }
+}
+.tl-screen {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--a-radius);
+  background: #000;
+  box-shadow: var(--a-shadow-md);
+}
+/* The preview iframes render the TV pages at 1920×1080 and scale down. */
+.tl-screen .bs-layer > iframe {
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 0 0;
+  transform: scale(var(--tl-scale, 0.4));
+}
+.tl-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+/* As tall as the preview, scrolling inside, so the timeline stays in view. */
+.tl-preview-actions {
+  display: inline-flex;
+  gap: 6px;
+}
+.tl-inspector {
+  align-self: stretch;
+  height: 0;
+  min-height: 100%;
+  overflow: auto;
+}
+@media (max-width: 960px) {
+  .tl-inspector {
+    height: auto;
+  }
+}
+.tl-help h2 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.tl-help ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--a-text-2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.tl-inspect-move {
+  display: inline-flex;
+  gap: 4px;
+}
+.tl-inspect-name {
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+}
+.tl-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.tl-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.tl-add-label {
+  font-weight: 600;
+  font-size: 14px;
+  margin-right: 4px;
+}
+.tl-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: var(--a-muted);
+  font-size: 13px;
+}
+.tl {
+  overflow-x: auto;
+  padding: 8px 12px 16px;
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius);
+  background: var(--a-surface);
+}
+.tl-ruler {
+  position: relative;
+  height: 20px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--a-border);
+  color: var(--a-faint);
+  font-size: 11px;
+}
+.tl-ruler span {
+  position: absolute;
+  bottom: 2px;
+  padding-left: 3px;
+  border-left: 1px solid var(--a-border-strong);
+  line-height: 1;
+}
+.tl-track {
+  display: flex;
+  align-items: stretch;
+  min-height: 92px;
+}
+.tl-empty {
+  margin: auto 0;
+  color: var(--a-muted);
+  font-size: 14px;
+}
+.tl-slot {
+  position: relative;
+  display: flex;
+}
+.tl-drop {
+  width: 3px;
+  margin: 0 2px;
+  border-radius: 2px;
+  background: var(--a-red);
+}
+.tl-clip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 88px;
+  margin-right: 3px;
+  padding: 6px 12px 6px 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: var(--a-radius-sm);
+  background: #3f3f46;
+  color: #fff;
+  cursor: grab;
+  user-select: none;
+  font-size: 12px;
+}
+.tl-clip:active {
+  cursor: grabbing;
+}
+.tl-clip:focus-visible {
+  outline: none;
+  box-shadow: var(--a-ring);
+}
+.tl-clip.selected {
+  border-color: var(--a-red);
+  box-shadow: var(--a-ring);
+}
+.tl-clip.inactive {
+  opacity: 0.45;
+}
+.tl-clip.dated {
+  background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0 8px, transparent 8px 16px);
+}
+.tl-image {
+  background-color: #1d4ed8;
+}
+.tl-video {
+  background-color: #7e22ce;
+}
+.tl-calendar {
+  background-color: #047857;
+}
+.tl-latestPosts,
+.tl-post {
+  background-color: #c2410c;
+}
+.tl-page {
+  background-color: #0e7490;
+}
+.tl-text {
+  background-color: #be123c;
+}
+.tl-thumb {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.55;
+}
+.tl-label,
+.tl-dur {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+}
+.tl-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tl-dur {
+  font-weight: 700;
+}
+.tl-segments span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed rgba(255, 255, 255, 0.6);
+}
+.tl-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: ew-resize;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35));
+}
+.tl-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 3px;
+  width: 2px;
+  height: 22px;
+  margin-top: -11px;
+  border-radius: 1px;
+  background: #fff;
+}
+.tl-strip {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-bottom: 8px;
+  overflow-x: auto;
+}
+.tl-strip-item {
+  flex: 0 0 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius-sm);
+  background: var(--a-surface);
+  cursor: grab;
+  font-size: 12px;
+  text-align: left;
+}
+.tl-strip-item:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.tl-strip-item img,
+.tl-strip-item .media-icon {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.tl-strip-item > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tl-dropping {
+  border-color: var(--a-red);
+  background: var(--a-red-soft);
+}
+.tl-clip,
+.tl-strip-item {
+  touch-action: none;
+}
+.tl-clip.dragging {
+  opacity: 0.35;
+}
+.tl-strip-item img {
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+.tl-ghost {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 240px;
+  padding: 6px 10px 6px 6px;
+  border-radius: var(--a-radius-sm);
+  background: var(--a-text);
+  color: #fff;
+  box-shadow: var(--a-shadow-lg);
+  font-size: 13px;
+  pointer-events: none;
+  transform: translate(-50%, -120%);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tl-ghost-thumb {
+  flex: 0 0 48px;
+  height: 27px;
+  border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+}
+.tl-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.tl-bg {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--a-border-strong);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.tl-bg.selected {
+  box-shadow: 0 0 0 2px var(--a-surface), 0 0 0 4px var(--a-red);
+}
+.tl-bg-custom input {
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.tl-clip-actions {
+  position: absolute;
+  right: 14px;
+  bottom: 5px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+/* Hover only; keyboard users see them when tabbing onto a button. */
+.tl-clip:hover .tl-clip-actions,
+.tl-clip-actions:has(:focus-visible) {
+  opacity: 1;
+}
+.tl-clip-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  cursor: pointer;
+}
+.tl-clip-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+.tl-clip-btn.danger:hover {
+  background: var(--a-red);
+}
+/* An off block stays readable enough to find and turn back on. */
+.tl-clip.inactive:hover {
+  opacity: 0.8;
+}

@@ -29,6 +29,8 @@ export interface MediaDoc {
   jobName?: string;
   /** Video without an audio track (transcoded video-only). */
   silent?: boolean;
+  /** Clip length, read by the browser from the video (Storbild timeline). */
+  durationSec?: number;
   renditions?: { src720: string; src1080?: string; poster?: string };
   createdAt: string;
   createdBy: string;
@@ -191,9 +193,12 @@ export async function listMedia(): Promise<MediaDoc[]> {
   return snap.docs.map((d) => d.data() as MediaDoc).filter((m) => !m.deletedAt);
 }
 
-export async function updateMedia(id: string, patch: { alt?: string }, user: AdminUser) {
+export async function updateMedia(id: string, patch: { alt?: string; durationSec?: number }, user: AdminUser) {
   const ref = getDb().collection(COLLECTION).doc(id);
-  await ref.update({ ...(patch.alt !== undefined ? { alt: patch.alt.slice(0, 300) } : {}) });
+  await ref.update({
+    ...(patch.alt !== undefined ? { alt: patch.alt.slice(0, 300) } : {}),
+    ...(patch.durationSec !== undefined ? { durationSec: Math.round(patch.durationSec * 10) / 10 } : {}),
+  });
   await audit(user, "update", `media/${id}`);
   return (await ref.get()).data() as MediaDoc;
 }

@@ -11,7 +11,7 @@ export const GET = adminRoute<Ctx>("editor", async (_req, _user, { params }) => 
 export const POST = adminRoute<Ctx>("editor", async (_req, user, { params }) => Response.json(await finalizeUpload((await params).id, user)));
 
 export const PATCH = adminRoute<Ctx>("editor", async (req, user, { params }) => {
-  const patch = z.object({ alt: z.string().optional() }).parse(await req.json());
+  const patch = z.object({ alt: z.string().optional(), durationSec: z.number().positive().max(36_000).optional() }).parse(await req.json());
   return Response.json(await updateMedia((await params).id, patch, user));
 });
 

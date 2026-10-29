@@ -28,6 +28,7 @@ export function Dashboard() {
     { href: "/admin/stjarna/", title: "Stjärnan (PowerPuff)", text: "Puffen på startsidan med utgångsdatum", icon: "star" },
     { href: "/admin/sidor/", title: "Sidor", text: "Redigera alla sidor på webbplatsen", icon: "page" },
     { href: "/admin/media/", title: "Bilder och filer", text: "Ladda upp bilder, video och PDF", icon: "image" },
+    { href: "/admin/storbild/", title: "Storbild", text: "Det som visas på TV:n i klubblokalen", icon: "monitor" },
     ...(me.role === "admin"
       ? ([
           { href: "/admin/meny/", title: "Meny", text: "Huvudmenyns länkar och ordning", icon: "menu" },
