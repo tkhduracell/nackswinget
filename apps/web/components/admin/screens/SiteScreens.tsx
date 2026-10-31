@@ -529,8 +529,11 @@ export function MediaScreen() {
     void load();
   }, [load]);
 
-  // Videos still converting: status and estimated progress, updated in place.
-  usePollConverting(items ?? [], (changed) => setItems((list) => list && list.map((m) => changed.find((u) => u.id === m.id) ?? m)));
+  // Videos still converting: progress updated in place; a finished or failed one reloads the list (it may have changed meanwhile).
+  usePollConverting(items ?? [], (changed) => {
+    if (changed.some((u) => u.status !== "processing")) void load();
+    else setItems((list) => list && list.map((m) => changed.find((u) => u.id === m.id) ?? m));
+  });
 
   const onFiles = async (files: FileList | File[]) => {
     setError(null);

@@ -221,7 +221,9 @@ export function TimelineEditor({ id }: { id: string }) {
     return () => clearTimeout(t);
   }, [state, blocks, name, api, id]);
 
-  // Preview: the server resolves the draft exactly as a screen would.
+  // Preview: the server resolves the draft exactly as a screen would. Again when a
+  // video in it finishes converting, since the server leaves unready ones out.
+  const readyMedia = blocks.flatMap((b) => ("mediaId" in b && lib.media.get(b.mediaId)?.status === "ready" ? [b.mediaId] : [])).join(",");
   useEffect(() => {
     if (!playlist) return;
     const t = setTimeout(() => {
@@ -230,7 +232,7 @@ export function TimelineEditor({ id }: { id: string }) {
         .catch(() => {});
     }, 600);
     return () => clearTimeout(t);
-  }, [api, blocks, playlist]);
+  }, [api, blocks, playlist, readyMedia]);
 
   // Videos uploaded before the timeline existed have no stored length: read it once.
   useEffect(() => {

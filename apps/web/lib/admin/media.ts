@@ -33,8 +33,10 @@ export interface MediaDoc {
   /** Clip length, read by the browser from the video (Storbild timeline). */
   durationSec?: number;
   renditions?: { src720: string; src1080?: string; poster?: string };
-  /** Not stored: estimated percent while a video converts, null while it waits in the queue (lib/admin/transcode.ts). */
-  progress?: number | null;
+  /** Not stored: estimated percent while a video converts (lib/admin/transcode.ts). */
+  progress?: number;
+  /** Not stored: the transcoder job is waiting in its queue. */
+  queued?: boolean;
   createdAt: string;
   createdBy: string;
   deletedAt?: string;
@@ -180,7 +182,7 @@ export async function refreshMedia(id: string): Promise<MediaDoc> {
     await ref.update(update);
     return { ...doc, ...update };
   }
-  if (job.state !== "SUCCEEDED") return { ...doc, progress: transcodeProgress(job, doc) };
+  if (job.state !== "SUCCEEDED") return { ...doc, progress: transcodeProgress(job, doc) ?? undefined, queued: job.state === "PENDING" };
   const out = `web/media/${id}/out`;
   const [files] = await getBucket().getFiles({ prefix: `${out}/` });
   await Promise.all(files.map((f) => f.makePublic()));

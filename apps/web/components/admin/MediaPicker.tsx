@@ -43,9 +43,15 @@ export function MediaThumb({ m }: { m: MediaDoc }) {
  */
 export function MediaStatus({ m }: { m: MediaDoc }) {
   if (m.status === "ready") return null;
-  if (m.status === "error") return <Badge tone="danger">{m.error ? `Misslyckades: ${m.error}` : "Misslyckades"}</Badge>;
+  // The transcoder's message is long and in English: on hover, not in the badge.
+  if (m.status === "error")
+    return (
+      <span className="media-status" title={m.error}>
+        <Badge tone="danger">Misslyckades</Badge>
+      </span>
+    );
   const pct = m.status === "processing" && typeof m.progress === "number" ? m.progress : null;
-  const label = m.status === "uploading" ? "Laddas upp…" : m.progress === null ? "I kö…" : pct === null ? "Konverteras…" : `Konverteras ${pct} %`;
+  const label = m.status === "uploading" ? "Laddas upp…" : m.queued ? "I kö…" : pct === null ? "Konverteras…" : `Konverteras ${pct} %`;
   return (
     <span className="media-status" title={pct === null ? undefined : "Uppskattat: konverteraren anger inte hur långt den kommit"}>
       <Badge tone={m.status === "uploading" ? "info" : "warning"}>
@@ -82,7 +88,10 @@ export function usePollConverting(media: MediaDoc[], apply: (changed: MediaDoc[]
     const poll = async () => {
       const list = ids.split(",");
       const updated = await Promise.all(list.map((id) => api<MediaDoc>(`/media/${id}`).catch(() => null)));
-      const changed = updated.filter((u): u is MediaDoc => !!u && (u.status !== known.current.get(u.id)?.status || u.progress !== known.current.get(u.id)?.progress));
+      const changed = updated.filter((u): u is MediaDoc => {
+        const was = u && known.current.get(u.id);
+        return !!u && (u.status !== was?.status || u.progress !== was?.progress || u.queued !== was?.queued);
+      });
       if (changed.length) latest.current(changed);
     };
     void poll();
@@ -99,6 +108,7 @@ export function MediaPicker({ accept, onPick, onClose }: { accept: "image" | "vi
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => api<MediaDoc[]>("/media").then(setItems).catch((e: Error) => setError(e.message)), [api]);
+  usePollConverting(items ?? [], (changed) => setItems((list) => list && list.map((m) => changed.find((u) => u.id === m.id) ?? m)));
   useEffect(() => {
     void load();
   }, [load]);

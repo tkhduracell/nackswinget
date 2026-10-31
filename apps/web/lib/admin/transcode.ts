@@ -22,5 +22,6 @@ export function transcodeProgress(job: TranscodeJob, clip: { durationSec?: numbe
   const clipSec = clip.durationSec ?? clip.size / BYTES_PER_CLIP_SEC;
   const expected = START_SEC + clipSec * SEC_PER_CLIP_SEC;
   const elapsed = (now - Date.parse(job.startTime)) / 1000;
+  if (!Number.isFinite(elapsed)) return null;
   return Math.max(0, Math.min(95, Math.round((elapsed / expected) * 100)));
 }

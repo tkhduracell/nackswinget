@@ -9,6 +9,7 @@ describe("transcodeProgress", () => {
   it("is unknown while queued or without a start time", () => {
     expect(transcodeProgress({ state: "PENDING" }, { size: 1 }, at(10))).toBeNull();
     expect(transcodeProgress({ state: "RUNNING" }, { size: 1 }, at(10))).toBeNull();
+    expect(transcodeProgress({ state: "RUNNING", startTime: "not a time" }, { size: 1 }, at(10))).toBeNull();
   });
   it("grows with the time since the start against overhead plus clip length", () => {
     // 30 s overhead + 30 s clip = 60 s expected.
