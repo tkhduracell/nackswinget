@@ -2941,7 +2941,7 @@
   overflow-x: auto;
 }
 .tl-strip-item {
-  flex: 0 0 120px;
+  flex: 0 0 140px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -2955,7 +2955,60 @@
 }
 .tl-strip-item:disabled {
   cursor: default;
-  opacity: 0.5;
+}
+.tl-strip-item:disabled > span:last-child {
+  color: var(--a-muted);
+}
+/* Not usable yet: the picture dims, the status sits on top of it in full colour. */
+.tl-strip-thumb {
+  position: relative;
+  display: block;
+}
+.tl-strip-item:disabled .tl-strip-thumb > :first-child {
+  opacity: 0.35;
+}
+.tl-strip-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.tl-strip-status .badge {
+  padding: 0 7px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+.tl-strip-status {
+  padding: 0 8px;
+}
+.tl-strip-status .media-status .badge {
+  align-self: center;
+}
+
+/* Upload/convert status (components/admin/MediaPicker.tsx, MediaStatus). */
+.media-status {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 4px;
+  min-width: 0;
+}
+.media-status .badge {
+  align-self: flex-start;
+}
+.media-progress {
+  display: block;
+  width: 100%;
+  min-width: 80px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--a-border);
+  overflow: hidden;
+}
+.media-progress > span {
+  display: block;
+  height: 100%;
+  background: #d98e04;
+  transition: width 1s ease;
 }
 .tl-strip-item img,
 .tl-strip-item .media-icon {

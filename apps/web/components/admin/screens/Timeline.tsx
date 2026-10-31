@@ -9,7 +9,7 @@ import { imageUrl, publicUrl } from "@/lib/media/urls";
 import { useAdmin } from "../AuthProvider";
 import type { DocRow } from "../docs";
 import { Icon, type IconName } from "../icons";
-import { MediaPicker, MediaThumb } from "../MediaPicker";
+import { MediaPicker, MediaStatus, MediaThumb, usePollConverting } from "../MediaPicker";
 import { Badge, LoadingRow } from "../ui";
 
 // The Storbild timeline (/admin/storbild/{id}/): blocks in a row, as wide as
@@ -449,6 +449,9 @@ export function TimelineEditor({ id }: { id: string }) {
   // right away, so the preview follows typing without waiting for it.
   const live = useMemo(() => liveBlocks(blocks, preview), [blocks, preview]);
   const shown = useMemo(() => (selected ? live.filter((p) => p.id === selected || p.id.startsWith(`${selected}:`)) : live), [live, selected]);
+  // Videos still converting turn usable (and their blocks lose the warning) without reloading the editor.
+  usePollConverting([...lib.media.values()], (changed) => setLib((l) => ({ ...l, media: new Map([...l.media, ...changed.map((u) => [u.id, u] as const)]) })));
+
   const strip = useMemo(() => [...lib.media.values()].filter((m) => !m.deletedAt && (m.kind === "image" || m.kind === "video")), [lib.media]);
 
   if (error && !playlist) return <p className="admin-error">{error}</p>;
@@ -656,7 +659,7 @@ export function TimelineEditor({ id }: { id: string }) {
               type="button"
               className="tl-strip-item"
               disabled={m.status !== "ready"}
-              title={m.status === "ready" ? `${m.name} – dra till tidslinjen eller klicka för att lägga till` : `${m.name} (konverteras…)`}
+              title={m.status === "ready" ? `${m.name} – dra till tidslinjen eller klicka för att lägga till` : `${m.name}: ${m.status === "error" ? "konverteringen misslyckades" : "kan läggas till när den är klar"}`}
               onPointerDown={(e) =>
                 startDrag(e, { media: m.id }, m.name, thumbOfMedia(m), () => {
                   const block = fromMedia(m);
@@ -671,7 +674,14 @@ export function TimelineEditor({ id }: { id: string }) {
                 if (block) insertAt(null, block);
               }}
             >
-              <MediaThumb m={m} />
+              <span className="tl-strip-thumb">
+                <MediaThumb m={m} />
+                {m.status !== "ready" && (
+                  <span className="tl-strip-status">
+                    <MediaStatus m={m} />
+                  </span>
+                )}
+              </span>
               <span>{m.name}</span>
             </button>
           ))
