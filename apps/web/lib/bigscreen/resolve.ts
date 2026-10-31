@@ -3,6 +3,7 @@ import { type CalendarEvent, todayStockholm } from "@/lib/calendar/ics";
 import type { CalendarFeed, PostSummary } from "@/lib/content/types";
 import { imageUrl, publicUrl } from "@/lib/media/urls";
 import { buildAgenda } from "./agenda";
+import { videoWindow } from "./engine";
 import { agendaHtml, postHtml, weekHtml } from "./render";
 import { type Block, DEFAULT_DURATION_SEC, type PlayerBlock, type Screen } from "./types";
 
@@ -71,6 +72,8 @@ export function resolveBlocks(blocks: Block[], ctx: ResolveContext): PlayerBlock
           src: publicUrl(src),
           ...(r.poster ? { poster: publicUrl(r.poster) } : {}),
           ...(block.durationSec ? { durationSec: block.durationSec } : {}),
+          ...(block.trimStart ? { trimStart: block.trimStart } : {}),
+          ...(block.trimEnd ? { trimEnd: block.trimEnd } : {}),
         });
         break;
       }
@@ -105,7 +108,11 @@ export function resolveBlocks(blocks: Block[], ctx: ResolveContext): PlayerBlock
 
 /** Seconds a block takes on the timeline (editor). Videos without a set duration use the clip length. */
 export function blockSeconds(block: Block, clipSec?: number): number {
-  if (block.type === "video") return block.durationSec ?? clipSec ?? DEFAULT_DURATION_SEC;
+  if (block.type === "video") {
+    // The same window the player plays.
+    const { start, end } = videoWindow(block, clipSec ?? null);
+    return end != null ? end - start : DEFAULT_DURATION_SEC;
+  }
   const d = block.durationSec ?? DEFAULT_DURATION_SEC;
   return block.type === "latestPosts" ? d * block.count : d;
 }

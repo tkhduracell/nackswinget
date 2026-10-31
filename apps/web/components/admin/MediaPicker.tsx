@@ -101,7 +101,7 @@ export function usePollConverting(media: MediaDoc[], apply: (changed: MediaDoc[]
 }
 
 /** Library modal with upload. `accept` filters what can be picked. */
-export function MediaPicker({ accept, onPick, onClose }: { accept: "image" | "video" | "file" | "any"; onPick: (m: PickedMedia, doc: MediaDoc) => void; onClose: () => void }) {
+export function MediaPicker({ accept, onPick, onClose }: { accept: "image" | "video" | "file" | "any"; onPick: (m: PickedMedia, doc: MediaDoc) => void; onClose: (uploaded: boolean) => void }) {
   const { api } = useAdmin();
   const [items, setItems] = useState<MediaDoc[] | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
@@ -113,11 +113,14 @@ export function MediaPicker({ accept, onPick, onClose }: { accept: "image" | "vi
     void load();
   }, [load]);
 
+  // Closed without picking: the caller refreshes its own list only if something was uploaded.
+  const uploaded = useRef(false);
   const upload = async (file: File) => {
     setError(null);
     setProgress(0);
     try {
       const doc = await uploadFile(api, file, setProgress);
+      uploaded.current = true;
       await load();
       const picked = toPicked(doc);
       if (picked && (accept === "any" || picked.kind === accept)) onPick(picked, doc);
@@ -132,11 +135,11 @@ export function MediaPicker({ accept, onPick, onClose }: { accept: "image" | "vi
   const acceptAttr = accept === "image" ? "image/*" : accept === "video" ? "video/*" : undefined;
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Mediebibliotek" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Mediebibliotek" onClick={(e) => e.target === e.currentTarget && onClose(uploaded.current)}>
       <div className="modal">
         <div className="modal-head">
           <h2>Mediebibliotek</h2>
-          <button type="button" className="button button-ghost button-sm" onClick={onClose}>
+          <button type="button" className="button button-ghost button-sm" onClick={() => onClose(uploaded.current)}>
             <Icon name="close" size={16} />
             Stäng
           </button>
