@@ -834,6 +834,7 @@ function Inspector({
   const clip = b.type === "video" ? lib.media.get(b.mediaId)?.durationSec : undefined;
   const warn = warningOf(b, lib);
   const num = (v: string) => (v === "" ? undefined : Math.max(1, Math.min(3600, Math.round(Number(v)))));
+  const [dated, setDated] = useState(() => !!(b.validFrom || b.validTo));
   return (
     <div className="tl-inspect">
       <div className="card-head">
@@ -993,16 +994,29 @@ function Inspector({
           <input value={b.caption ?? ""} maxLength={200} onChange={(e) => onPatch({ caption: e.target.value || undefined })} />
         </label>
       )}
-      <div className="field-row">
-        <label className="field">
-          <span>Visa från (valfritt)</span>
-          <input type="date" value={b.validFrom ?? ""} onChange={(e) => onPatch({ validFrom: e.target.value || undefined })} />
-        </label>
-        <label className="field">
-          <span>Visa till och med</span>
-          <input type="date" value={b.validTo ?? ""} onChange={(e) => onPatch({ validTo: e.target.value || undefined })} />
-        </label>
-      </div>
+      <label className="bs-check">
+        <input
+          type="checkbox"
+          checked={dated}
+          onChange={(e) => {
+            setDated(e.target.checked);
+            if (!e.target.checked) onPatch({ validFrom: undefined, validTo: undefined });
+          }}
+        />
+        Visa specifika datum
+      </label>
+      {dated && (
+        <div className="field-row">
+          <label className="field">
+            <span>Visa från (valfritt)</span>
+            <input type="date" value={b.validFrom ?? ""} onChange={(e) => onPatch({ validFrom: e.target.value || undefined })} />
+          </label>
+          <label className="field">
+            <span>Visa till och med</span>
+            <input type="date" value={b.validTo ?? ""} onChange={(e) => onPatch({ validTo: e.target.value || undefined })} />
+          </label>
+        </div>
+      )}
       {b.disabled && <p className="muted">Blocket är avstängt och visas inte. Slå på det med ögat på blocket i tidslinjen.</p>}
     </div>
   );
