@@ -364,6 +364,20 @@ export class Engine {
       const cutShort = end != null && (length == null || end < length - 0.05);
       this.timer = setTimeout(next, (shown == null ? 600 : cutShort ? shown : shown + 5) * 1000);
       if (shown != null) this.progress(layer, shown);
+      // Length not known yet: apply the end cut once it is.
+      if (length == null && block.trimEnd)
+        media.addEventListener(
+          "durationchange",
+          () => {
+            if (this.current !== layer || !Number.isFinite(media.duration)) return;
+            const w = videoWindow(block, media.duration);
+            if (w.end == null) return;
+            clearTimeout(this.timer);
+            this.timer = setTimeout(next, Math.max(0, w.end - media.currentTime) * 1000);
+            this.progress(layer, w.end - w.start, media.currentTime - w.start);
+          },
+          { once: true },
+        );
     } else {
       // A playlist of one image crossfades into itself, which looks like nothing happened.
       const shown = block.durationSec ?? 10;

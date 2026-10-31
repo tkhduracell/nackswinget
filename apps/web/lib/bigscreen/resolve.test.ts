@@ -134,6 +134,8 @@ describe("blockSeconds", () => {
     expect(blockSeconds(parse({ id: "v", type: "video", mediaId: "vid" }), 23)).toBe(23);
     expect(blockSeconds(parse({ id: "v", type: "video", mediaId: "vid", durationSec: 8 }), 23)).toBe(8);
     expect(blockSeconds(parse({ id: "v", type: "video", mediaId: "vid", trimStart: 3, trimEnd: 5 }), 23)).toBe(15);
+    // A cut leaving under a second is ignored by the player, so the timeline shows the whole clip too.
+    expect(blockSeconds(parse({ id: "v", type: "video", mediaId: "vid", trimStart: 10, trimEnd: 12.5 }), 23)).toBe(23);
     expect(blockSeconds(parse({ id: "n", type: "latestPosts", count: 3, durationSec: 8 }))).toBe(24);
     expect(blockSeconds(parse({ id: "c", type: "calendar" }))).toBe(10);
   });

@@ -3,6 +3,7 @@ import { type CalendarEvent, todayStockholm } from "@/lib/calendar/ics";
 import type { CalendarFeed, PostSummary } from "@/lib/content/types";
 import { imageUrl, publicUrl } from "@/lib/media/urls";
 import { buildAgenda } from "./agenda";
+import { videoWindow } from "./engine";
 import { agendaHtml, postHtml, weekHtml } from "./render";
 import { type Block, DEFAULT_DURATION_SEC, type PlayerBlock, type Screen } from "./types";
 
@@ -108,9 +109,9 @@ export function resolveBlocks(blocks: Block[], ctx: ResolveContext): PlayerBlock
 /** Seconds a block takes on the timeline (editor). Videos without a set duration use the clip length. */
 export function blockSeconds(block: Block, clipSec?: number): number {
   if (block.type === "video") {
-    const cut = clipSec != null ? Math.max(1, clipSec - (block.trimStart ?? 0) - (block.trimEnd ?? 0)) : Infinity;
-    const shown = Math.min(block.durationSec ?? Infinity, cut);
-    return Number.isFinite(shown) ? shown : DEFAULT_DURATION_SEC;
+    // The same window the player plays.
+    const { start, end } = videoWindow(block, clipSec ?? null);
+    return end != null ? end - start : DEFAULT_DURATION_SEC;
   }
   const d = block.durationSec ?? DEFAULT_DURATION_SEC;
   return block.type === "latestPosts" ? d * block.count : d;

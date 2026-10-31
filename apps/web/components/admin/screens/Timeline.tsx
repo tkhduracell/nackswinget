@@ -131,9 +131,10 @@ function liveBlocks(blocks: Block[], resolved: PlayerBlock[]): PlayerBlock[] {
 
 /** Seconds as m:ss.s for the cut, e.g. 0:03.5. */
 function fmtAt(sec: number): string {
-  const m = Math.floor(sec / 60);
-  const s = Math.round((sec % 60) * 10) / 10;
-  return `${m}:${s < 10 ? "0" : ""}${s}`;
+  // Round once, in tenths, so 59.97 becomes 1:00 rather than 0:60.
+  const tenths = Math.round(sec * 10);
+  const s = (tenths % 600) / 10;
+  return `${Math.floor(tenths / 600)}:${s < 10 ? "0" : ""}${s}`;
 }
 
 /**
@@ -144,11 +145,15 @@ function fmtAt(sec: number): string {
 function VideoCut({ b, clip, onPatch }: { b: Extract<Block, { type: "video" }>; clip: number | undefined; onPatch: (p: Partial<Block>) => void }) {
   const { start, end } = videoWindow(b, clip ?? null);
   const cutEnd = clip != null && end != null ? Math.max(0, Math.round((clip - end) * 10) / 10) : (b.trimEnd ?? 0);
+  const [tooMuch, setTooMuch] = useState(false);
   const sec = (v: string) => Math.max(0, Math.round((Number(v) || 0) * 2) / 2);
   const set = (trimStart: number, trimEnd: number) => {
     // Always leave at least a second of video.
-    if (clip != null && clip - trimStart - trimEnd < 1) return;
-    onPatch({ durationSec: undefined, trimStart: trimStart || undefined, trimEnd: trimEnd || undefined });
+    const over = clip != null && clip - trimStart - trimEnd < 1;
+    setTooMuch(over);
+    if (over) return;
+    // Without the clip's length an older "first N seconds" can't become an end cut yet: keep it.
+    onPatch({ durationSec: clip == null ? b.durationSec : undefined, trimStart: trimStart || undefined, trimEnd: trimEnd || undefined });
   };
   return (
     <div className="tl-cut">
@@ -167,6 +172,7 @@ function VideoCut({ b, clip, onPatch }: { b: Extract<Block, { type: "video" }>; 
           <input type="number" min={0} step={0.5} max={clip != null ? Math.max(0, clip - start - 1) : undefined} value={cutEnd} onChange={(e) => set(start, sec(e.target.value))} />
         </label>
       </div>
+      {tooMuch && <p className="admin-error">Minst 1 sekund av videon måste vara kvar.</p>}
       {clip != null && end != null && (
         <p className="muted">
           {start || cutEnd ? `Visar ${fmtAt(start)}–${fmtAt(end)}, ${fmtTime(end - start)} av ${fmtTime(clip)}` : `Hela videon visas (${fmtTime(clip)})`}
@@ -507,7 +513,13 @@ export function TimelineEditor({ id }: { id: string }) {
   const total = seconds.reduce((a, b) => a + b, 0);
   const sel = blocks.find((b) => b.id === selected) ?? null;
   // A new cut on the selected video restarts the preview, so it plays from the new start.
-  const cutKey = sel?.type === "video" ? `${sel.trimStart ?? 0}-${sel.trimEnd ?? 0}` : "";
+  // Waits until typing pauses, so each keystroke doesn't reload the video.
+  const cutNow = sel?.type === "video" ? `${sel.trimStart ?? 0}-${sel.trimEnd ?? 0}` : "";
+  const [cutKey, setCutKey] = useState(cutNow);
+  useEffect(() => {
+    const t = setTimeout(() => setCutKey(cutNow), 600);
+    return () => clearTimeout(t);
+  }, [cutNow]);
   // The server resolves media and posts (debounced); text and settings come from the draft
   // right away, so the preview follows typing without waiting for it.
   const live = useMemo(() => liveBlocks(blocks, preview), [blocks, preview]);
@@ -761,9 +773,10 @@ export function TimelineEditor({ id }: { id: string }) {
       {picker && (
         <MediaPicker
           accept={picker}
-          onClose={() => {
+          onClose={(uploaded) => {
             setPicker(null);
             // Files uploaded in the dialog (and not picked) show up in the strip right away.
+            if (!uploaded) return;
             api<MediaDoc[]>("/media")
               .then((fresh) => setLib((l) => ({ ...l, media: new Map([...l.media, ...fresh.map((m) => [m.id, m] as const)]) })))
               .catch(() => {});
