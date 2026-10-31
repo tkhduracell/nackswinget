@@ -5,7 +5,7 @@ import { type Banner, bannerExpiresAt, type CalendarFeed, type NavItem, PUFF_STY
 import { publicUrl } from "@/lib/media/urls";
 import { useAdmin } from "../AuthProvider";
 import { type LinkTarget, LinkPicker, useLinkTargets } from "../LinkPicker";
-import { MediaThumb } from "../MediaPicker";
+import { MediaStatus, MediaThumb, usePollConverting } from "../MediaPicker";
 import { Icon } from "../icons";
 import { uploadFile } from "../upload";
 import { Badge, EmptyState, LoadingRow, PageHead } from "../ui";
@@ -529,16 +529,11 @@ export function MediaScreen() {
     void load();
   }, [load]);
 
-  // Poll videos that are still being converted.
-  useEffect(() => {
-    const processing = (items ?? []).filter((m) => m.status === "processing");
-    if (processing.length === 0) return;
-    const t = setInterval(async () => {
-      const updated = await Promise.all(processing.map((m) => api<MediaDoc>(`/media/${m.id}`).catch(() => m)));
-      if (updated.some((u, i) => u.status !== processing[i].status)) void load();
-    }, 10_000);
-    return () => clearInterval(t);
-  }, [items, api, load]);
+  // Videos still converting: progress updated in place; a finished or failed one reloads the list (it may have changed meanwhile).
+  usePollConverting(items ?? [], (changed) => {
+    if (changed.some((u) => u.status !== "processing")) void load();
+    else setItems((list) => list && list.map((m) => changed.find((u) => u.id === m.id) ?? m));
+  });
 
   const onFiles = async (files: FileList | File[]) => {
     setError(null);
@@ -609,15 +604,8 @@ export function MediaScreen() {
                 </span>
                 {m.status === "ready" ? (
                   <span className="muted">{`${(m.size / 1024 / 1024).toFixed(1)} MB`}</span>
-                ) : m.status === "processing" ? (
-                  <Badge tone="warning">
-                    <span className="spinner sm" aria-hidden="true" />
-                    Konverteras…
-                  </Badge>
-                ) : m.status === "error" ? (
-                  <Badge tone="danger">{`Fel: ${m.error ?? ""}`}</Badge>
                 ) : (
-                  <Badge tone="info">Laddas upp…</Badge>
+                  <MediaStatus m={m} />
                 )}
                 {m.kind === "image" && (
                   <input

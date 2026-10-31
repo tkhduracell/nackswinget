@@ -6,6 +6,7 @@ import { contentTypeFor, storeMedia } from "@/lib/media/process";
 import { BUCKET, isRaster } from "@/lib/media/urls";
 import { type AdminUser, HttpError } from "./auth";
 import { audit } from "./content";
+import { transcodeProgress } from "./transcode";
 
 // Admin uploads: media/{id} documents + objects under web/media/{id}/.
 // Images get WebP variants, videos are transcoded (Transcoder API) to H.264
@@ -32,6 +33,10 @@ export interface MediaDoc {
   /** Clip length, read by the browser from the video (Storbild timeline). */
   durationSec?: number;
   renditions?: { src720: string; src1080?: string; poster?: string };
+  /** Not stored: estimated percent while a video converts (lib/admin/transcode.ts). */
+  progress?: number;
+  /** Not stored: the transcoder job is waiting in its queue. */
+  queued?: boolean;
   createdAt: string;
   createdBy: string;
   deletedAt?: string;
@@ -177,7 +182,7 @@ export async function refreshMedia(id: string): Promise<MediaDoc> {
     await ref.update(update);
     return { ...doc, ...update };
   }
-  if (job.state !== "SUCCEEDED") return doc;
+  if (job.state !== "SUCCEEDED") return { ...doc, progress: transcodeProgress(job, doc) ?? undefined, queued: job.state === "PENDING" };
   const out = `web/media/${id}/out`;
   const [files] = await getBucket().getFiles({ prefix: `${out}/` });
   await Promise.all(files.map((f) => f.makePublic()));
