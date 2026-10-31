@@ -761,7 +761,13 @@ export function TimelineEditor({ id }: { id: string }) {
       {picker && (
         <MediaPicker
           accept={picker}
-          onClose={() => setPicker(null)}
+          onClose={() => {
+            setPicker(null);
+            // Files uploaded in the dialog (and not picked) show up in the strip right away.
+            api<MediaDoc[]>("/media")
+              .then((fresh) => setLib((l) => ({ ...l, media: new Map([...l.media, ...fresh.map((m) => [m.id, m] as const)]) })))
+              .catch(() => {});
+          }}
           onPick={(_picked, doc) => {
             setLib((l) => ({ ...l, media: new Map(l.media).set(doc.id, doc) }));
             const block = fromMedia(doc);
