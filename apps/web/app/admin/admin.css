@@ -2953,6 +2953,8 @@
 }
 .tl-strip {
   display: flex;
+  /* Each tile as tall as its own content, not the tallest one in the row. */
+  align-items: flex-start;
   gap: 8px;
   margin-top: 12px;
   padding-bottom: 8px;
@@ -2960,6 +2962,8 @@
 }
 .tl-strip-item {
   flex: 0 0 140px;
+  /* A long file name is cut with an ellipsis instead of widening the tile. */
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -2981,6 +2985,7 @@
 .tl-strip-thumb {
   position: relative;
   display: block;
+  overflow: hidden;
 }
 .tl-strip-item:disabled .tl-strip-thumb > :first-child {
   opacity: 0.35;
@@ -3052,6 +3057,7 @@
   opacity: 0.35;
 }
 .tl-strip-item img {
+  display: block;
   -webkit-user-drag: none;
   pointer-events: none;
 }
