@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Player } from "@/components/bigscreen/Player";
+import { videoWindow } from "@/lib/bigscreen/engine";
 import type { MediaDoc } from "@/lib/admin/media";
 import { blockSeconds, isActive } from "@/lib/bigscreen/resolve";
 import { type Block, DEFAULT_DURATION_SEC, type PlayerBlock, type Playlist } from "@/lib/bigscreen/types";
@@ -118,8 +119,61 @@ function liveBlocks(blocks: Block[], resolved: PlayerBlock[]): PlayerBlock[] {
     if (b.type === "text") return [{ id: b.id, kind: "text", src: "", title: b.title, body: b.body, background: b.background, caption: b.caption, durationSec: duration }];
     return resolved
       .filter((p) => p.id === b.id || p.id.startsWith(`${b.id}:`))
-      .map((p) => ({ ...p, caption: b.caption, durationSec: p.kind === "video" ? b.durationSec : duration, ...(b.type === "image" ? { fit: b.fit, background: b.background } : {}) }));
+      .map((p) => ({
+        ...p,
+        caption: b.caption,
+        durationSec: p.kind === "video" ? b.durationSec : duration,
+        ...(b.type === "image" ? { fit: b.fit, background: b.background } : {}),
+        ...(b.type === "video" ? { trimStart: b.trimStart, trimEnd: b.trimEnd } : {}),
+      }));
   });
+}
+
+/** Seconds as m:ss.s for the cut, e.g. 0:03.5. */
+function fmtAt(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = Math.round((sec % 60) * 10) / 10;
+  return `${m}:${s < 10 ? "0" : ""}${s}`;
+}
+
+/**
+ * Cut seconds away at the start and the end of a video. A block saved with the
+ * older "show the first N seconds" (durationSec) shows as a cut at the end, and
+ * becomes one on the first change.
+ */
+function VideoCut({ b, clip, onPatch }: { b: Extract<Block, { type: "video" }>; clip: number | undefined; onPatch: (p: Partial<Block>) => void }) {
+  const { start, end } = videoWindow(b, clip ?? null);
+  const cutEnd = clip != null && end != null ? Math.max(0, Math.round((clip - end) * 10) / 10) : (b.trimEnd ?? 0);
+  const sec = (v: string) => Math.max(0, Math.round((Number(v) || 0) * 2) / 2);
+  const set = (trimStart: number, trimEnd: number) => {
+    // Always leave at least a second of video.
+    if (clip != null && clip - trimStart - trimEnd < 1) return;
+    onPatch({ durationSec: undefined, trimStart: trimStart || undefined, trimEnd: trimEnd || undefined });
+  };
+  return (
+    <div className="tl-cut">
+      {clip != null && (
+        <div className="tl-cut-bar" aria-hidden="true">
+          <span style={{ left: `${(start / clip) * 100}%`, right: `${(cutEnd / clip) * 100}%` }} />
+        </div>
+      )}
+      <div className="field-row">
+        <label className="field">
+          <span>Klipp bort i början (s)</span>
+          <input type="number" min={0} step={0.5} max={clip != null ? Math.max(0, clip - cutEnd - 1) : undefined} value={start} onChange={(e) => set(sec(e.target.value), cutEnd)} />
+        </label>
+        <label className="field">
+          <span>Klipp bort i slutet (s)</span>
+          <input type="number" min={0} step={0.5} max={clip != null ? Math.max(0, clip - start - 1) : undefined} value={cutEnd} onChange={(e) => set(start, sec(e.target.value))} />
+        </label>
+      </div>
+      {clip != null && end != null && (
+        <p className="muted">
+          {start || cutEnd ? `Visar ${fmtAt(start)}–${fmtAt(end)}, ${fmtTime(end - start)} av ${fmtTime(clip)}` : `Hela videon visas (${fmtTime(clip)})`}
+        </p>
+      )}
+    </div>
+  );
 }
 
 function fmtTime(sec: number): string {
@@ -434,6 +488,11 @@ export function TimelineEditor({ id }: { id: string }) {
       let secs = Math.max(1, Math.round(start + (ev.clientX - startX) / zoom));
       if (clip) secs = Math.min(secs, Math.floor(clip));
       if (b.type === "latestPosts") secs = Math.max(1, Math.round(secs / b.count));
+      // A video's right edge cuts its end away.
+      if (b.type === "video" && clip) {
+        const trimStart = videoWindow(b, clip).start;
+        return patchBlock(b.id, { durationSec: undefined, trimStart: trimStart || undefined, trimEnd: Math.max(0, clip - trimStart - secs) || undefined });
+      }
       patchBlock(b.id, { durationSec: secs });
     };
     const onUp = () => {
@@ -447,6 +506,8 @@ export function TimelineEditor({ id }: { id: string }) {
   const seconds = useMemo(() => blocks.map((b) => blockSeconds(b, b.type === "video" ? lib.media.get(b.mediaId)?.durationSec : undefined)), [blocks, lib.media]);
   const total = seconds.reduce((a, b) => a + b, 0);
   const sel = blocks.find((b) => b.id === selected) ?? null;
+  // A new cut on the selected video restarts the preview, so it plays from the new start.
+  const cutKey = sel?.type === "video" ? `${sel.trimStart ?? 0}-${sel.trimEnd ?? 0}` : "";
   // The server resolves media and posts (debounced); text and settings come from the draft
   // right away, so the preview follows typing without waiting for it.
   const live = useMemo(() => liveBlocks(blocks, preview), [blocks, preview]);
@@ -500,7 +561,7 @@ export function TimelineEditor({ id }: { id: string }) {
         <div className="tl-preview">
           <div className="tl-screen" ref={screenRef}>
             {/* Remounted on selection so the chosen block starts from the beginning right away. */}
-            <Player key={`${selected ?? "all"}-${replay}`} blocks={shown} />
+            <Player key={`${selected ?? "all"}-${replay}-${cutKey}`} blocks={shown} />
           </div>
           <div className="tl-preview-bar">
             <span className="muted">
@@ -773,18 +834,7 @@ function Inspector({
       <p className="muted tl-inspect-name">{blockName(b, lib)}</p>
 
       {b.type === "video" ? (
-        <>
-          <label className="bs-check">
-            <input type="checkbox" checked={!b.durationSec} onChange={(e) => onPatch({ durationSec: e.target.checked ? undefined : Math.min(15, Math.floor(clip ?? 15)) })} />
-            Spela hela videon{clip ? ` (${fmtTime(clip)})` : ""}
-          </label>
-          {!!b.durationSec && (
-            <label className="field">
-              <span>Visa de första (sekunder)</span>
-              <input type="number" min={1} max={clip ? Math.floor(clip) : 3600} value={b.durationSec} onChange={(e) => onPatch({ durationSec: num(e.target.value) })} />
-            </label>
-          )}
-        </>
+        <VideoCut b={b} clip={clip} onPatch={onPatch} />
       ) : b.type === "latestPosts" ? (
         <div className="field-row">
           <label className="field">

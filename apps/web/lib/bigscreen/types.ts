@@ -20,7 +20,8 @@ export const blockSchema = z.discriminatedUnion("type", [
   // `background` shows behind transparent images and around "contain" (default black).
   z.object({ ...blockBase, type: z.literal("image"), mediaId: z.string().min(1), fit: z.enum(["cover", "contain"]).default("cover"), background: z.string().regex(/^#[0-9a-f]{6}$/i).optional() }),
   // Always muted: the TVs never play sound.
-  z.object({ ...blockBase, type: z.literal("video"), mediaId: z.string().min(1) }),
+  // trimStart/trimEnd: seconds cut away at the start and the end of the clip.
+  z.object({ ...blockBase, type: z.literal("video"), mediaId: z.string().min(1), trimStart: z.number().min(0).max(3600).optional(), trimEnd: z.number().min(0).max(3600).optional() }),
   z.object({ ...blockBase, type: z.literal("calendar"), view: z.enum(["week"]).default("week"), feeds: z.array(z.string()).default([]) }),
   // "Dagens schema": what's left of today as a TV-guide list, then the first events of tomorrow.
   z.object({ ...blockBase, type: z.literal("agenda"), feeds: z.array(z.string()).default([]), tomorrowCount: z.number().int().min(0).max(6).default(2) }),
@@ -82,6 +83,9 @@ export interface PlayerBlock {
   /** kind "text": drawn by the player itself, no page load. */
   title?: string;
   body?: string;
+  /** kind "video": seconds cut away at the start and the end (see videoWindow in engine.ts). */
+  trimStart?: number;
+  trimEnd?: number;
   /** kind "html": the markup (escaped by lib/bigscreen/render.ts). */
   html?: string;
   /** kind "text" and "image": the colour behind it. */

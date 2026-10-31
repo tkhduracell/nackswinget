@@ -69,6 +69,11 @@ describe("resolveBlocks", () => {
     expect(resolveBlocks(blocks.slice(0, 1), { media: library, posts: POSTS, quality: "720", now: NOW })[0].src).toBe(`${PUBLIC_BASE}/web/media/vid/out/720.mp4`);
   });
 
+  it("passes a video's cuts on to the player", () => {
+    const [v] = resolveBlocks([parse({ id: "1", type: "video", mediaId: "vid", trimStart: 2, trimEnd: 1.5 })], { media: library, posts: POSTS, quality: "1080", now: NOW });
+    expect(v).toMatchObject({ trimStart: 2, trimEnd: 1.5 });
+  });
+
   it("keeps a video's duration only when one is set", () => {
     const [v] = resolveBlocks([parse({ id: "1", type: "video", mediaId: "vid", durationSec: 8 })], { media: library, posts: POSTS, quality: "1080", now: NOW });
     expect(v.durationSec).toBe(8);
@@ -128,6 +133,7 @@ describe("blockSeconds", () => {
   it("uses the clip length for videos without a duration, N × duration for latest posts", () => {
     expect(blockSeconds(parse({ id: "v", type: "video", mediaId: "vid" }), 23)).toBe(23);
     expect(blockSeconds(parse({ id: "v", type: "video", mediaId: "vid", durationSec: 8 }), 23)).toBe(8);
+    expect(blockSeconds(parse({ id: "v", type: "video", mediaId: "vid", trimStart: 3, trimEnd: 5 }), 23)).toBe(15);
     expect(blockSeconds(parse({ id: "n", type: "latestPosts", count: 3, durationSec: 8 }))).toBe(24);
     expect(blockSeconds(parse({ id: "c", type: "calendar" }))).toBe(10);
   });

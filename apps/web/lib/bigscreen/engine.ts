@@ -19,6 +19,20 @@ export function canPreload(light: boolean, current: PlayerBlock | undefined, nex
   return !(light && current?.kind === "video" && next.kind === "video");
 }
 
+/**
+ * The part of a video that plays, in seconds into the clip: after `trimStart`,
+ * before the last `trimEnd`, and no longer than `durationSec`. `end` is null
+ * while the clip's length is unknown and nothing else limits it. A cut that
+ * would leave under a second is ignored.
+ */
+export function videoWindow(block: Pick<PlayerBlock, "trimStart" | "trimEnd" | "durationSec">, length: number | null): { start: number; end: number | null } {
+  const start = block.trimStart ?? 0;
+  let end = length != null ? length - (block.trimEnd ?? 0) : Infinity;
+  if (block.durationSec) end = Math.min(end, start + block.durationSec);
+  if (Number.isFinite(end) && end - start < 1) return { start: 0, end: length };
+  return { start, end: Number.isFinite(end) ? end : null };
+}
+
 export interface EngineEvents {
   /** A block is now on screen. */
   onShow?(block: PlayerBlock, index: number): void;
@@ -113,7 +127,8 @@ export class Engine {
       v.playsInline = true;
       v.preload = "auto";
       if (block.poster) v.poster = block.poster;
-      v.src = block.src;
+      // #t starts loading at the cut, so the first frame is the right one.
+      v.src = block.trimStart ? `${block.src}#t=${block.trimStart}` : block.src;
       media = v;
       ready = waitFor(v, "canplay", () => v.readyState >= 3);
     } else if (block.kind === "image") {
@@ -300,7 +315,10 @@ export class Engine {
     let failed = err;
     if (!failed && layer.media instanceof HTMLVideoElement) {
       try {
-        await layer.media.play();
+        const v = layer.media;
+        const { start } = videoWindow(layer.block, Number.isFinite(v.duration) ? v.duration : null);
+        if (Math.abs(v.currentTime - start) > 0.3) v.currentTime = start;
+        await v.play();
       } catch (e) {
         failed = (e as Error).message || "play() failed";
       }
@@ -339,11 +357,13 @@ export class Engine {
     if (media instanceof HTMLVideoElement) {
       media.addEventListener("ended", () => this.current === layer && next(), { once: true });
       const length = Number.isFinite(media.duration) ? media.duration : null;
-      // A stalled video must not hold the screen forever.
-      const cap = block.durationSec ?? (length ? length + 5 : 600);
-      this.timer = setTimeout(next, cap * 1000);
-      const shown = Math.min(block.durationSec ?? Infinity, length ?? Infinity);
-      if (Number.isFinite(shown)) this.progress(layer, shown);
+      const { start, end } = videoWindow(block, length);
+      const shown = end != null ? end - start : null;
+      // Cut short: stop on time. Playing to the end: "ended" moves on, and the
+      // timer only keeps a stalled video from holding the screen forever.
+      const cutShort = end != null && (length == null || end < length - 0.05);
+      this.timer = setTimeout(next, (shown == null ? 600 : cutShort ? shown : shown + 5) * 1000);
+      if (shown != null) this.progress(layer, shown);
     } else {
       // A playlist of one image crossfades into itself, which looks like nothing happened.
       const shown = block.durationSec ?? 10;
@@ -371,14 +391,15 @@ export class Engine {
     const layer = this.current;
     const m = layer?.media;
     if (!layer || !(m instanceof HTMLVideoElement) || !Number.isFinite(m.duration)) return;
-    const end = Math.min(m.duration, layer.block.durationSec ?? Infinity);
-    if (t >= end - 2) return;
+    const { start, end } = videoWindow(layer.block, m.duration);
+    const stop = end ?? m.duration;
+    if (t <= start || t >= stop - 2) return;
     m.currentTime = t;
-    this.progress(layer, end, t);
-    if (layer.block.durationSec) {
-      // The duration counts from the start of the clip, not from the resume point.
+    this.progress(layer, stop - start, t - start);
+    if (stop < m.duration - 0.05) {
+      // The cut counts from the start of the clip, not from the resume point.
       clearTimeout(this.timer);
-      this.timer = setTimeout(() => void this.advance(), (end - t) * 1000);
+      this.timer = setTimeout(() => void this.advance(), (stop - t) * 1000);
     }
   }
 }
@@ -402,5 +423,5 @@ function setClocks(root: HTMLElement) {
 
 /** Same block showing the same file, page or markup, so a layer can be updated instead of rebuilt. */
 function sameContent(a: PlayerBlock, b: PlayerBlock): boolean {
-  return a.id === b.id && a.kind === b.kind && a.src === b.src && a.html === b.html;
+  return a.id === b.id && a.kind === b.kind && a.src === b.src && a.html === b.html && a.trimStart === b.trimStart && a.trimEnd === b.trimEnd;
 }

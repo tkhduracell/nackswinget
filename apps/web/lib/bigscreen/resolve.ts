@@ -71,6 +71,8 @@ export function resolveBlocks(blocks: Block[], ctx: ResolveContext): PlayerBlock
           src: publicUrl(src),
           ...(r.poster ? { poster: publicUrl(r.poster) } : {}),
           ...(block.durationSec ? { durationSec: block.durationSec } : {}),
+          ...(block.trimStart ? { trimStart: block.trimStart } : {}),
+          ...(block.trimEnd ? { trimEnd: block.trimEnd } : {}),
         });
         break;
       }
@@ -105,7 +107,11 @@ export function resolveBlocks(blocks: Block[], ctx: ResolveContext): PlayerBlock
 
 /** Seconds a block takes on the timeline (editor). Videos without a set duration use the clip length. */
 export function blockSeconds(block: Block, clipSec?: number): number {
-  if (block.type === "video") return block.durationSec ?? clipSec ?? DEFAULT_DURATION_SEC;
+  if (block.type === "video") {
+    const cut = clipSec != null ? Math.max(1, clipSec - (block.trimStart ?? 0) - (block.trimEnd ?? 0)) : Infinity;
+    const shown = Math.min(block.durationSec ?? Infinity, cut);
+    return Number.isFinite(shown) ? shown : DEFAULT_DURATION_SEC;
+  }
   const d = block.durationSec ?? DEFAULT_DURATION_SEC;
   return block.type === "latestPosts" ? d * block.count : d;
 }
