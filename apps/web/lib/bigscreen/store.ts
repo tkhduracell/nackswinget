@@ -5,7 +5,7 @@ import { getPost, getSite, listAllPosts } from "@/lib/content/cached";
 import { getDb } from "@/lib/firebase/admin";
 import { plainText } from "./render";
 import { resolveBlocks } from "./resolve";
-import { type Block, blockSchema, type PlayerBlock, type PlayerPayload, type Playlist, playlistSchema, type Screen, screenSchema } from "./types";
+import { type Block, blockSchema, type PlayerBlock, type PlayerPayload, type Playlist, playlistSchema, playsLight, type Screen, screenSchema } from "./types";
 
 export const BIGSCREEN_COLLECTIONS = { screens: "bigscreens", playlists: "bigscreenPlaylists" } as const;
 
@@ -76,7 +76,7 @@ export async function playerPayload(key: string, now = new Date()): Promise<Play
   if (!screen) return null;
   const playlist = await getPlaylist(screen.playlistId);
   return {
-    screen: { name: screen.name, light: screen.light, ...(screen.reloadAt ? { reloadAt: screen.reloadAt } : {}) },
+    screen: { name: screen.name, light: playsLight(screen), ...(screen.reloadAt ? { reloadAt: screen.reloadAt } : {}) },
     blocks: await resolveForPlayer(playlist?.blocks ?? [], screen.quality, now),
   };
 }

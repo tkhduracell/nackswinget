@@ -48,6 +48,9 @@ export const playlistSchema = z.object({
 });
 export type Playlist = z.infer<typeof playlistSchema>;
 
+/** Light mode exists only at 720p (the Pi Zero's setting); an older screen may have it stored with a higher quality. */
+export const playsLight = (s: { quality: string; light: boolean }) => s.light && s.quality === "720";
+
 export const screenSchema = z.object({
   id: z.string(),
   name: z.string(),

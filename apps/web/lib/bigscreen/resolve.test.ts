@@ -4,7 +4,7 @@ import { PUBLIC_BASE } from "@/lib/media/urls";
 import type { PostSummary } from "@/lib/content/types";
 import type { CalendarEvent } from "@/lib/calendar/ics";
 import { blockSeconds, isActive, resolveBlocks } from "./resolve";
-import { type Block, blockSchema } from "./types";
+import { type Block, blockSchema, playsLight } from "./types";
 
 const media = (doc: Partial<MediaDoc> & Pick<MediaDoc, "id" | "kind" | "path">): MediaDoc => ({
   name: doc.path,
@@ -146,5 +146,14 @@ describe("blockSeconds", () => {
     expect(blockSeconds(parse({ id: "v", type: "video", mediaId: "vid", trimStart: 10, trimEnd: 12.5 }), 23)).toBe(23);
     expect(blockSeconds(parse({ id: "n", type: "latestPosts", count: 3, durationSec: 8 }))).toBe(24);
     expect(blockSeconds(parse({ id: "c", type: "calendar" }))).toBe(10);
+  });
+});
+
+describe("playsLight", () => {
+  it("applies only at 720p, also for a screen stored with light mode at a higher quality", () => {
+    expect(playsLight({ quality: "720", light: true })).toBe(true);
+    expect(playsLight({ quality: "720", light: false })).toBe(false);
+    expect(playsLight({ quality: "1080", light: true })).toBe(false);
+    expect(playsLight({ quality: "2160", light: true })).toBe(false);
   });
 });

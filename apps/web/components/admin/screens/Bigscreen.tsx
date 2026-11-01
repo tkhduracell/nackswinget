@@ -2,23 +2,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { PlaylistRow } from "@/lib/bigscreen/admin";
-import type { Screen } from "@/lib/bigscreen/types";
+import { playsLight, type Screen } from "@/lib/bigscreen/types";
 import { useAdmin } from "../AuthProvider";
 import { Icon } from "../icons";
 import { Badge, EmptyState, LoadingRow, PageHead } from "../ui";
 
 const ONLINE_MS = 2 * 60_000;
 
-/** Video quality and light mode in one choice; light mode = one video at a time, fading through black. */
+/** Video quality and light mode in one choice; barebones = light mode: one video at a time, fading through black. */
 const PLAYBACK: { value: string; label: string; quality: Screen["quality"]; light: boolean }[] = [
-  { value: "720-light", label: "Pi Zero: 720p, lätt läge", quality: "720", light: true },
+  { value: "720-light", label: "720p, barebones", quality: "720", light: true },
   { value: "720", label: "720p", quality: "720", light: false },
-  { value: "1080-light", label: "1080p, lätt läge", quality: "1080", light: true },
   { value: "1080", label: "1080p", quality: "1080", light: false },
-  { value: "2160-light", label: "4K, lätt läge", quality: "2160", light: true },
-  { value: "2160", label: "4K", quality: "2160", light: false },
+  { value: "2160", label: "2160p (4K)", quality: "2160", light: false },
 ];
-const playbackOf = (s: Screen) => `${s.quality}${s.light ? "-light" : ""}`;
+const playbackOf = (s: Screen) => `${s.quality}${playsLight(s) ? "-light" : ""}`;
 
 function ago(iso: string, now: number): string {
   const min = Math.round((now - new Date(iso).getTime()) / 60_000);
@@ -171,7 +169,7 @@ export function BigscreenScreen() {
                       <span>Uppspelning</span>
                       <select
                         value={playbackOf(s)}
-                        title="Lätt läge: en video i taget, videor tonar via svart. För Pi Zero. 4K: för skärmar med 4K-avkodning, inte Raspberry Pi. Videor från 4K-källor konverteras när skärmen först spelar dem och visas i 1080p tills dess."
+                        title="Barebones: en video i taget, videor tonar via svart. För Pi Zero. 4K: för skärmar med 4K-avkodning, inte Raspberry Pi. Videor från 4K-källor konverteras när skärmen först spelar dem och visas i 1080p tills dess."
                         onChange={(e) => {
                           const p = PLAYBACK.find((o) => o.value === e.target.value);
                           if (p) patch(s, { quality: p.quality, light: p.light });
