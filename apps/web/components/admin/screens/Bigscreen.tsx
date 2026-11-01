@@ -15,6 +15,7 @@ const PLAYBACK: { value: string; label: string; quality: Screen["quality"]; ligh
   { value: "720", label: "720p", quality: "720", light: false },
   { value: "1080-light", label: "1080p, lätt läge", quality: "1080", light: true },
   { value: "1080", label: "1080p", quality: "1080", light: false },
+  { value: "2160-light", label: "4K, lätt läge", quality: "2160", light: true },
   { value: "2160", label: "4K", quality: "2160", light: false },
 ];
 const playbackOf = (s: Screen) => `${s.quality}${s.light ? "-light" : ""}`;
@@ -170,7 +171,7 @@ export function BigscreenScreen() {
                       <span>Uppspelning</span>
                       <select
                         value={playbackOf(s)}
-                        title="Lätt läge: en video i taget, videor tonar via svart. För Pi Zero. 4K: videor som inte finns i 4K visas i 1080p."
+                        title="Lätt läge: en video i taget, videor tonar via svart. För Pi Zero. 4K: för skärmar med 4K-avkodning, inte Raspberry Pi. Videor från 4K-källor konverteras när skärmen först spelar dem och visas i 1080p tills dess."
                         onChange={(e) => {
                           const p = PLAYBACK.find((o) => o.value === e.target.value);
                           if (p) patch(s, { quality: p.quality, light: p.light });

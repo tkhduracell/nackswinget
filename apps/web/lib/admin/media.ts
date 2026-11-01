@@ -3,14 +3,14 @@ import { randomUUID } from "node:crypto";
 import { GoogleAuth } from "google-auth-library";
 import { getBucket, getDb, PROJECT_ID } from "@/lib/firebase/admin";
 import { contentTypeFor, storeMedia } from "@/lib/media/process";
-import { BUCKET, isRaster } from "@/lib/media/urls";
+import { BUCKET, isRaster, isVideoFile } from "@/lib/media/urls";
 import { type AdminUser, HttpError } from "./auth";
 import { audit } from "./content";
-import { hasUhdSource, transcodeConfig, transcodeProgress } from "./transcode";
+import { transcodeConfig, transcodeProgress, uhdTranscodeConfig, wantsUhd } from "./transcode";
 
 // Admin uploads: media/{id} documents + objects under web/media/{id}/.
 // Images get WebP variants, videos are transcoded (Transcoder API) to H.264
-// MP4 at 720p/1080p (and 4K from a 4K source) plus a poster, PDFs and other files are stored as-is.
+// MP4 at 720p/1080p plus a poster (and 4K once a 4K screen plays one), PDFs and other files are stored as-is.
 
 export type MediaKind = "image" | "video" | "file";
 
@@ -33,6 +33,9 @@ export interface MediaDoc {
   /** Clip length, read by the browser from the video (Storbild timeline). */
   durationSec?: number;
   renditions?: { src720: string; src1080?: string; src2160?: string; poster?: string };
+  /** The separate 4K job (refreshUhd), and why it failed. */
+  uhdJobName?: string;
+  uhdError?: string;
   /** Not stored: estimated percent while a video converts (lib/admin/transcode.ts). */
   progress?: number;
   /** Not stored: the transcoder job is waiting in its queue. */
@@ -47,7 +50,7 @@ const TRANSCODER_LOCATION = "europe-west4";
 const IMAGE_MAX_BYTES = 20 * 1024 * 1024;
 
 function kindOf(contentType: string, name: string): MediaKind {
-  if (contentType.startsWith("video/") || /\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(name)) return "video";
+  if (contentType.startsWith("video/") || isVideoFile(name)) return "video";
   if (contentType.startsWith("image/") && isRaster(name)) return "image";
   return "file";
 }
@@ -98,14 +101,16 @@ async function transcoderFetch(path: string, init?: RequestInit) {
   return body;
 }
 
-/** Without audio for inputs that have no audio track (screen recordings, muted clips). */
-async function startTranscode(doc: MediaDoc, withAudio: boolean): Promise<string> {
+async function startJob(doc: MediaDoc, config: object): Promise<string> {
   const job = await transcoderFetch(`projects/${PROJECT_ID}/locations/${TRANSCODER_LOCATION}/jobs`, {
     method: "POST",
-    body: JSON.stringify({ inputUri: `gs://${BUCKET}/${doc.path}`, outputUri: `gs://${BUCKET}/web/media/${doc.id}/out/`, config: transcodeConfig(withAudio, hasUhdSource(doc)) }),
+    body: JSON.stringify({ inputUri: `gs://${BUCKET}/${doc.path}`, outputUri: `gs://${BUCKET}/web/media/${doc.id}/out/`, config }),
   });
   return job.name as string;
 }
+
+/** `withAudio` is false for inputs that have no audio track (screen recordings, muted clips). */
+const startTranscode = (doc: MediaDoc, withAudio: boolean) => startJob(doc, transcodeConfig(withAudio));
 
 export async function finalizeUpload(id: string, user: AdminUser): Promise<MediaDoc> {
   const ref = getDb().collection(COLLECTION).doc(id);
@@ -169,9 +174,31 @@ export async function refreshMedia(id: string): Promise<MediaDoc> {
   const [files] = await getBucket().getFiles({ prefix: `${out}/` });
   await Promise.all(files.map((f) => f.makePublic()));
   const poster = files.find((f) => /poster.*\.jpe?g$/i.test(f.name))?.name;
-  const uhd = files.some((f) => f.name === `${out}/2160.mp4`);
-  const renditions = { src720: `${out}/720.mp4`, src1080: `${out}/1080.mp4`, ...(uhd ? { src2160: `${out}/2160.mp4` } : {}), ...(poster ? { poster } : {}) };
+  const renditions = { src720: `${out}/720.mp4`, src1080: `${out}/1080.mp4`, ...(poster ? { poster } : {}) };
   const update = { status: "ready" as const, renditions };
+  await ref.update(update);
+  return { ...doc, ...update };
+}
+
+/** For videos a 4K screen plays: starts the 4K job, or publishes its result. Until then the screen plays 1080p. */
+export async function refreshUhd(doc: MediaDoc): Promise<MediaDoc> {
+  if (!wantsUhd(doc)) return doc;
+  const ref = getDb().collection(COLLECTION).doc(doc.id);
+  if (!doc.uhdJobName) {
+    const update = { uhdJobName: await startJob(doc, uhdTranscodeConfig(doc, !doc.silent)) };
+    await ref.update(update);
+    return { ...doc, ...update };
+  }
+  const job = await transcoderFetch(doc.uhdJobName);
+  if (job.state === "FAILED") {
+    const update = { uhdError: job.error?.message ?? "Konverteringen misslyckades" };
+    await ref.update(update);
+    return { ...doc, ...update };
+  }
+  if (job.state !== "SUCCEEDED") return doc;
+  const src2160 = `web/media/${doc.id}/out/2160.mp4`;
+  await getBucket().file(src2160).makePublic();
+  const update = { renditions: { ...doc.renditions!, src2160 } };
   await ref.update(update);
   return { ...doc, ...update };
 }

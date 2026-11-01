@@ -68,10 +68,12 @@ describe("resolveBlocks", () => {
 
   it("uses the 720p rendition for screens set to 720", () => {
     expect(resolveBlocks(blocks.slice(0, 1), { media: library, posts: POSTS, quality: "720", now: NOW })[0].src).toBe(`${PUBLIC_BASE}/web/media/vid/out/720.mp4`);
+  });
+
+  it("uses the 4K rendition for screens set to 4K, and 1080p for a video without one", () => {
     const src = (mediaId: string, quality: "720" | "1080" | "2160") => resolveBlocks([parse({ id: "1", type: "video", mediaId })], { media: library, posts: POSTS, quality, now: NOW })[0].src;
     expect(src("uhd", "2160")).toBe(`${PUBLIC_BASE}/web/media/uhd/out/2160.mp4`);
     expect(src("uhd", "1080")).toBe(`${PUBLIC_BASE}/web/media/uhd/out/1080.mp4`);
-    // Not every video exists in 4K.
     expect(src("vid", "2160")).toBe(`${PUBLIC_BASE}/web/media/vid/out/1080.mp4`);
   });
 

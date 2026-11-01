@@ -46,3 +46,8 @@ const RASTER = /\.(png|jpe?g|webp|gif|avif)$/i;
 export function isRaster(path: string): boolean {
   return RASTER.test(path);
 }
+
+const VIDEO = /\.(mp4|mov|m4v|webm|avi|mkv)$/i;
+export function isVideoFile(path: string): boolean {
+  return VIDEO.test(path);
+}

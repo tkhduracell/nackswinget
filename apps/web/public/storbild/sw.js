@@ -78,10 +78,23 @@ async function cacheFirst(name, req) {
 async function fetchWhole(cache, url) {
   try {
     const res = await fetch(url, { mode: "cors", credentials: "omit" });
-    if (res.ok && res.status === 200 && res.type === "cors") await cache.put(url, res);
-  } catch {
-    // Offline or no CORS for this origin: the file is just not cached.
+    if (!res.ok || res.status !== 200 || res.type !== "cors") return;
+    // A 4K file can be larger than the browser's quota: don't download what can't be kept.
+    const { quota = Infinity, usage = 0 } = (await navigator.storage?.estimate?.()) ?? {};
+    if (Number(res.headers.get("content-length")) > quota - usage) {
+      await res.body?.cancel();
+      return reportCacheError(url);
+    }
+    await cache.put(url, res);
+  } catch (e) {
+    // Otherwise offline or no CORS for this origin: the file is just not cached.
+    if (e?.name === "QuotaExceededError") await reportCacheError(url);
   }
+}
+
+/** The player passes this on with its heartbeat, as the file then always plays from the network. */
+async function reportCacheError(url) {
+  for (const client of await self.clients.matchAll({ type: "window" })) client.postMessage({ type: "cache-error", url });
 }
 
 async function media(req) {

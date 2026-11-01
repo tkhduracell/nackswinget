@@ -1,15 +1,11 @@
 import type { MediaDoc } from "@/lib/admin/media";
+import { isVideoFile } from "@/lib/media/urls";
 
 type Api = <T = unknown>(path: string, init?: RequestInit & { json?: unknown }) => Promise<T>;
 
-/**
- * Uploads a file: asks the server for a resumable Cloud Storage session,
- * PUTs the bytes straight to Storage (any size, progress events), then asks
- * the server to process it (image variants / video transcoding).
- */
-/** A video's size as shown, which decides if it gets a 4K rendition. Unknown when the browser can't read the file. */
-function videoSize(file: File): Promise<{ width?: number; height?: number }> {
-  if (!file.type.startsWith("video/") && !/\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(file.name)) return Promise.resolve({});
+/** A video's size as shown, which decides if it can get a 4K rendition. Unknown when the browser can't read the file. */
+export function videoSize(file: File): Promise<{ width?: number; height?: number }> {
+  if (!file.type.startsWith("video/") && !isVideoFile(file.name)) return Promise.resolve({});
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file);
     const v = document.createElement("video");
@@ -28,6 +24,11 @@ function videoSize(file: File): Promise<{ width?: number; height?: number }> {
   });
 }
 
+/**
+ * Uploads a file: asks the server for a resumable Cloud Storage session,
+ * PUTs the bytes straight to Storage (any size, progress events), then asks
+ * the server to process it (image variants / video transcoding).
+ */
 export async function uploadFile(api: Api, file: File, onProgress: (fraction: number) => void): Promise<MediaDoc> {
   const { media, uploadUrl } = await api<{ media: MediaDoc; uploadUrl: string }>("/media", {
     method: "POST",
