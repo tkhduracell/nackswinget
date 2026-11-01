@@ -9,6 +9,15 @@ import { Badge, EmptyState, LoadingRow, PageHead } from "../ui";
 
 const ONLINE_MS = 2 * 60_000;
 
+/** Video quality and light mode in one choice; light mode = one video at a time, fading through black. */
+const PLAYBACK: { value: string; label: string; quality: Screen["quality"]; light: boolean }[] = [
+  { value: "720-light", label: "Pi Zero: 720p, lätt läge", quality: "720", light: true },
+  { value: "720", label: "720p", quality: "720", light: false },
+  { value: "1080-light", label: "1080p, lätt läge", quality: "1080", light: true },
+  { value: "1080", label: "1080p", quality: "1080", light: false },
+];
+const playbackOf = (s: Screen) => `${s.quality}${s.light ? "-light" : ""}`;
+
 function ago(iso: string, now: number): string {
   const min = Math.round((now - new Date(iso).getTime()) / 60_000);
   if (min < 1) return "nyss";
@@ -157,20 +166,24 @@ export function BigscreenScreen() {
                   </label>
                   {isAdmin && (
                     <label className="field">
-                      <span>Videokvalitet</span>
-                      <select value={s.quality} onChange={(e) => patch(s, { quality: e.target.value as Screen["quality"] })}>
-                        <option value="720">720p (Pi Zero)</option>
-                        <option value="1080">1080p</option>
+                      <span>Uppspelning</span>
+                      <select
+                        value={playbackOf(s)}
+                        title="Lätt läge: en video i taget, videor tonar via svart. För Pi Zero."
+                        onChange={(e) => {
+                          const p = PLAYBACK.find((o) => o.value === e.target.value);
+                          if (p) patch(s, { quality: p.quality, light: p.light });
+                        }}
+                      >
+                        {PLAYBACK.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
                       </select>
                     </label>
                   )}
                 </div>
-                {isAdmin && (
-                  <label className="check">
-                    <input type="checkbox" checked={s.light} onChange={(e) => patch(s, { light: e.target.checked })} />
-                    Lätt läge (för Pi Zero: en video i taget, videor tonar via svart)
-                  </label>
-                )}
                 {s.resolution && <p className="muted">Skärmen: {s.resolution}</p>}
                 {!!s.errors?.length && <p className="admin-error">Senaste fel: {s.errors.join(", ")}</p>}
                 <div className="bs-actions">
