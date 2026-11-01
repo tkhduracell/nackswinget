@@ -117,6 +117,7 @@ export function BigscreenScreen() {
                 <th>Spellista</th>
                 <th className="hide-sm">Block</th>
                 <th className="col-status">Status</th>
+                {isAdmin && <th className="col-actions" aria-label="Åtgärder" />}
               </tr>
             </thead>
             <tbody>
@@ -129,6 +130,18 @@ export function BigscreenScreen() {
                   </td>
                   <td className="muted hide-sm">{p.blocks}</td>
                   <td className="col-status">{p.hasDraft ? <Badge tone="warning">Utkast</Badge> : <Badge tone="success">Publicerad</Badge>}</td>
+                  {isAdmin && (
+                    <td className="col-actions">
+                      <button
+                        type="button"
+                        className="button button-danger-ghost button-sm"
+                        onClick={() => window.confirm(`Ta bort spellistan ${p.name}? Det går inte att ångra.`) && run(() => api(`/bigscreen/playlists/${p.id}`, { method: "DELETE" }))}
+                      >
+                        <Icon name="trash" size={16} />
+                        Ta bort
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
