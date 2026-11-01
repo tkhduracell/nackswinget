@@ -7,10 +7,31 @@ type Api = <T = unknown>(path: string, init?: RequestInit & { json?: unknown }) 
  * PUTs the bytes straight to Storage (any size, progress events), then asks
  * the server to process it (image variants / video transcoding).
  */
+/** A video's size as shown, which decides if it gets a 4K rendition. Unknown when the browser can't read the file. */
+function videoSize(file: File): Promise<{ width?: number; height?: number }> {
+  if (!file.type.startsWith("video/") && !/\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(file.name)) return Promise.resolve({});
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement("video");
+    const done = (size: { width?: number; height?: number }) => {
+      clearTimeout(timer);
+      v.removeAttribute("src");
+      URL.revokeObjectURL(url);
+      resolve(size);
+    };
+    const timer = setTimeout(() => done({}), 5_000);
+    v.preload = "metadata";
+    v.muted = true;
+    v.onloadedmetadata = () => done(v.videoHeight ? { width: v.videoWidth, height: v.videoHeight } : {});
+    v.onerror = () => done({});
+    v.src = url;
+  });
+}
+
 export async function uploadFile(api: Api, file: File, onProgress: (fraction: number) => void): Promise<MediaDoc> {
   const { media, uploadUrl } = await api<{ media: MediaDoc; uploadUrl: string }>("/media", {
     method: "POST",
-    json: { name: file.name, contentType: file.type || "application/octet-stream", size: file.size },
+    json: { name: file.name, contentType: file.type || "application/octet-stream", size: file.size, ...(await videoSize(file)) },
   });
   await new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
