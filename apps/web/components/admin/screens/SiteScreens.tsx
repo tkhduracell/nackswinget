@@ -602,11 +602,8 @@ export function MediaScreen() {
                 <span className="media-name" title={m.name}>
                   {m.name}
                 </span>
-                {m.status === "ready" ? (
-                  <span className="muted">{`${(m.size / 1024 / 1024).toFixed(1)} MB`}</span>
-                ) : (
-                  <MediaStatus m={m} />
-                )}
+                {m.status === "ready" && <span className="muted">{`${(m.size / 1024 / 1024).toFixed(1)} MB`}</span>}
+                <MediaStatus m={m} />
                 {m.kind === "image" && (
                   <input
                     defaultValue={m.alt}

@@ -120,7 +120,7 @@ export async function listScreens(): Promise<Screen[]> {
 const screenInput = z.object({
   name: z.string().trim().min(1).max(80),
   playlistId: z.string().min(1),
-  quality: z.enum(["1080", "720"]),
+  quality: z.enum(["2160", "1080", "720"]),
   light: z.boolean(),
 });
 

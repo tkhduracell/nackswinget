@@ -65,7 +65,8 @@ export function resolveBlocks(blocks: Block[], ctx: ResolveContext): PlayerBlock
         const m = ctx.media.get(block.mediaId);
         const r = m?.renditions;
         if (!m || m.deletedAt || m.status !== "ready" || m.kind !== "video" || !r) break;
-        const src = ctx.quality === "720" || !r.src1080 ? r.src720 : r.src1080;
+        // The best the clip has up to the screen's quality: not every video exists in 4K.
+        const src = (ctx.quality === "2160" && r.src2160) || (ctx.quality !== "720" && r.src1080) || r.src720;
         out.push({
           ...base,
           kind: "video",

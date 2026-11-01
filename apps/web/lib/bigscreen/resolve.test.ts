@@ -4,7 +4,7 @@ import { PUBLIC_BASE } from "@/lib/media/urls";
 import type { PostSummary } from "@/lib/content/types";
 import type { CalendarEvent } from "@/lib/calendar/ics";
 import { blockSeconds, isActive, resolveBlocks } from "./resolve";
-import { type Block, blockSchema } from "./types";
+import { type Block, blockSchema, playsLight } from "./types";
 
 const media = (doc: Partial<MediaDoc> & Pick<MediaDoc, "id" | "kind" | "path">): MediaDoc => ({
   name: doc.path,
@@ -22,6 +22,7 @@ const library = new Map<string, MediaDoc>([
   ["img", media({ id: "img", kind: "image", path: "web/media/img/a.png", width: 1920, variants: [480, 960, 1600] })],
   ["small", media({ id: "small", kind: "image", path: "web/media/small/b.png", width: 1200, variants: [480, 960, 1200] })],
   ["vid", media({ id: "vid", kind: "video", path: "web/media/vid/v.mp4", renditions: { src720: "web/media/vid/out/720.mp4", src1080: "web/media/vid/out/1080.mp4", poster: "web/media/vid/out/poster.jpeg" } })],
+  ["uhd", media({ id: "uhd", kind: "video", path: "web/media/uhd/v.mp4", renditions: { src720: "web/media/uhd/out/720.mp4", src1080: "web/media/uhd/out/1080.mp4", src2160: "web/media/uhd/out/2160.mp4" } })],
   ["busy", media({ id: "busy", kind: "video", path: "web/media/busy/v.mp4", status: "processing" })],
   ["gone", media({ id: "gone", kind: "image", path: "web/media/gone/c.png", deletedAt: "2026-10-01T00:00:00Z" })],
 ]);
@@ -67,6 +68,13 @@ describe("resolveBlocks", () => {
 
   it("uses the 720p rendition for screens set to 720", () => {
     expect(resolveBlocks(blocks.slice(0, 1), { media: library, posts: POSTS, quality: "720", now: NOW })[0].src).toBe(`${PUBLIC_BASE}/web/media/vid/out/720.mp4`);
+  });
+
+  it("uses the 4K rendition for screens set to 4K, and 1080p for a video without one", () => {
+    const src = (mediaId: string, quality: "720" | "1080" | "2160") => resolveBlocks([parse({ id: "1", type: "video", mediaId })], { media: library, posts: POSTS, quality, now: NOW })[0].src;
+    expect(src("uhd", "2160")).toBe(`${PUBLIC_BASE}/web/media/uhd/out/2160.mp4`);
+    expect(src("uhd", "1080")).toBe(`${PUBLIC_BASE}/web/media/uhd/out/1080.mp4`);
+    expect(src("vid", "2160")).toBe(`${PUBLIC_BASE}/web/media/vid/out/1080.mp4`);
   });
 
   it("passes a video's cuts on to the player", () => {
@@ -138,5 +146,14 @@ describe("blockSeconds", () => {
     expect(blockSeconds(parse({ id: "v", type: "video", mediaId: "vid", trimStart: 10, trimEnd: 12.5 }), 23)).toBe(23);
     expect(blockSeconds(parse({ id: "n", type: "latestPosts", count: 3, durationSec: 8 }))).toBe(24);
     expect(blockSeconds(parse({ id: "c", type: "calendar" }))).toBe(10);
+  });
+});
+
+describe("playsLight", () => {
+  it("applies only at 720p, also for a screen stored with light mode at a higher quality", () => {
+    expect(playsLight({ quality: "720", light: true })).toBe(true);
+    expect(playsLight({ quality: "720", light: false })).toBe(false);
+    expect(playsLight({ quality: "1080", light: true })).toBe(false);
+    expect(playsLight({ quality: "2160", light: true })).toBe(false);
   });
 });

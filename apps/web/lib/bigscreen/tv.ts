@@ -114,6 +114,10 @@ function start(stage: HTMLElement, key: string) {
   setTimeout(beat, 5_000);
   addEventListener("pagehide", remember);
 
+  navigator.serviceWorker?.addEventListener("message", (e) => {
+    if (e.data?.type === "cache-error") errors.push(`Får inte plats i offline-cachen: ${e.data.url}`);
+  });
+
   // Offline cache. Not on localhost, where it would keep stale dev builds.
   if ("serviceWorker" in navigator && location.hostname !== "localhost") navigator.serviceWorker.register("/storbild/sw.js", { scope: "/storbild/" }).catch(() => {});
 }

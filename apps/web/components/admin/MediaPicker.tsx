@@ -40,9 +40,14 @@ export function MediaThumb({ m }: { m: MediaDoc }) {
 /**
  * Where a file that can't be used yet stands: uploading, waiting in the
  * converter's queue, converting (with an estimated percent and bar), or failed.
+ * A ready video shows how its 4K rendition stands, if it has one.
  */
 export function MediaStatus({ m }: { m: MediaDoc }) {
-  if (m.status === "ready") return null;
+  if (m.status === "ready") {
+    if (m.renditions?.src2160) return <span className="media-status"><Badge tone="info">4K</Badge></span>;
+    if (m.uhdError) return <span className="media-status" title={m.uhdError}><Badge tone="danger">4K misslyckades</Badge></span>;
+    return m.uhdJobName ? <span className="media-status"><Badge tone="warning">4K konverteras…</Badge></span> : null;
+  }
   // The transcoder's message is long and in English: on hover, not in the badge.
   if (m.status === "error")
     return (

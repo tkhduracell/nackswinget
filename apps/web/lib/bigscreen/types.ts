@@ -48,13 +48,16 @@ export const playlistSchema = z.object({
 });
 export type Playlist = z.infer<typeof playlistSchema>;
 
+/** Light mode exists only at 720p (the Pi Zero's setting); an older screen may have it stored with a higher quality. */
+export const playsLight = (s: { quality: string; light: boolean }) => s.light && s.quality === "720";
+
 export const screenSchema = z.object({
   id: z.string(),
   name: z.string(),
   key: z.string().min(16),
   playlistId: z.string(),
   // The Pi Zero 2 W players have 512 MB RAM: 720p and light mode by default (plan B12).
-  quality: z.enum(["1080", "720"]).default("720"),
+  quality: z.enum(["2160", "1080", "720"]).default("720"),
   /** Never two videos loaded at once: no video preload during a video, videos fade through black. */
   light: z.boolean().default(true),
   /** Bumped from the admin; the player reloads itself when it changes. */

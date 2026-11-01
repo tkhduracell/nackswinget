@@ -1,11 +1,11 @@
 import "server-only";
-import { type MediaDoc, refreshMedia } from "@/lib/admin/media";
+import { type MediaDoc, refreshMedia, refreshUhd } from "@/lib/admin/media";
 import { loadEvents } from "@/lib/calendar/fetch";
 import { getPost, getSite, listAllPosts } from "@/lib/content/cached";
 import { getDb } from "@/lib/firebase/admin";
 import { plainText } from "./render";
 import { resolveBlocks } from "./resolve";
-import { type Block, blockSchema, type PlayerBlock, type PlayerPayload, type Playlist, playlistSchema, type Screen, screenSchema } from "./types";
+import { type Block, blockSchema, type PlayerBlock, type PlayerPayload, type Playlist, playlistSchema, playsLight, type Screen, screenSchema } from "./types";
 
 export const BIGSCREEN_COLLECTIONS = { screens: "bigscreens", playlists: "bigscreenPlaylists" } as const;
 
@@ -35,7 +35,7 @@ function validBlock(input: unknown, playlistId: string): Block[] {
   return [];
 }
 
-export async function getMedia(ids: string[]): Promise<Map<string, MediaDoc>> {
+export async function getMedia(ids: string[], quality?: Screen["quality"]): Promise<Map<string, MediaDoc>> {
   const unique = [...new Set(ids)];
   if (!unique.length) return new Map();
   const db = getDb();
@@ -45,7 +45,9 @@ export async function getMedia(ids: string[]): Promise<Map<string, MediaDoc>> {
   // Bilder & filer does). Ask here too, or a clip uploaded from the Storbild
   // editor stays "processing" and the screens skip it forever.
   const fresh = await Promise.all(docs.map((m) => (m.kind === "video" && m.status === "processing" && m.jobName ? refreshMedia(m.id).catch(() => m) : m)));
-  return new Map(fresh.map((m) => [m.id, m]));
+  // 4K is made on demand: only videos a 4K screen actually plays cost a 4K job.
+  const out = quality === "2160" ? await Promise.all(fresh.map((m) => refreshUhd(m).catch(() => m))) : fresh;
+  return new Map(out.map((m) => [m.id, m]));
 }
 
 /** Blocks → what the player plays (the TV, and the admin preview of a draft). */
@@ -53,7 +55,7 @@ export async function resolveForPlayer(blocks: Block[], quality: Screen["quality
   const needsPosts = blocks.some((b) => b.type === "latestPosts" || b.type === "post");
   const needsEvents = blocks.some((b) => b.type === "calendar" || b.type === "agenda");
   const [media, posts, feeds] = await Promise.all([
-    getMedia(blocks.flatMap((b) => ("mediaId" in b ? [b.mediaId] : []))),
+    getMedia(blocks.flatMap((b) => ("mediaId" in b ? [b.mediaId] : [])), quality),
     needsPosts ? listAllPosts() : [],
     needsEvents ? getSite().then((s) => s.settings.calendarFeeds) : [],
   ]);
@@ -74,7 +76,7 @@ export async function playerPayload(key: string, now = new Date()): Promise<Play
   if (!screen) return null;
   const playlist = await getPlaylist(screen.playlistId);
   return {
-    screen: { name: screen.name, light: screen.light, ...(screen.reloadAt ? { reloadAt: screen.reloadAt } : {}) },
+    screen: { name: screen.name, light: playsLight(screen), ...(screen.reloadAt ? { reloadAt: screen.reloadAt } : {}) },
     blocks: await resolveForPlayer(playlist?.blocks ?? [], screen.quality, now),
   };
 }

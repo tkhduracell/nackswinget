@@ -1,6 +1,28 @@
 import type { MediaDoc } from "@/lib/admin/media";
+import { isVideoFile } from "@/lib/media/urls";
 
 type Api = <T = unknown>(path: string, init?: RequestInit & { json?: unknown }) => Promise<T>;
+
+/** A video's size as shown, which decides if it can get a 4K rendition. Unknown when the browser can't read the file. */
+export function videoSize(file: File): Promise<{ width?: number; height?: number }> {
+  if (!file.type.startsWith("video/") && !isVideoFile(file.name)) return Promise.resolve({});
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement("video");
+    const done = (size: { width?: number; height?: number }) => {
+      clearTimeout(timer);
+      v.removeAttribute("src");
+      URL.revokeObjectURL(url);
+      resolve(size);
+    };
+    const timer = setTimeout(() => done({}), 5_000);
+    v.preload = "metadata";
+    v.muted = true;
+    v.onloadedmetadata = () => done(v.videoHeight ? { width: v.videoWidth, height: v.videoHeight } : {});
+    v.onerror = () => done({});
+    v.src = url;
+  });
+}
 
 /**
  * Uploads a file: asks the server for a resumable Cloud Storage session,
@@ -10,7 +32,7 @@ type Api = <T = unknown>(path: string, init?: RequestInit & { json?: unknown }) 
 export async function uploadFile(api: Api, file: File, onProgress: (fraction: number) => void): Promise<MediaDoc> {
   const { media, uploadUrl } = await api<{ media: MediaDoc; uploadUrl: string }>("/media", {
     method: "POST",
-    json: { name: file.name, contentType: file.type || "application/octet-stream", size: file.size },
+    json: { name: file.name, contentType: file.type || "application/octet-stream", size: file.size, ...(await videoSize(file)) },
   });
   await new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
