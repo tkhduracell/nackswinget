@@ -1010,6 +1010,10 @@
   position: absolute;
   inset: 0;
 }
+.admin .admin-table .row-link .button {
+  position: relative;
+  z-index: 1;
+}
 .admin .admin-table .row-link:hover .cell-title {
   color: var(--a-red);
 }
